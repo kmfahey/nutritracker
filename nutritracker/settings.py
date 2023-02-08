@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%cjbhnh(@c78g6hq((sw-npfm*mmq!v@l2rb8ap10ss(_tcz^p'
+SECRET_KEY = 'django-insecure-' + config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -77,10 +78,16 @@ WSGI_APPLICATION = 'nutritracker.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django_mongodb_engine',
+        'NAME': 'nutritracker',
+        'USER': config("DB_USERNAME"),
+        'PASSWORD': config("DB_PASSWORD"),
+        'HOST': 'localhost',
+        'PORT': 27017
     }
 }
+
+
 
 
 # Password validation
