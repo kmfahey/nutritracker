@@ -1,0 +1,13 @@
+* use django
+    * the front end this time
+    * templates especially
+    * it'll be low-rent bc you don't know CSS but kick it HTML2.0 style, it'll be charming at least
+
+* be able to load foods in using an API
+    * do it just-in-time and store the foods after, so its a furnishment arrangement, not an always-ask arrangement
+    * be able to load recipes in from the API too
+    * also accept recipes from user??? how would this even work???
+    * without javascript at HTML2.0 speeds, idfk but it'll be fun figuring it out.
+
+* store it in MongoDB just to try it out
+    * set up a local mongodb to know how to do that
