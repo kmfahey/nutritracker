@@ -1,3 +1,5 @@
+DESIGN GOALS
+
 * use django
     * the front end this time
     * templates especially
@@ -11,3 +13,67 @@
 
 * store it in MongoDB just to try it out
     * set up a local mongodb to know how to do that
+
+* should support user profiles with height & weight properties
+    * then calculate custom RDAs based on bodyweight
+
+
+page brainstorming
+
+app: /foods
+
+pages:
+
+[list of foods] with links to [individual food page]s
+
+* paginated
+* url format: /foods/list/$PAGE_NO
+* each links to a page in a different app where the food can be added to a user's daily intake
+
+[individual food page], url using FCD ID
+
+/foods/$FDC_ID
+
+* lists nutrition info
+* remember to omit optional nutritional fields
+
+[page to search foods locally] by name which matches food title, links to [individual food page]s
+
+/foods/local_search
+
+[page to search foods remotely] by name which matches food title, links to [page to import FDC food]s
+
+/foods/remote_search
+    * unsure if this will work, what if the FDC API is down or slow?
+
+[page to import an FDC food]
+
+/foods/import/$FDC_ID
+
+
+SUMMARY:
+
+[list of foods]
+    /foods/list/$PAGE_NO
+
+[individual food page]
+    /foods/$FDC_ID
+
+[page to search foods locally]
+    /foods/local_search
+
+[page to search foods remotely]
+    /foods/remote_search
+
+[page to import an FDC food]
+    /foods/import/$FDC_ID
+
+
+
+other apps needed:
+
+/daily
+
+/recipes
+
+

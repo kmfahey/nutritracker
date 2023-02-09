@@ -57,7 +57,9 @@ ROOT_URLCONF = 'nutritracker.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            'foods/templates/foods'
+            ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -78,7 +80,7 @@ WSGI_APPLICATION = 'nutritracker.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django_mongodb_engine',
+        'ENGINE': 'djongo',
         'NAME': 'nutritracker',
         'USER': config("DB_USERNAME"),
         'PASSWORD': config("DB_PASSWORD"),
