@@ -2,7 +2,11 @@
 
 from django.db import models
 
+from mongoengine.fields import ObjectIdField
+
+
 class Food(models.Model):
+    _id                    = ObjectIdField()
     fdc_id                 = models.PositiveIntegerField(     default=0,  verbose_name="Food Data Central ID")
     food_name              = models.CharField(max_length=200, default="", verbose_name="food name")
     serving_size           = models.PositiveSmallIntegerField(default=1,  verbose_name="serving size")
@@ -34,6 +38,11 @@ class Food(models.Model):
     magnesium_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="magnesium (mg)")
     zinc_mg                = models.PositiveSmallIntegerField(default=0,  verbose_name="zinc (mg)")
     copper_mg              = models.PositiveSmallIntegerField(default=0,  verbose_name="copper (mg)")
+
+    class Meta:
+        managed = False
+        db_table = 'foods'
+        app_label = 'foods'
 
 
 
