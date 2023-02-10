@@ -5,7 +5,9 @@
 {% block content %}
 
 {% for food_obj in food_objs %}
-    <h2>{{ food_obj.food_name }}</h2>
-    <p>FDC ID: {{ food_obj.fdc_id }}</p>
+    <p>
+    <b>{{ food_obj.food_name }}</b><br/>
+    Calories: {{ food_obj.energy_kcal.amount|floatformat }}
+    </p>
 {% endfor %}
 {% endblock %}

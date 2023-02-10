@@ -27,8 +27,11 @@ parser.add_option("-d", "--save-to-db", action="store_true", dest="save_to_db", 
 def main(search_kw=[], fdc_ids=[], save_to_db=False, food_list=False, food_list_page=1):
     api_contacter = Fdc_Api_Contacter(api_key)
     if save_to_db:
+        username = decouple.config("DB_USERNAME")
+        password = decouple.config("DB_PASSWORD")
+        db_conx = Db_Connection(username, password)
         food_objs = api_contacter.look_up_fdc_ids(fdc_ids)
-        results_list = api_contacter.save_food_objs_to_db(food_objs)
+        results_list = [db_conx.save_food_object(food_obj) for food_obj in food_objs]
     elif fdc_ids:
         results_list = [food_obj.serialize() for food_obj in api_contacter.look_up_fdc_ids(fdc_ids)]
     elif search_kw:
@@ -55,14 +58,15 @@ class Db_Connection:
         self.db, self.client = get_db_handle(self.db_name, 'localhost', 27017, username, password)
 
     def save_food_object(self, food_obj):
-        existing_food_obj = self.db.foods.find_one({'fdc_id':food_obj.fdc_id})
+        foods_coll = self.db['foods']
+        existing_food_obj = foods_coll.find_one({'fdc_id':food_obj.fdc_id})
         if existing_food_obj is not None:
-            self.db.foods.delete_one({'fdc_id':food_obj.fdc_id})
+            foods_coll.delete_one({'fdc_id':food_obj.fdc_id})
         food_obj_serialized = food_obj.serialize()
         for property_key, property_value in food_obj_serialized.items():
             if isinstance(property_value, dict):
                 food_obj_serialized[property_key] = property_value["amount"]
-        object_id = self.db.foods.insert_one(food_obj_serialized).inserted_id
+        object_id = foods_coll.insert_one(food_obj_serialized).inserted_id
         return str(object_id)
 
 

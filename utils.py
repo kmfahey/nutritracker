@@ -11,7 +11,7 @@ from pymongo import MongoClient
 
 def get_db_handle(db_name, host, port, username, password):
     client = MongoClient(host=host, port=int(port), username=username, password=password)
-    db_handle = client['db_name']
+    db_handle = client['nutritracker']
     return db_handle, client
 
 
@@ -211,7 +211,7 @@ class Food_Detailed(Abstract_Food):
         serving_size = food_model_obj.serving_size
         serving_units = food_model_obj.serving_units
         food_obj = self(fdc_id, food_name, serving_size, serving_units)
-        for fdc_id, nutrient_obj in self.nutrients:
+        for fdc_id, nutrient_obj in self.nutrients.items():
             if not hasattr(food_model_obj, nutrient_obj.symbol):
                 continue
             nutrient_in_food = nutrient_obj.copy()
@@ -297,12 +297,6 @@ class Fdc_Api_Contacter:
             food_obj = Food_Detailed.from_json_object(json_content)
             results_list.append(food_obj)
         return results_list
-
-    def save_food_objs_to_db(self, food_objs):
-        username = decouple.config("DB_USERNAME")
-        password = decouple.config("DB_PASSWORD")
-        db_conx = Db_Connection(username, password)
-        return [db_conx.save_food_object(food_obj) for food_obj in food_objs]
 
     def retrieve_foods_list(self, food_list_page=1):
         food_list_url = self.get_food_list_url()
