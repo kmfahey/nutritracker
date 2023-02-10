@@ -15,15 +15,6 @@ def get_db_handle(db_name, host, port, username, password):
     return db_handle, client
 
 
-api_url = "https://api.nal.usda.gov/fdc/v1"
-
-api_key = decouple.config("FDC_API_KEY")
-
-get_fdc_search_url = lambda fdc_id, page_number=1: f"{api_url}/food/{fdc_id}?api_key={api_key}"
-
-get_food_list_url = lambda: f"{api_url}/foods/list?api_key={api_key}"
-
-
 class Nutrient:
     __slots__ = ('name', 'units', 'fdc_code', 'amount', 'symbol')
 
@@ -156,7 +147,7 @@ class Abstract_Food(metaclass=abc.ABCMeta):
 
 
 class Food_Stub(Abstract_Food):
-    __slots__ = ('fdc_id', 'food_name')
+    __slots__ = ('fdc_id', 'food_name', 'calories')
 
     def __init__(self, fdc_id, food_name):
         self.fdc_id = fdc_id
@@ -167,13 +158,20 @@ class Food_Stub(Abstract_Food):
         fdc_id = food_json_obj["fdcId"]
         food_name = food_json_obj["description"]
         food_obj = Food_Stub(fdc_id, food_name)
+        for nutrient_json_obj in food_json_obj["foodNutrients"]:
+            if int(nutrient_json_obj["nutrientNumber"]) != 208:
+                continue
+            food_obj.calories = float(nutrient_json_obj["value"])
+            break
+        if not hasattr(food_obj, 'calories'):
+            food_obj.calories = None
         return food_obj
 
     def serialize(self):
-        return {'fdc_id': self.fdc_id, 'food_name': self.food_name}
+        return {'fdc_id': self.fdc_id, 'food_name': self.food_name, 'calories': self.calories}
 
 
-class Food(Abstract_Food):
+class Food_Detailed(Abstract_Food):
     __slots__ = ('fdc_id', 'food_name', 'serving_size', 'serving_units', 'biotin_mcg', 'calcium_mg', 'cholesterol_mg',
                  'copper_mg', 'dietary_fiber_g', 'energy_kcal', 'folate_mcg', 'iodine_mcg', 'iron_mg', 'magnesium_mg',
                  'niacin_B3_mg', 'pantothenic_acid_B5_mg', 'phosphorous_mg', 'potassium_mg', 'protein_g',
@@ -182,7 +180,7 @@ class Food(Abstract_Food):
 
     def __init__(self, fdc_id, food_name, serving_size, serving_units):
         self.fdc_id = fdc_id
-        self.food_name = self._title_case(food_name)
+        self.food_name = self._title_case(food_name.lower())
         self.serving_size = serving_size
         self.serving_units = serving_units
         for nutrient_obj in self.nutrients.values():
@@ -196,6 +194,8 @@ class Food(Abstract_Food):
             if fdc_code not in self.nutrients:
                 continue
             elif "amount" not in nutrient_json_obj:
+                continue
+            elif float(nutrient_json_obj["amount"]) == 0:
                 continue
             nutrient_table[fdc_code] = Nutrient(nutrient_json_obj["nutrient"]["name"],
                                                 nutrient_json_obj["nutrient"]["unitName"].lower(),
@@ -233,7 +233,7 @@ class Food(Abstract_Food):
             raise Exception(f'while processing a food JSON object, unsupported value for property \'dataType\': {food_json_obj["dataType"]}')
         food_obj = self(fdc_id, food_name, serving_size, serving_units)
         nutrient_table = self._food_json_obj_to_nutrient_table(food_json_obj)
-        for fdc_code, nutrient_obj in Food.nutrients.items():
+        for fdc_code, nutrient_obj in Food_Detailed.nutrients.items():
             if fdc_code not in nutrient_table:
                 continue
             nutrient_in_food = nutrient_table[fdc_code]
@@ -259,26 +259,59 @@ class Food(Abstract_Food):
                 serialized[attr_name] = attr_val
         return serialized
 
+    def to_model_cls_args(self):
+        return {property_key: (property_val["amount"] if isinstance(property_val, dict) else property_val)
+                for property_key, property_val in self.serialize().items()}
 
-def search_for_fdc_ids(fdc_ids=[]):
-    results_list = list()
-    for fdc_id in fdc_ids:
-        search_url = get_fdc_search_url(fdc_id)
-        response = requests.get(search_url)
+
+class Fdc_Api_Contacter:
+    __slots__ = 'api_key',
+
+    api_url = "https://api.nal.usda.gov/fdc/v1"
+
+    get_fdc_lookup_url = lambda self, fdc_id: f"{self.api_url}/food/{fdc_id}?api_key={self.api_key}"
+
+    get_fdc_search_url = lambda self: f"{self.api_url}/foods/search?api_key={self.api_key}"
+
+    get_food_list_url = lambda self: f"{self.api_url}/foods/list?api_key={self.api_key}"
+
+    def __init__(self, api_key):
+        self.api_key = api_key
+
+    def search_by_keywords(self, query):
+        search_url = self.get_fdc_search_url()
+        json_argd = dict(dataType=["Branded", "SR Legacy"], query=query)
+        response = requests.post(search_url, json=json_argd)
         json_content = json.loads(response.content)
-        food_obj = Food.from_json_object(json_content)
-        results_list.append(food_obj.serialize())
-    return results_list
+        results_list = list()
+        for result_obj in json_content['foods']:
+            results_list.append(Food_Stub.from_json_object(result_obj).serialize())
+        return results_list
 
+    def look_up_fdc_ids(self, fdc_ids=[]):
+        results_list = list()
+        for fdc_id in fdc_ids:
+            lookup_url = self.get_fdc_lookup_url(fdc_id)
+            response = requests.get(lookup_url)
+            json_content = json.loads(response.content)
+            food_obj = Food_Detailed.from_json_object(json_content)
+            results_list.append(food_obj)
+        return results_list
 
-def retrieve_foods_list(food_list_page=1):
-    food_list_url = get_food_list_url()
-    json_argd = dict(dataType=["Branded", "SR Legacy"])
-    if food_list_page:
-        json_argd["pageNumber"] = food_list_page
-    response = requests.post(food_list_url, json=json_argd)
-    results_list = list()
-    for response_obj in json.loads(response.content):
-        food_stub_obj = Food_Stub.from_json_object(response_obj)
-        results_list.append(food_stub_obj.serialize())
-    return results_list
+    def save_food_objs_to_db(self, food_objs):
+        username = decouple.config("DB_USERNAME")
+        password = decouple.config("DB_PASSWORD")
+        db_conx = Db_Connection(username, password)
+        return [db_conx.save_food_object(food_obj) for food_obj in food_objs]
+
+    def retrieve_foods_list(self, food_list_page=1):
+        food_list_url = self.get_food_list_url()
+        json_argd = dict(dataType=["Branded", "SR Legacy"])
+        if food_list_page:
+            json_argd["pageNumber"] = food_list_page
+        response = requests.post(food_list_url, json=json_argd)
+        results_list = list()
+        for response_obj in json.loads(response.content):
+            food_stub_obj = Food_Stub.from_json_object(response_obj)
+            results_list.append(food_stub_obj.serialize())
+        return results_list
