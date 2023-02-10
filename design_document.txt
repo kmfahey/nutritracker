@@ -37,16 +37,16 @@ pages:
 * lists nutrition info
 * remember to omit optional nutritional fields
 
-[page to search foods locally] by name which matches food title, links to [individual food page]s
+[search foods locally] by name which matches food title, links to [individual food page]s
 
 /foods/local_search
 
-[page to search foods remotely] by name which matches food title, links to [page to import FDC food]s
+[search foods remotely] by name which matches food title, links to [page to import FDC food]s
 
 /foods/remote_search
     * unsure if this will work, what if the FDC API is down or slow?
 
-[page to import an FDC food]
+[import an FDC food]
 
 /foods/import/$FDC_ID
 
@@ -59,13 +59,13 @@ SUMMARY:
 [individual food page]
     /foods/$FDC_ID
 
-[page to search foods locally]
+[search foods locally]
     /foods/local_search
 
-[page to search foods remotely]
+[search foods remotely]
     /foods/remote_search
 
-[page to import an FDC food]
+[import an FDC food]
     /foods/import/$FDC_ID
 
 
