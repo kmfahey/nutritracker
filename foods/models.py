@@ -3,7 +3,7 @@
 from django.db import models
 
 class Food(models.Model):
-    food_data_central_id   = models.PositiveIntegerField(     default=0,  verbose_name="Food Data Central ID")
+    fdc_id                 = models.PositiveIntegerField(     default=0,  verbose_name="Food Data Central ID")
     food_name              = models.CharField(max_length=200, default="", verbose_name="food name")
     serving_size           = models.PositiveSmallIntegerField(default=1,  verbose_name="serving size")
     serving_size_alt       = models.PositiveSmallIntegerField(default=1,  verbose_name="serving size (alternate)")
@@ -22,7 +22,7 @@ class Food(models.Model):
     potassium_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="potassium (mg)")
     iron_mg                = models.PositiveSmallIntegerField(default=0,  verbose_name="iron (mg)")
     calcium_mg             = models.PositiveSmallIntegerField(default=0,  verbose_name="calcium (mg)")
-    vitamin_E_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="vitamin E")
+    vitamin_E_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="vitamin E (mg)")
     thiamin_B1_mg          = models.PositiveSmallIntegerField(default=0,  verbose_name="thiamin (vitamin B1) (mg)")
     riboflavin_B2_mg       = models.PositiveSmallIntegerField(default=0,  verbose_name="riboflavin (vitamin B2) (mg)")
     niacin_B6_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="niacin (vitamin B6) (mg)")

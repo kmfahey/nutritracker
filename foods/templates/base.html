@@ -1,7 +1,7 @@
 <html>
     <head>
-        <title>NutriTracker - {{ specific page subtitle }}</title>
-        <meta name="description" content= "{{ specific page description }}" />
+        <title>NutriTracker - {% block title %}{% endblock %}</title>
+        <meta name="description" content= "{% block description %}{% endblock %}" />
         <link rel="stylesheet" type="text/css" href="ntr-general.css" />
         <style>
 body {
@@ -43,7 +43,7 @@ footer {
             <a href="/foods">Foods</a> &bullet; <a href="/daily">Daily Tracker</a> &bullet; <a href="/recipes">Recipes</a>
         </nav>
         <section id="main" class="elem">
-            {{ the<br/>actual<br/>body<br/>of<br/>whatever<br/>I'm<br/>doing<br/>in<br/>this<br/>page }}
+            {% block content %}{% endblock %}
         </section>
         <footer class="elem">
             &#169; 2023 Kerne M. Fahey
