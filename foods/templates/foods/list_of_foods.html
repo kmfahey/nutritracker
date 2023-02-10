@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Main Foods List{% endblock %}
+
+{% block content %}
+
+{% for food_obj in food_objs %}
+    <h2>{{ food_obj.food_name }}</h2>
+    <p>FDC ID: {{ food_obj.fdc_id }}</p>
+{% endfor %}
+{% endblock %}

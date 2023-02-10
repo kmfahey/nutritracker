@@ -58,7 +58,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            'foods/templates/foods'
+            BASE_DIR / 'foods/templates/foods'
             ],
         'APP_DIRS': True,
         'OPTIONS': {
