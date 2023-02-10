@@ -21,8 +21,10 @@ get_food_list_url = lambda: f"{api_url}/foods/list?api_key={api_key}"
 jq_path = "/usr/bin/jq"
 
 parser = optparse.OptionParser()
-parser.add_option("-l", "--food-list", action="store_true", dest="food_list", default=False, help="access the FDC /foods/list API and relay results")
-parser.add_option("-p", "--food-list-page", action="store", dest="food_list_page", default=0, metavar="PAGE", type="int", help="access the FDC /foods/list API and relay results")
+parser.add_option("-l", "--food-list", action="store_true", dest="food_list", default=False,
+                  help="access the FDC /foods/list API and relay results")
+parser.add_option("-p", "--food-list-page", action="store", dest="food_list_page", default=0, metavar="PAGE",
+                  type="int", help="access the FDC /foods/list API and relay results")
 
 number_to_ordinal = lambda number: (f"{number}st" if number % 10 == 1 else
                                     f"{number}nd" if number % 10 == 2 else
@@ -34,6 +36,14 @@ number_to_ordinal = lambda number: (f"{number}st" if number % 10 == 1 else
 class Nutrient:
     __slots__ = ('name', 'units', 'fdc_code', 'amount', 'symbol')
 
+    daily_values = {'biotin_mcg': 30, 'calcium_mg': 1300, 'cholesterol_mg': 300, 'copper_mg': 0.9,
+                    'dietary_fiber_g': 28, 'folate_mcg': 400, 'iodine_mcg': 150, 'iron_mg': 18,
+                    'magnesium_mg': 420, 'niacin_B3_mg': 16, 'pantothenic_acid_B5_mg': 5,
+                    'phosphorous_mg': 1250, 'potassium_mg': 4700, 'protein_g': 50,
+                    'riboflavin_B2_mg': 1.3, 'saturated_fat_g': 20, 'sodium_mg': 2300, 'sugars_g': 50,
+                    'thiamin_B1_mg': 1.2, 'total_carbohydrates_g': 275, 'total_fat_g': 78,
+                    'vitamin_D_mcg': 20, 'vitamin_E_mg': 15, 'zinc_mg': 11}
+
     def __init__(self, name, units, fdc_code=0, amount=0, symbol=''):
         self.name = name
         self.units = units
@@ -41,11 +51,27 @@ class Nutrient:
         self.amount = amount
         self.symbol = symbol
 
+    @property
+    def dv_perc(self):
+        if self.symbol not in self.daily_values:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute 'dv_perc'")
+        return round(100 * self.amount / self.daily_values[self.symbol], 0)
+
+    def serialize(self):
+        serialized = {'name':self.name,
+                      'units':self.units,
+                      'fdc_code':self.fdc_code,
+                      'amount':self.amount,
+                      'symbol':self.symbol}
+        if hasattr(self, 'dv_perc'):
+            serialized['dv_perc'] = self.dv_perc
+        return serialized
+
 
 class Food:
     __slots__ = ('fdc_id', 'food_name', 'serving_size', 'serving_units', 'biotin_mcg', 'calcium_mg', 'cholesterol_mg',
                  'copper_mg', 'dietary_fiber_g', 'energy_kcal', 'folate_mcg', 'iodine_mcg', 'iron_mg', 'magnesium_mg',
-                 'niacin_B6_mg', 'pantothenic_acid_B5_mg', 'phosphorous_mg', 'potassium_mg', 'protein_g',
+                 'niacin_B3_mg', 'pantothenic_acid_B5_mg', 'phosphorous_mg', 'potassium_mg', 'protein_g',
                  'riboflavin_B2_mg', 'saturated_fat_g', 'sodium_mg', 'sugars_g', 'thiamin_B1_mg',
                  'total_carbohydrates_g', 'total_fat_g', 'trans_fat_g', 'vitamin_D_mcg', 'vitamin_E_mg', 'zinc_mg')
 
@@ -69,7 +95,7 @@ class Food:
         324: Nutrient("vitamin D (mcg)", "mcg", fdc_code=324, symbol='vitamin_D_mcg'),
         404: Nutrient("thiamin (vitamin B1) (mg)", "mg", fdc_code=404, symbol='thiamin_B1_mg'),
         405: Nutrient("riboflavin (vitamin B2) (mg)", "mg", fdc_code=405, symbol='riboflavin_B2_mg'),
-        406: Nutrient("niacin (vitamin B6) (mg)", "mg", fdc_code=406, symbol='niacin_B6_mg'),
+        406: Nutrient("niacin (vitamin B3) (mg)", "mg", fdc_code=406, symbol='niacin_B3_mg'),
         410: Nutrient("pantothenic acid (mg)", "mg", fdc_code=410, symbol='pantothenic_acid_B5_mg'),
         416: Nutrient("biotin (mcg)", "mcg", fdc_code=416, symbol='biotin_mcg'),
         417: Nutrient("folate (mcg)", "mcg", fdc_code=417, symbol='folate_mcg'),
@@ -86,9 +112,9 @@ class Food:
                                    "|"
                                "(?<=[^A-Za-zÀ-ÿ0-9._'ʼ’])(?=[A-Za-zÀ-ÿ0-9._'ʼ’])")
 
-    is_unc_alnum_punct = lambda self, strval: re.match("^[A-Za-zÀ-ÿ0-9._'ʼ’]+$", strval)
+    _is_unc_alnum_punct = classmethod(lambda self, strval: re.match("^[A-Za-zÀ-ÿ0-9._'ʼ’]+$", strval))
 
-    capitalize = lambda self, strval: re.sub("[A-Za-zÀ-ÿ]", lambda m: m.group(0).upper(), strval, count=1)
+    _capitalize = classmethod(lambda self, strval: re.sub("[A-Za-zÀ-ÿ]", lambda m: m.group(0).upper(), strval, count=1))
 
     def __init__(self, fdc_id, food_name, serving_size, serving_units):
         self.fdc_id = fdc_id
@@ -99,7 +125,7 @@ class Food:
             setattr(self, nutrient_obj.symbol, 0)
 
     @classmethod
-    def _title_case(strval):
+    def _title_case(self, strval):
 
         tokens = self.tokenizing_re.split(strval)
 
@@ -113,11 +139,11 @@ class Food:
         # first and last _actual words_, not counting non-alphanumeric substrings,
         # so the indexes of the first and last actual words need to be found.
         for index, token in zip(range(len(tokens)), tokens):
-            if self.is_unc_alnum_punct(token):
+            if self._is_unc_alnum_punct(token):
                 first_alpha_token_index = index
                 break
         for index, token in zip(range(len(tokens) - 1, -1, -1), reversed(tokens)):
-            if self.is_unc_alnum_punct(token):
+            if self._is_unc_alnum_punct(token):
                 last_alpha_token_index = index
                 break
 
@@ -126,11 +152,11 @@ class Food:
             if re.match(r"^([A-Za-zÀ-ÿ]\.){2,}$", token):
                 token = token.upper()
             elif index == first_alpha_token_index or index == last_alpha_token_index:
-                token = self.capitalize(token)
-            elif token.lower() in title_case_lc_words:
+                token = self._capitalize(token)
+            elif token.lower() in self.title_case_lc_words:
                 token = token.lower()
             elif re.match("^([à-ÿa-z'’ʼ]+)$", token):
-                token = self.capitalize(token)
+                token = self._capitalize(token)
             output.append(token)
 
         return ''.join(output)
@@ -146,7 +172,9 @@ class Food:
                 continue
             nutrient_table[fdc_code] = Nutrient(nutrient_json_obj["nutrient"]["name"],
                                                 nutrient_json_obj["nutrient"]["unitName"].lower(),
-                                                amount=float(nutrient_json_obj["amount"]))
+                                                fdc_code=fdc_code,
+                                                amount=float(nutrient_json_obj["amount"]),
+                                                symbol=self.nutrients[fdc_code].symbol)
         return nutrient_table
 
     @classmethod
@@ -172,15 +200,22 @@ class Food:
                 # D amounts in micrograms. Converting from IU to mg/mcg is
                 # different for every substance that IU are used with. For
                 # vitamin D, 40 IU == 1 mcg.
-                nutrient_amount = nutrient_in_food.amount / 40
-            else:
-                assert nutrient_in_food.units == self.nutrients[fdc_code].units
-                nutrient_amount = nutrient_in_food.amount
-            setattr(food_obj, nutrient_obj.symbol, nutrient_amount)
+                nutrient_in_food.amount /= 40
+                nutrient_in_food.units = 'mcg'
+            setattr(food_obj, nutrient_obj.symbol, nutrient_in_food)
         return food_obj
 
     def serialize(self):
-        return {attr_name: getattr(self, attr_name) for attr_name in self.__slots__ if getattr(self, attr_name)}
+        serialized = dict()
+        for attr_name in self.__slots__:
+            attr_val = getattr(self, attr_name)
+            if attr_val == 0 or attr_val is None:
+                continue
+            if hasattr(attr_val, 'serialize'):
+                serialized[attr_name] = attr_val.serialize()
+            else:
+                serialized[attr_name] = attr_val
+        return serialized
 
 
 def main(fdc_ids=[], food_list=False, food_list_page=0):
