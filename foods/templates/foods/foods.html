@@ -4,6 +4,10 @@
 
 {% block content %}
 
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
 {% include "_food_obj_foreach.html" %}
+
+{% if more_than_one_page %}{% autoescape off %}{{ pagination_links }}{% endautoescape %}{% endif %}
 
 {% endblock %}

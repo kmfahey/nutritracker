@@ -9,7 +9,24 @@ import functools
 import math
 import urllib.parse
 
+from django.http import HttpResponse
+
 from pymongo import MongoClient
+
+
+get_cgi_params = lambda request: request.GET if request.method == "GET" else request.POST if request.method == "POST" else {}
+
+slice_output_list_by_page = lambda output_list, page_size, current_page: output_list[page_size * (current_page - 1) : page_size * (current_page - 1) + page_size]
+
+
+def cast_int(strval, param_name, template, context, request):
+    try:
+        intval = int(strval)
+        assert intval > 0
+    except (ValueError, AssertionError):
+        context["message"] = f"value for {param_name} must be an integer greater than zero"
+        return HttpResponse(template.render(context, request))
+    return intval
 
 
 def get_db_handle(db_name, host, port, username, password):
@@ -341,16 +358,19 @@ class Fdc_Api_Contacter:
             results_list.append(food_stub_obj.serialize())
         return results_list
 
-def generate_pagination_links(url_base, search_query, results_count, page_size, current_page):
+def generate_pagination_links(url_base, results_count, page_size, current_page, search_query=None):
     if results_count < page_size:
         return ''
-    no_of_pages = math.ceil(results_count / page_size)
+    number_of_pages = math.ceil(results_count / page_size)
     page_links = list()
-    for page_number in range(1, no_of_pages + 1):
+    for page_number in range(1, number_of_pages + 1):
         if page_number == current_page:
             page_links.append(str(page_number))
         else:
-            params = urllib.parse.urlencode({'search_query':search_query, 'page_size':page_size, 'page':page_number})
+            url_params = {'page_size':page_size, 'page':page_number}
+            if search_query is not None:
+                url_params['search_query'] = search_query
+            params = urllib.parse.urlencode(url_params)
             page_links.append(f'<a href="{url_base}?{params}">{page_number}</a>')
     return " • ".join(page_links)
 
