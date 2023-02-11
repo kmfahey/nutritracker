@@ -10,7 +10,6 @@ class Food(models.Model):
     fdc_id                 = models.PositiveIntegerField(     default=0,  verbose_name="Food Data Central ID")
     food_name              = models.CharField(max_length=200, default="", verbose_name="food name")
     serving_size           = models.PositiveSmallIntegerField(default=1,  verbose_name="serving size")
-    serving_size_alt       = models.PositiveSmallIntegerField(default=1,  verbose_name="serving size (alternate)")
     serving_units          = models.CharField(max_length=30,  default="", verbose_name="serving units")
     energy_kcal            = models.PositiveSmallIntegerField(default=0,  verbose_name="energy (kcal)")
     total_fat_g            = models.PositiveSmallIntegerField(default=0,  verbose_name="total fat (g)")

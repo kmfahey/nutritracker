@@ -18,8 +18,8 @@ def get_db_handle(db_name, host, port, username, password):
 class Nutrient:
     __slots__ = ('name', 'units', 'fdc_code', 'amount', 'symbol')
 
-    daily_values = {'biotin_mcg': 30, 'calcium_mg': 1300, 'cholesterol_mg': 300, 'copper_mg': 0.9,
-                    'dietary_fiber_g': 28, 'folate_mcg': 400, 'iodine_mcg': 150, 'iron_mg': 18,
+    daily_values = {'biotin_B7_mcg': 30, 'calcium_mg': 1300, 'cholesterol_mg': 300, 'copper_mg': 0.9,
+                    'dietary_fiber_g': 28, 'folate_B9_mcg': 400, 'iodine_mcg': 150, 'iron_mg': 18,
                     'magnesium_mg': 420, 'niacin_B3_mg': 16, 'pantothenic_acid_B5_mg': 5,
                     'phosphorous_mg': 1250, 'potassium_mg': 4700, 'protein_g': 50,
                     'riboflavin_B2_mg': 1.3, 'saturated_fat_g': 20, 'sodium_mg': 2300, 'sugars_g': 50,
@@ -37,7 +37,10 @@ class Nutrient:
     def dv_perc(self):
         if self.symbol not in self.daily_values:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute 'dv_perc'")
-        return round(100 * self.amount / self.daily_values[self.symbol], 0)
+        if self.amount == 0:
+            return 0
+        else:
+            return round(100 * self.amount / self.daily_values[self.symbol], 0)
 
     def copy(self):
         return Nutrient(self.name, self.units, fdc_code=self.fdc_code, amount=self.amount, symbol=self.symbol)
@@ -76,8 +79,8 @@ class Abstract_Food(metaclass=abc.ABCMeta):
         405: Nutrient("riboflavin (vitamin B2) (mg)", "mg", fdc_code=405, symbol='riboflavin_B2_mg'),
         406: Nutrient("niacin (vitamin B3) (mg)", "mg", fdc_code=406, symbol='niacin_B3_mg'),
         410: Nutrient("pantothenic acid (mg)", "mg", fdc_code=410, symbol='pantothenic_acid_B5_mg'),
-        416: Nutrient("biotin (mcg)", "mcg", fdc_code=416, symbol='biotin_mcg'),
-        417: Nutrient("folate (mcg)", "mcg", fdc_code=417, symbol='folate_mcg'),
+        416: Nutrient("biotin (mcg)", "mcg", fdc_code=416, symbol='biotin_B7_mcg'),
+        417: Nutrient("folate (mcg)", "mcg", fdc_code=417, symbol='folate_B9_mcg'),
         601: Nutrient("cholesterol (mg)", "mg", fdc_code=601, symbol='cholesterol_mg'),
         605: Nutrient("trans fat (g)", "g", fdc_code=605, symbol='trans_fat_g'),
         606: Nutrient("saturated fat (g)", "g", fdc_code=606, symbol='saturated_fat_g'),
@@ -172,8 +175,8 @@ class Food_Stub(Abstract_Food):
 
 
 class Food_Detailed(Abstract_Food):
-    __slots__ = ('fdc_id', 'food_name', 'serving_size', 'serving_units', 'biotin_mcg', 'calcium_mg', 'cholesterol_mg',
-                 'copper_mg', 'dietary_fiber_g', 'energy_kcal', 'folate_mcg', 'iodine_mcg', 'iron_mg', 'magnesium_mg',
+    __slots__ = ('fdc_id', 'food_name', 'serving_size', 'serving_units', 'biotin_B7_mcg', 'calcium_mg', 'cholesterol_mg',
+                 'copper_mg', 'dietary_fiber_g', 'energy_kcal', 'folate_B9_mcg', 'iodine_mcg', 'iron_mg', 'magnesium_mg',
                  'niacin_B3_mg', 'pantothenic_acid_B5_mg', 'phosphorous_mg', 'potassium_mg', 'protein_g',
                  'riboflavin_B2_mg', 'saturated_fat_g', 'sodium_mg', 'sugars_g', 'thiamin_B1_mg',
                  'total_carbohydrates_g', 'total_fat_g', 'trans_fat_g', 'vitamin_D_mcg', 'vitamin_E_mg', 'zinc_mg')
@@ -195,8 +198,6 @@ class Food_Detailed(Abstract_Food):
                 continue
             elif "amount" not in nutrient_json_obj:
                 continue
-            elif float(nutrient_json_obj["amount"]) == 0:
-                continue
             nutrient_table[fdc_code] = Nutrient(nutrient_json_obj["nutrient"]["name"],
                                                 nutrient_json_obj["nutrient"]["unitName"].lower(),
                                                 fdc_code=fdc_code,
@@ -212,10 +213,11 @@ class Food_Detailed(Abstract_Food):
         serving_units = food_model_obj.serving_units
         food_obj = self(fdc_id, food_name, serving_size, serving_units)
         for fdc_id, nutrient_obj in self.nutrients.items():
-            if not hasattr(food_model_obj, nutrient_obj.symbol):
-                continue
             nutrient_in_food = nutrient_obj.copy()
-            nutrient_in_food.amount = getattr(food_model_obj, nutrient_obj.symbol)
+            if hasattr(food_model_obj, nutrient_obj.symbol):
+                nutrient_in_food.amount = getattr(food_model_obj, nutrient_obj.symbol)
+            else:
+                nutrient_in_food.amount = 0
             setattr(food_obj, nutrient_obj.symbol, nutrient_in_food)
         return food_obj
 
@@ -234,17 +236,20 @@ class Food_Detailed(Abstract_Food):
         food_obj = self(fdc_id, food_name, serving_size, serving_units)
         nutrient_table = self._food_json_obj_to_nutrient_table(food_json_obj)
         for fdc_code, nutrient_obj in Food_Detailed.nutrients.items():
-            if fdc_code not in nutrient_table:
-                continue
-            nutrient_in_food = nutrient_table[fdc_code]
-            if nutrient_obj.symbol == "vitamin_D_mcg":
-                # The FDC uses IU for vitamin D, but this program stores vitamin
-                # D amounts in micrograms. Converting from IU to mg/mcg is
-                # different for every substance that IU are used with. For
-                # vitamin D, 40 IU == 1 mcg.
-                nutrient_in_food.amount /= 40
-                nutrient_in_food.units = 'mcg'
-            setattr(food_obj, nutrient_obj.symbol, nutrient_in_food)
+            if fdc_code in nutrient_table:
+                nutrient_in_food = nutrient_table[fdc_code]
+                if nutrient_obj.symbol == "vitamin_D_mcg" and nutrient_in_food.units.upper() == 'IU':
+                    # The FDC uses IU for vitamin D, but this program stores vitamin
+                    # D amounts in micrograms. Converting from IU to mg/mcg is
+                    # different for every substance that IU are used with. For
+                    # vitamin D, 40 IU == 1 mcg.
+                    nutrient_in_food.amount /= 40
+                    nutrient_in_food.units = 'mcg'
+                setattr(food_obj, nutrient_obj.symbol, nutrient_in_food)
+            else:
+                nutrient_in_food = nutrient_obj.copy()
+                nutrient_in_food.amount = 0
+                setattr(food_obj, nutrient_obj.symbol, nutrient_in_food)
         return food_obj
 
     def serialize(self):

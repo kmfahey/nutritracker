@@ -1,11 +1,36 @@
 <html>
     <head>
         <title>NutriTracker - {% block title %}{% endblock %}</title>
-        <link rel="stylesheet" type="text/css" href="ntr-general.css" />
         <style>
 body {
     font-family: Arial, Helvetica, sans-serif;
     background-color: lightyellow;
+}
+
+.verylarge {
+    font-size: 200%;
+}
+
+.larger {
+    font-size: 150%;
+}
+
+.small {
+    font-size: 80%;
+}
+
+.tab {
+    margin-left: 2.5em;
+}
+
+.halftab {
+    margin-left: 1.25em;
+}
+
+.superscript {
+    position: relative;
+    top: -0.5em;
+    font-size: 80%;
 }
 
 .elem {
@@ -14,6 +39,24 @@ body {
     padding: 10px;
     float: left;
     width: 70%;
+}
+
+table.nutrfacts {
+    background-color: white;
+    border: 5px solid black;
+    outline: 5px solid white;
+}
+
+td.right {
+    text-align: right;
+}
+
+hr {
+    background-color: black;
+    height: 5px;
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
 }
 
 header {

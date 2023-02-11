@@ -6,7 +6,7 @@
 
 {% for food_obj in food_objs %}
     <p>
-    <b>{{ food_obj.food_name }}</b><br/>
+    <b><a href="/foods/{{ food_obj.fdc_id }}/">{{ food_obj.food_name }}</a></b><br/>
     Calories: {{ food_obj.energy_kcal.amount|floatformat }}
     </p>
 {% endfor %}
