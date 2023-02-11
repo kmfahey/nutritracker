@@ -1,0 +1,24 @@
+{% extends "_base.html" %}
+
+{% block title %}FoodData Central Search{% endblock %}
+
+{% block content %}
+
+{% include "_fdc_search_header.html" %}
+
+{% for food_obj in food_objs %}
+    <div>
+        <form action="/foods/fdc_import/" method="GET">
+            <input type="submit" value="Import" style="float: right;"/>
+            <input type="hidden" name="fdc_id" value="{{ food_obj.fdc_id }}"/>
+        </form>
+        <p>
+            <b><a href="/foods/fdc_search/{{ food_obj.fdc_id }}/">{{ food_obj.food_name }}</a></b><br/>
+            Calories: {{ food_obj.calories|floatformat }}
+        </p>
+    </div>
+{% endfor %}
+
+{% if more_than_one_page %}{% autoescape off %}{{ pagination_links }}{% endautoescape %}{% endif %}
+
+{% endblock %}

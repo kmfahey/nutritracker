@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import decouple
 import optparse
 import sys
 import subprocess
@@ -56,6 +57,11 @@ class Db_Connection:
         self.username = username
         self.password = password
         self.db, self.client = get_db_handle(self.db_name, 'localhost', 27017, username, password)
+
+    def list_food_objects(self, limit=0):
+        foods_coll = self.db['foods']
+        food_objs = foods_coll.find(limit=limit)
+        return list(food_objs)
 
     def save_food_object(self, food_obj):
         foods_coll = self.db['foods']

@@ -1,0 +1,23 @@
+{% extends "_base.html" %}
+
+{% block title %}Food - {{ food_obj.food_name }} - from FoodData Central data{% endblock %}
+
+{% block content %}
+
+<div>
+
+<h3>{{ food_obj.food_name }} - from FoodData Central data</h3>
+
+<form action="/foods/fdc_import/" method="GET">
+
+    <input type="submit" value="Import" style="float: right;" />
+
+    <input type="hidden" name="fdc_id" value="{{ food_obj.fdc_id }}"/>
+
+</form>
+
+{% include "_nutrition_facts_table.html" %}
+
+</div>
+
+{% endblock %}

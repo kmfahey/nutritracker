@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import abc
-import decouple
 import json
 import re
 import requests
@@ -19,7 +18,7 @@ get_cgi_params = lambda request: request.GET if request.method == "GET" else req
 slice_output_list_by_page = lambda output_list, page_size, current_page: output_list[page_size * (current_page - 1) : page_size * (current_page - 1) + page_size]
 
 
-def cast_int(strval, param_name, template, context, request):
+def cast_to_int(strval, param_name, template, context, request):
     try:
         intval = int(strval)
         assert intval > 0
@@ -33,6 +32,28 @@ def get_db_handle(db_name, host, port, username, password):
     client = MongoClient(host=host, port=int(port), username=username, password=password)
     db_handle = client['nutritracker']
     return db_handle, client
+
+
+class Navigation_Links_Displayer:
+    __slots__ = 'nav_hrefs_to_texts',
+
+    def __init__(self, nav_hrefs_to_texts):
+        self.nav_hrefs_to_texts = nav_hrefs_to_texts
+
+    def href_list_wo_one_callable(self, href_to_exclude):
+        if href_to_exclude not in self.nav_hrefs_to_texts:
+            raise Exception(f"href {href_to_exclude} not among the hrefs in stored href mapping")
+        return functools.partial(self.href_list_wo_one, href_to_exclude)
+
+    def full_href_list_callable(self):
+        return functools.partial(self.full_href_list)
+
+    def full_href_list(self):
+        return " • ".join(f'<a href="{nav_href}">{nav_link_text}</a>' for nav_href, nav_link_text in self.nav_hrefs_to_texts.items())
+
+    def href_list_wo_one(self, href_to_exclude):
+        return " • ".join(f'<a href="{nav_href}">{nav_link_text}</a>' if nav_href != href_to_exclude else nav_link_text
+                          for nav_href, nav_link_text in self.nav_hrefs_to_texts.items())
 
 
 class Nutrient:
@@ -77,6 +98,15 @@ class Nutrient:
 
 
 class Abstract_Food(metaclass=abc.ABCMeta):
+
+    nutrient_symbols_to_numbers = {'protein_g': 203, 'total_fat_g': 204, 'total_carbohydrates_g': 205,
+                                   'energy_kcal': 208, 'sugars_g': 269, 'dietary_fiber_g': 291, 'calcium_mg': 301,
+                                   'iron_mg': 303, 'magnesium_mg': 304, 'phosphorous_mg': 305, 'potassium_mg': 306,
+                                   'sodium_mg': 307, 'zinc_mg': 309, 'copper_mg': 312, 'iodine_mcg': 314,
+                                   'vitamin_E_mg': 323, 'vitamin_D_mcg': 324, 'thiamin_B1_mg': 404,
+                                   'riboflavin_B2_mg': 405, 'niacin_B3_mg': 406, 'pantothenic_acid_B5_mg': 410,
+                                   'biotin_B7_mcg': 416, 'folate_B9_mcg': 417, 'cholesterol_mg': 601, 'trans_fat_g': 605,
+                                   'saturated_fat_g': 606}
 
     nutrients = {
         203: Nutrient("protein (g)", "g", fdc_code=203, symbol='protein_g'),
@@ -129,7 +159,7 @@ class Abstract_Food(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def from_json_object(self, json_obj):
+    def from_fdc_json_object(self, json_obj):
         pass
 
     @classmethod
@@ -170,37 +200,15 @@ class Abstract_Food(metaclass=abc.ABCMeta):
         return ''.join(output)
 
 
-class Navigation_Links_Displayer:
-    __slots__ = 'nav_hrefs_to_texts',
-
-    def __init__(self, nav_hrefs_to_texts):
-        self.nav_hrefs_to_texts = nav_hrefs_to_texts
-
-    def href_list_wo_one_callable(self, href_to_exclude):
-        if href_to_exclude not in self.nav_hrefs_to_texts:
-            raise Exception(f"href {href_to_exclude} not among the hrefs in stored href mapping")
-        return functools.partial(self.href_list_wo_one, href_to_exclude)
-
-    def full_href_list_callable(self):
-        return functools.partial(self.full_href_list)
-
-    def full_href_list(self):
-        return " • ".join(f'<a href="{nav_href}">{nav_link_text}</a>' for nav_href, nav_link_text in self.nav_hrefs_to_texts.items())
-
-    def href_list_wo_one(self, href_to_exclude):
-        return " • ".join(f'<a href="{nav_href}">{nav_link_text}</a>' if nav_href != href_to_exclude else nav_link_text
-                          for nav_href, nav_link_text in self.nav_hrefs_to_texts.items())
-
-
 class Food_Stub(Abstract_Food):
     __slots__ = ('fdc_id', 'food_name', 'calories')
 
     def __init__(self, fdc_id, food_name):
         self.fdc_id = fdc_id
-        self.food_name = self._title_case(food_name)
+        self.food_name = self._title_case(food_name.lower())
 
     @classmethod
-    def from_json_object(self, food_json_obj):
+    def from_fdc_json_object(self, food_json_obj):
         fdc_id = food_json_obj["fdcId"]
         food_name = food_json_obj["description"]
         food_obj = Food_Stub(fdc_id, food_name)
@@ -265,7 +273,7 @@ class Food_Detailed(Abstract_Food):
         return food_obj
 
     @classmethod
-    def from_json_object(self, food_json_obj):
+    def from_fdc_json_object(self, food_json_obj):
         fdc_id = food_json_obj["fdcId"]
         food_name = food_json_obj["description"]
         if food_json_obj["dataType"] == "SR Legacy":
@@ -293,6 +301,28 @@ class Food_Detailed(Abstract_Food):
                 nutrient_in_food = nutrient_obj.copy()
                 nutrient_in_food.amount = 0
                 setattr(food_obj, nutrient_obj.symbol, nutrient_in_food)
+        return food_obj
+
+    def to_nt_json_code(self):
+        return json.dumps(self.serialize())
+
+    @classmethod
+    def from_nt_json_object(self, json_content):
+        const_args = {'fdc_id', 'food_name', 'serving_size', 'serving_units'}
+        const_argd = {key: value for key, value in filter(lambda pair: pair[0] in const_args, json_content.items())}
+        food_obj = self(**const_argd)
+        for key, value in json_content.items():
+            if key in const_args or key == '_id':
+                continue
+            if isinstance(value, dict):
+                nutrient_argd = value.copy()
+                if 'dv_perc' in nutrient_argd:
+                    del nutrient_argd['dv_perc']
+                nutrient_in_food = Nutrient(**nutrient_argd)
+            else:
+                nutrient_in_food = self.nutrients[self.nutrient_symbols_to_numbers[key]].copy()
+                nutrient_in_food.amount = value
+            setattr(food_obj, key, nutrient_in_food)
         return food_obj
 
     def serialize(self):
@@ -326,15 +356,25 @@ class Fdc_Api_Contacter:
     def __init__(self, api_key):
         self.api_key = api_key
 
-    def search_by_keywords(self, query):
+    def _keyword_search(self, query, page_size=None, page_number=None):
         search_url = self.get_fdc_search_url()
-        json_argd = dict(dataType=["Branded", "SR Legacy"], query=query)
+        json_argd = {'dataType': ["Branded", "SR Legacy"], 'query': query}
+        if page_size is not None:
+            json_argd['pageSize'] = page_size
+        if page_number is not None:
+            json_argd['pageNumber'] = page_number
         response = requests.post(search_url, json=json_argd)
-        json_content = json.loads(response.content)
+        return json.loads(response.content)
+
+    def search_by_keywords(self, query, page_size=25, page_number=1):
+        json_content = self._keyword_search(query, page_size, page_number)
         results_list = list()
         for result_obj in json_content['foods']:
-            results_list.append(Food_Stub.from_json_object(result_obj).serialize())
+            results_list.append(Food_Stub.from_fdc_json_object(result_obj))
         return results_list
+
+    def number_of_search_results(self, query):
+        return len(self._keyword_search(query)['foods'])
 
     def look_up_fdc_ids(self, fdc_ids=[]):
         results_list = list()
@@ -342,7 +382,7 @@ class Fdc_Api_Contacter:
             lookup_url = self.get_fdc_lookup_url(fdc_id)
             response = requests.get(lookup_url)
             json_content = json.loads(response.content)
-            food_obj = Food_Detailed.from_json_object(json_content)
+            food_obj = Food_Detailed.from_fdc_json_object(json_content)
             results_list.append(food_obj)
         return results_list
 
@@ -354,7 +394,7 @@ class Fdc_Api_Contacter:
         response = requests.post(food_list_url, json=json_argd)
         results_list = list()
         for response_obj in json.loads(response.content):
-            food_stub_obj = Food_Stub.from_json_object(response_obj)
+            food_stub_obj = Food_Stub.from_fdc_json_object(response_obj)
             results_list.append(food_stub_obj.serialize())
         return results_list
 
@@ -367,7 +407,7 @@ def generate_pagination_links(url_base, results_count, page_size, current_page, 
         if page_number == current_page:
             page_links.append(str(page_number))
         else:
-            url_params = {'page_size':page_size, 'page':page_number}
+            url_params = {'page_size':page_size, 'page_number':page_number}
             if search_query is not None:
                 url_params['search_query'] = search_query
             params = urllib.parse.urlencode(url_params)
