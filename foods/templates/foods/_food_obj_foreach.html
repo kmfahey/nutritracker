@@ -1,13 +1,6 @@
-{% extends "base.html" %}
-
-{% block title %}Main Foods List{% endblock %}
-
-{% block content %}
-
 {% for food_obj in food_objs %}
     <p>
     <b><a href="/foods/{{ food_obj.fdc_id }}/">{{ food_obj.food_name }}</a></b><br/>
     Calories: {{ food_obj.energy_kcal.amount|floatformat }}
     </p>
 {% endfor %}
-{% endblock %}

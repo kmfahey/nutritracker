@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "_base.html" %}
 
 {% block title %}Food - {{ food_obj.food_name }}{% endblock %}
 
@@ -34,9 +34,9 @@
         <td class="right">{{ food_obj.iron_mg.dv_perc|floatformat }}%</td>
     </tr>
     <tr>
-        <td class="larger"><b>Calories</b></td>
+        <td class="muchlarger"><b>Calories</b></td>
         <td></td>
-        <td class="right larger"><b>{{ food_obj.energy_kcal.amount|floatformat }}</b></td>
+        <td class="right muchlarger"><b>{{ food_obj.energy_kcal.amount|floatformat }}</b></td>
         <td><span class="halftab"/></td>
         <td><b>Calcium</b></td>
         <td class="right">{{ food_obj.calcium_mg.amount|floatformat }}{{ food_obj.calcium_mg.units }}</td>

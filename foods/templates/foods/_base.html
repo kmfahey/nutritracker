@@ -11,8 +11,12 @@ body {
     font-size: 200%;
 }
 
-.larger {
+.muchlarger {
     font-size: 150%;
+}
+
+.larger {
+    font-size: 115%;
 }
 
 .small {
@@ -82,7 +86,8 @@ footer {
             NutriTracker
         </header>
         <nav class="elem">
-            <a href="/foods">Foods</a> &bullet; <a href="/daily">Daily Tracker</a> &bullet; <a href="/recipes">Recipes</a>
+            <span class="muchlarger"><a href="/foods">Foods</a> &bullet; <a href="/daily">Daily Tracker</a> &bullet; <a href="/recipes">Recipes</a></span><br/>
+            {% autoescape off %}<span class="larger">{{ subordinate_navigation }}</span>{% endautoescape %}
         </nav>
         <section id="main" class="elem">
             {% block content %}{% endblock %}

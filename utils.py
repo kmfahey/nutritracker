@@ -5,6 +5,7 @@ import decouple
 import json
 import re
 import requests
+import functools
 
 from pymongo import MongoClient
 
@@ -54,6 +55,7 @@ class Nutrient:
         if hasattr(self, 'dv_perc'):
             serialized['dv_perc'] = self.dv_perc
         return serialized
+
 
 class Abstract_Food(metaclass=abc.ABCMeta):
 
@@ -147,6 +149,28 @@ class Abstract_Food(metaclass=abc.ABCMeta):
             output.append(token)
 
         return ''.join(output)
+
+
+class Navigation_Links_Displayer:
+    __slots__ = 'nav_hrefs_to_texts',
+
+    def __init__(self, nav_hrefs_to_texts):
+        self.nav_hrefs_to_texts = nav_hrefs_to_texts
+
+    def href_list_wo_one_callable(self, href_to_exclude):
+        if href_to_exclude not in self.nav_hrefs_to_texts:
+            raise Exception(f"href {href_to_exclude} not among the hrefs in stored href mapping")
+        return functools.partial(self.href_list_wo_one, href_to_exclude)
+
+    def full_href_list_callable(self):
+        return functools.partial(self.full_href_list)
+
+    def full_href_list(self):
+        return " • ".join(f'<a href="{nav_href}">{nav_link_text}</a>' for nav_href, nav_link_text in self.nav_hrefs_to_texts.items())
+
+    def href_list_wo_one(self, href_to_exclude):
+        return " • ".join(f'<a href="{nav_href}">{nav_link_text}</a>' if nav_href != href_to_exclude else nav_link_text
+                          for nav_href, nav_link_text in self.nav_hrefs_to_texts.items())
 
 
 class Food_Stub(Abstract_Food):
