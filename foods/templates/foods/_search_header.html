@@ -3,6 +3,21 @@
 
 <form action="/foods/local_search_results/">
 
-    <p>Search the local food database: <input type="text" class="larger" name="search_query"> <input class="larger" type="submit" value="Search"></p>
+    <p>
+        Search the local food database:
+        <span class="qtrtab"/>
+        <input type="text" class="larger" name="search_query">
+        <span class="qtrtab"/>
+        Results per page:
+        <select class="larger" name="page_size">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
+        <span class="qtrtab"/>
+        <input class="larger" type="submit" value="Search"></p>
+    </p>
 
 </form>

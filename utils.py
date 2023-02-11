@@ -6,6 +6,8 @@ import json
 import re
 import requests
 import functools
+import math
+import urllib.parse
 
 from pymongo import MongoClient
 
@@ -338,3 +340,17 @@ class Fdc_Api_Contacter:
             food_stub_obj = Food_Stub.from_json_object(response_obj)
             results_list.append(food_stub_obj.serialize())
         return results_list
+
+def generate_pagination_links(url_base, search_query, results_count, page_size, current_page):
+    if results_count < page_size:
+        return ''
+    no_of_pages = math.ceil(results_count / page_size)
+    page_links = list()
+    for page_number in range(1, no_of_pages + 1):
+        if page_number == current_page:
+            page_links.append(str(page_number))
+        else:
+            params = urllib.parse.urlencode({'search_query':search_query, 'page_size':page_size, 'page':page_number})
+            page_links.append(f'<a href="{url_base}?{params}">{page_number}</a>')
+    return " • ".join(page_links)
+
