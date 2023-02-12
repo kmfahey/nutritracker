@@ -34,7 +34,8 @@ def main(search_kw=[], fdc_ids=[], save_to_db=False, food_list=False, food_list_
         food_objs = api_contacter.look_up_fdc_ids(fdc_ids)
         results_list = [db_conx.save_food_object(food_obj) for food_obj in food_objs]
     elif fdc_ids:
-        results_list = [food_obj.serialize() for food_obj in api_contacter.look_up_fdc_ids(fdc_ids)]
+        food_objs = [api_contacter.look_up_fdc_id(fdc_id) for fdc_id in fdc_ids]
+        results_list = [food_obj.serialize() for food_obj in food_objs]
     elif search_kw:
         results_list = api_contacter.search_by_keywords(' '.join(search_kw))
     elif food_list:

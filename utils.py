@@ -23,6 +23,7 @@ def cast_to_int(strval, param_name, template, context, request):
         intval = int(strval)
         assert intval > 0
     except (ValueError, AssertionError):
+        context["error"] = True
         context["message"] = f"value for {param_name} must be an integer greater than zero"
         return HttpResponse(template.render(context, request))
     return intval
@@ -201,11 +202,12 @@ class Abstract_Food(metaclass=abc.ABCMeta):
 
 
 class Food_Stub(Abstract_Food):
-    __slots__ = ('fdc_id', 'food_name', 'calories')
+    __slots__ = ('fdc_id', 'food_name', 'calories', 'in_db_already')
 
     def __init__(self, fdc_id, food_name):
         self.fdc_id = fdc_id
         self.food_name = self._title_case(food_name.lower())
+        self.in_db_already = False
 
     @classmethod
     def from_fdc_json_object(self, food_json_obj):
@@ -226,10 +228,10 @@ class Food_Stub(Abstract_Food):
 
 
 class Food_Detailed(Abstract_Food):
-    __slots__ = ('fdc_id', 'food_name', 'serving_size', 'serving_units', 'biotin_B7_mcg', 'calcium_mg', 'cholesterol_mg',
-                 'copper_mg', 'dietary_fiber_g', 'energy_kcal', 'folate_B9_mcg', 'iodine_mcg', 'iron_mg', 'magnesium_mg',
-                 'niacin_B3_mg', 'pantothenic_acid_B5_mg', 'phosphorous_mg', 'potassium_mg', 'protein_g',
-                 'riboflavin_B2_mg', 'saturated_fat_g', 'sodium_mg', 'sugars_g', 'thiamin_B1_mg',
+    __slots__ = ('fdc_id', 'food_name', 'serving_size', 'serving_units', 'in_db_already', 'biotin_B7_mcg', 'calcium_mg',
+                 'cholesterol_mg', 'copper_mg', 'dietary_fiber_g', 'energy_kcal', 'folate_B9_mcg', 'iodine_mcg',
+                 'iron_mg', 'magnesium_mg', 'niacin_B3_mg', 'pantothenic_acid_B5_mg', 'phosphorous_mg', 'potassium_mg',
+                 'protein_g', 'riboflavin_B2_mg', 'saturated_fat_g', 'sodium_mg', 'sugars_g', 'thiamin_B1_mg',
                  'total_carbohydrates_g', 'total_fat_g', 'trans_fat_g', 'vitamin_D_mcg', 'vitamin_E_mg', 'zinc_mg')
 
     def __init__(self, fdc_id, food_name, serving_size, serving_units):
@@ -239,6 +241,7 @@ class Food_Detailed(Abstract_Food):
         self.serving_units = serving_units
         for nutrient_obj in self.nutrients.values():
             setattr(self, nutrient_obj.symbol, None)
+        self.in_db_already = False
 
     @classmethod
     def _food_json_obj_to_nutrient_table(self, food_json_obj):
@@ -376,15 +379,13 @@ class Fdc_Api_Contacter:
     def number_of_search_results(self, query):
         return len(self._keyword_search(query)['foods'])
 
-    def look_up_fdc_ids(self, fdc_ids=[]):
-        results_list = list()
-        for fdc_id in fdc_ids:
-            lookup_url = self.get_fdc_lookup_url(fdc_id)
-            response = requests.get(lookup_url)
-            json_content = json.loads(response.content)
-            food_obj = Food_Detailed.from_fdc_json_object(json_content)
-            results_list.append(food_obj)
-        return results_list
+    def look_up_fdc_id(self, fdc_id):
+        lookup_url = self.get_fdc_lookup_url(fdc_id)
+        response = requests.get(lookup_url)
+        if response.status_code == 404:
+            return None
+        json_content = json.loads(response.content)
+        return Food_Detailed.from_fdc_json_object(json_content)
 
     def retrieve_foods_list(self, food_list_page=1):
         food_list_url = self.get_food_list_url()

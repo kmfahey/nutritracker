@@ -25,7 +25,7 @@ fdc_api_key = config("FDC_API_KEY")
 
 
 @require_http_methods(["GET"])
-def index(request):
+def foods(request):
     foods_template = loader.get_template('foods.html')
     cgi_params = get_cgi_params(request)
     context = {'more_than_one_page': False}
@@ -59,7 +59,7 @@ def index(request):
     return HttpResponse(foods_template.render(context, request))
 
 @require_http_methods(["GET"])
-def display_food(request, fdc_id):
+def foods_fdc_id(request, fdc_id):
     template = loader.get_template('foods_+fdc_id+.html')
     food_model_objs = Food.objects.filter(fdc_id=fdc_id)
     if not len(food_model_objs):
@@ -144,7 +144,6 @@ def fdc_search_results(request):
     fdc_search_template = loader.get_template('foods_fdc_search.html')
     fdc_search_results_template = loader.get_template('foods_fdc_search_results.html')
 
-    query_params = dict()
     cgi_params = get_cgi_params(request)
     search_query = cgi_params.get("search_query", '')
     if not search_query:
@@ -170,6 +169,55 @@ def fdc_search_results(request):
         return HttpResponse(fdc_search_template.render(context, request))
 
     food_objs = api_contacter.search_by_keywords(query=query, page_size=page_size, page_number=page_number)
+    for food_obj in food_objs:
+        food_obj.in_db_already = bool(len(Food.objects.filter(fdc_id=food_obj.fdc_id)))
     context["more_than_one_page"] = number_of_results > page_size
     context['food_objs'] = food_objs
     return HttpResponse(fdc_search_results_template.render(context, request))
+
+@require_http_methods(["GET"])
+def fdc_search_fdc_id(request, fdc_id):
+    template = loader.get_template('foods_fdc_search_+fdc_id+.html')
+    subordinate_navigation = navigation_link_displayer.full_href_list_callable()
+    context = {'subordinate_navigation': subordinate_navigation}
+
+    api_contacter = Fdc_Api_Contacter(fdc_api_key)
+    food_obj = api_contacter.look_up_fdc_id(fdc_id)
+    if food_obj is None:
+        return HttpResponse(f"No such FDC ID in the FoodData Central database: {fdc_id}", status=404)
+    food_obj.in_db_already = bool(len(Food.objects.filter(fdc_id=food_obj.fdc_id)))
+    context['food_obj'] = food_obj
+    return HttpResponse(template.render(context, request))
+
+@require_http_methods(["GET","POST"])
+def fdc_import(request):
+    template = loader.get_template('foods_fdc_import.html')
+    subordinate_navigation = navigation_link_displayer.full_href_list_callable()
+    context = {'subordinate_navigation': subordinate_navigation, 'error': False}
+    cgi_params = get_cgi_params(request)
+    api_contacter = Fdc_Api_Contacter(fdc_api_key)
+
+    retval = cast_to_int(cgi_params.get('fdc_id', 0), 'fdc_id', template, context, request)
+    if isinstance(retval, HttpResponse):
+        return retval
+    fdc_id = retval
+    food_objs = list(Food.objects.filter(fdc_id=fdc_id))
+    if len(food_objs):
+        context['imported'] = False
+        context['food_obj'] = food_model_objs[0]
+        return HttpResponse(template.render(context, request))
+
+    food_obj = api_contacter.look_up_fdc_id(fdc_id)
+    if food_obj is None:
+        context['error'] = True
+        context['message'] = f"No such FDC ID in the FoodData Central database: {fdc_id}"
+        return HttpResponse(template.render(context, request))
+
+    context['imported'] = True
+    food_model_cls_argd = food_obj.to_model_cls_args()
+    food_model_obj = Food(**food_model_cls_argd)
+    food_model_obj.save()
+
+    context['food_obj'] = food_model_obj
+    return HttpResponse(template.render(context, request))
+

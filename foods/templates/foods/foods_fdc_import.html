@@ -1,0 +1,17 @@
+{% extends "_base.html" %}
+
+{% block title %}FoodData Central Import - {{ food_obj.food_name }}{% endblock %}
+
+{% block content %}
+
+{% if error is False %}
+    {% if imported %}
+        <p><b>Imported.</b> You can now access this food locally at <a href="/foods/{{ food_obj.fdc_id }}/">{{ food_obj.food_name }}</a>.</b>
+    {% else %}
+        <p><b>Not imported.</b> A food with this FDC ID already exists in the local database. It's accessible at <a href="/foods/{{ food_obj.fdc_id }}/">{{ food_obj.food_name }}</a>.</p>
+    {% endif %}
+{% else %}
+    {% if message %}<p><b>{{ message }}</b></p>{% endif %}
+{% endif %}
+
+{% endblock %}
