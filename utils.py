@@ -123,9 +123,12 @@ class Recipe_Detailed:
                 return self.memoized
             nutrient_obj = Nutrient.from_symbol(self.symbol)
             if len(instance.ingredients):
-                nutrient_obj.amount = sum(getattr(ingr_obj.food, self.symbol).amount
-                                          for ingr_obj in instance.ingredients
-                                          if hasattr(ingr_obj.food, self.symbol))
+                amount = 0
+                for ingr_obj in instance.ingredients:
+                    if not hasattr(ingr_obj.food, self.symbol):
+                        continue
+                    amount += ingr_obj.servings_number * getattr(ingr_obj.food, self.symbol).amount
+                nutrient_obj.amount = amount
             self.memoized = nutrient_obj
             return nutrient_obj
 
