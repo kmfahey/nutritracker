@@ -1,6 +1,6 @@
 {% for recipe_obj in recipe_objs %}
     <p>
-    <b><a href="/recipes/{{ recipe_obj._id }}/">{{ recipe_obj.recipe_name }}</a></b><br/>
+    <b><a href="/recipes/{{ recipe_obj.mongodb_id }}/">{{ recipe_obj.recipe_name }}</a></b><br/>
     Calories: {{ recipe_obj.energy_kcal.amount|floatformat }}
     </p>
 {% endfor %}

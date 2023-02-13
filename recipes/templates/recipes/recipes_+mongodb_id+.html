@@ -1,0 +1,11 @@
+{% extends "main/_base.html" %}
+
+{% block title %}Recipes - {{ recipe_obj.recipe_name }}{% endblock %}
+
+{% block content %}
+
+<h3>{{ recipe_obj.recipe_name }}</h3>
+
+{% include "main/_nutrition_facts_table.html" %}
+
+{% endblock %}

@@ -2,6 +2,8 @@
 
 import math
 
+from bson.objectid import ObjectId
+
 from decouple import config
 
 from operator import and_, attrgetter
@@ -23,9 +25,17 @@ navigation_link_displayer = Navigation_Links_Displayer({'/recipes/': "Main Recip
 default_page_size = config("DEFAULT_PAGE_SIZE")
 
 
+
+# Much of this is adapted from foods.views.foods with just symbols changed,
+# which is Not a Good Look. In the past I've generalized such code into
+# higher-order functions and used a closure in each case of duplicated code. The
+# downside is the code inside the higher-order function is created with a lot of
+# find-and-replace and it becomes unreadable, and a pain to maintain. Not sure
+# it's worth it this time.
+
+
 @require_http_methods(["GET"])
 def recipes(request):
-    # This code is copy/pasted from foods.views.foods, ugh. Not sure how to generalize it though.
     recipes_template = loader.get_template('recipes/recipes.html')
     cgi_params = get_cgi_params(request)
     context = {'more_than_one_page': False, 'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/")}
@@ -56,3 +66,17 @@ def recipes(request):
     context['recipe_objs'] = recipe_objs
 
     return HttpResponse(recipes_template.render(context, request))
+
+@require_http_methods(["GET"])
+def recipes_mongodb_id(request, mongodb_id):
+    template = loader.get_template('recipes/recipes_+mongodb_id+.html')
+    try:
+        recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
+    except Recipe.DoesNotExist:
+        return HttpResponse(f"no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'", status=404)
+    recipe_obj = Recipe_Detailed.from_json_obj(recipe_model_obj.serialize())
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/")}
+    context['recipe_obj'] = context['food_or_recipe_obj'] = recipe_obj
+    return HttpResponse(template.render(context, request))
+
+

@@ -106,7 +106,7 @@ class Navigation_Links_Displayer:
 
 
 class Recipe_Detailed:
-    __slots__ = 'recipe_name', 'ingredients'
+    __slots__ = 'mongodb_id', 'recipe_name', 'ingredients'
 
     # This class calls for 26 properties that all behave identically apart from
     # which symbol they query, so this class generalizes that repeated __get__()
@@ -135,7 +135,8 @@ class Recipe_Detailed:
         def __delete__(self, instance):
             raise AttributeError(f"'{instance.__class__.__name__}' object attribute '{self.symbol}' is read-only")
 
-    def __init__(self, recipe_name, ingredients=[]):
+    def __init__(self, recipe_name, mongodb_id=None, ingredients=[]):
+        self.mongodb_id = mongodb_id
         self.recipe_name = title_case(recipe_name.lower())
         ingredient_list = list()
         for ingredient_obj in ingredients:
@@ -149,7 +150,7 @@ class Recipe_Detailed:
 
     @classmethod
     def from_json_obj(self, recipe_json_obj):
-        return self(recipe_name=recipe_json_obj["recipe_name"], ingredients=recipe_json_obj["ingredients"])
+        return self(recipe_name=recipe_json_obj["recipe_name"], mongodb_id=recipe_json_obj["_id"], ingredients=recipe_json_obj["ingredients"])
 
     biotin_B7_mcg          = Summing_Property('biotin_B7_mcg')
     calcium_mg             = Summing_Property('calcium_mg')
