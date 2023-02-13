@@ -84,8 +84,48 @@ Summary:
 [recipe builder - add food page]
     /recipes/builder/$ID/add
 
+[recipe builder - mark as done]
+    /recipes/builder/$ID/done
 
 
+RECIPE BUILDER WORKFLOW
+
+* step 1:
+    * /recipes/builder/new
+    * form with text input for recipe name and [Create] button; submits via GET to /recipes/builder/new
+    * which saves a Recipe object to the data store with an empty ingredients list
+    * then redirects to /recipes/builder/$MONGODB_ID
+
+* step 2: 
+    * /recipes/builder/$MONGODB_ID
+    * (a) features a food search option w/usual search tools; submits via GET to /recipes/builder/$MONGODB_ID/ingredients/add?search_query=$ETC
+    * (b) features a [Finished] button; form submits via GET to /recipes/builder/$MONGODB_ID/finished
+    * (c) features a [Delete] button; form submits via GET to /recipes/builder/$MONGODB_ID/delete
+
+* step 3:
+    * /recipes/builder/$MONGODB_ID/ingredients/add?search_query=$ETC
+    * a list of matching foods
+    * links click through to /recipes/builder/$MONGODB_ID/ingredients/$FDC_ID/add
+
+* step 4:
+    * /recipes/builder/$MONGODB_ID/ingredients/$FDC_ID/add
+    * displays nutrition block, has a form with a text input for # of servings and an [Add] button
+
+* step 5:
+    * /recipes/builder/$MONGODB_ID/ingredients/$FDC_ID/add/confirm
+    * displays modified nutrition block as figured by # of servings, has a [Confirm] button
+    * form submits to /recipes/builder/$MONGODB_ID
+
+* step 6:
+    * /recipes/builder/$MONGODB_ID/finished
+    * outcome of taking step 2c. recipe is finished.
+
+* repeat step 2a, 3, 4 and 5 until all ingredients added, then take step 2b to step 6 to complete
+
+* also needed:
+    * /recipes/builder
+    * lists all recipes currently under construction with links to each one
+    * links to /recipes/builder/$MONGODB_ID
 
 
 other apps needed:
