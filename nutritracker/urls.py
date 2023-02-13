@@ -24,5 +24,6 @@ import foods
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('foods/', include('foods.urls'))
+    path('foods/', include('foods.urls')),
+    path('recipes/', include('recipes.urls'))
 ]
