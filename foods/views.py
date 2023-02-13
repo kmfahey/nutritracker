@@ -10,12 +10,11 @@ from functools import reduce
 
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
-from django.shortcuts import render, redirect
 from django.template import loader
 from django.db.models import Q
 
 from .models import Food
-from utils import Food_Detailed, Navigation_Links_Displayer, generate_pagination_links, get_cgi_params, slice_output_list_by_page, cast_to_int, Fdc_Api_Contacter
+from utils import Food_Detailed, Navigation_Links_Displayer, generate_pagination_links, get_cgi_params, slice_output_list_by_page, cast_to_int, Fdc_Api_Contacter, retrieve_pagination_params
 
 
 navigation_link_displayer = Navigation_Links_Displayer({'/foods/': "Main Foods List", "/foods/local_search/": "Local Food Search", "/foods/fdc_search/": "FDC Food Search"})
@@ -27,17 +26,13 @@ fdc_api_key = config("FDC_API_KEY")
 @require_http_methods(["GET"])
 def foods(request):
     foods_template = loader.get_template('foods/foods.html')
-    cgi_params = get_cgi_params(request)
     context = {'more_than_one_page': False}
 
-    retval = cast_to_int(cgi_params.get("page_size", default_page_size), 'page_size', foods_template, context, request)
+    retval = retrieve_pagination_params(foods_template, context, request, default_page_size, query=False)
     if isinstance(retval, HttpResponse):
         return retval
-    page_size = retval
-    retval = cast_to_int(cgi_params.get("page_number", 1), 'page_number', foods_template, context, request)
-    if isinstance(retval, HttpResponse):
-        return retval
-    page_number = retval
+    page_size = retval["page_size"]
+    page_number = retval["page_number"]
 
     food_objs = [Food_Detailed.from_model_obj(food_model_obj) for food_model_obj in Food.objects.filter()]
     food_objs.sort(key=attrgetter('food_name'))
@@ -58,6 +53,7 @@ def foods(request):
 
     return HttpResponse(foods_template.render(context, request))
 
+
 @require_http_methods(["GET"])
 def foods_fdc_id(request, fdc_id):
     template = loader.get_template('foods/foods_+fdc_id+.html')
@@ -69,17 +65,19 @@ def foods_fdc_id(request, fdc_id):
     food_model_obj = food_model_objs[0]
     food_obj = Food_Detailed.from_model_obj(food_model_obj)
     subordinate_navigation = navigation_link_displayer.full_href_list_callable()
-    context = {'food_obj':food_obj, 'food_or_recipe_obj':food_obj, 'subordinate_navigation': subordinate_navigation}
+    context = {'food_obj': food_obj, 'food_or_recipe_obj': food_obj, 'subordinate_navigation': subordinate_navigation}
     return HttpResponse(template.render(context, request))
+
 
 @require_http_methods(["GET"])
 def local_search(request):
     template = loader.get_template('foods/foods_local_search.html')
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/foods/local_search/")
-    context = {'subordinate_navigation': subordinate_navigation, 'message':'', 'more_than_one_page':False}
+    context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False}
     return HttpResponse(template.render(context, request))
 
-@require_http_methods(["GET","POST"])
+
+@require_http_methods(["GET", "POST"])
 def local_search_results(request):
     search_url = "/foods/local_search/"
     subordinate_navigation = navigation_link_displayer.full_href_list_callable()
@@ -87,20 +85,12 @@ def local_search_results(request):
     local_search_template = loader.get_template('foods/foods_local_search.html')
     local_search_results_template = loader.get_template('foods/foods_local_search_results.html')
 
-    cgi_params = get_cgi_params(request)
-    search_query = cgi_params.get("search_query", '')
-    if not search_query:
-        return redirect(search_url)
-    retval = cast_to_int(cgi_params.get("page_size", default_page_size), 'page_size', local_search_template, context, request)
+    retval = retrieve_pagination_params(local_search_template, context, request, default_page_size, search_url, query=True)
     if isinstance(retval, HttpResponse):
         return retval
-    page_size = retval
-    retval = cast_to_int(cgi_params.get("page_number", 1), 'page_number', local_search_template, context, request)
-    if isinstance(retval, HttpResponse):
-        return retval
-    page_number = retval
-    if not search_query:
-        return redirect(search_url)
+    search_query = retval["search_query"]
+    page_size = retval["page_size"]
+    page_number = retval["page_number"]
     kws = search_query.strip().split()
 
     # This is equivelant to q_term = (Q(food_name__icontains=kws[0]) & Q(food_name__icontains=kws[1]) & ... & Q(food_name__icontains=kws[-1]))
@@ -126,14 +116,16 @@ def local_search_results(request):
         context['food_objs'] = food_objs
     return HttpResponse(local_search_results_template.render(context, request))
 
+
 @require_http_methods(["GET"])
 def fdc_search(request):
     template = loader.get_template('foods/foods_fdc_search.html')
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/foods/fdc_search/")
-    context = {'subordinate_navigation': subordinate_navigation, 'message':''}
+    context = {'subordinate_navigation': subordinate_navigation, 'message': ''}
     return HttpResponse(template.render(context, request))
 
-@require_http_methods(["GET","POST"])
+
+@require_http_methods(["GET", "POST"])
 def fdc_search_results(request):
     search_url = "/foods/fdc_search/"
     api_contacter = Fdc_Api_Contacter(fdc_api_key)
@@ -144,21 +136,14 @@ def fdc_search_results(request):
     fdc_search_template = loader.get_template('foods/foods_fdc_search.html')
     fdc_search_results_template = loader.get_template('foods/foods_fdc_search_results.html')
 
-    cgi_params = get_cgi_params(request)
-    search_query = cgi_params.get("search_query", '')
-    if not search_query:
-        return redirect(search_url)
-    retval = cast_to_int(cgi_params.get("page_size", default_page_size), 'page_size', fdc_search_template, context, request)
+    retval = retrieve_pagination_params(fdc_search_template, context, request, default_page_size, search_url, query=True)
     if isinstance(retval, HttpResponse):
         return retval
-    page_size = retval
-    retval = cast_to_int(cgi_params.get("page_number", 1), 'page_number', fdc_search_template, context, request)
-    if isinstance(retval, HttpResponse):
-        return retval
-    page_number = retval
-    query = search_query.strip().lower()
+    search_query = retval["search_query"]
+    page_size = retval["page_size"]
+    page_number = retval["page_number"]
 
-    number_of_results = api_contacter.number_of_search_results(query=query)
+    number_of_results = api_contacter.number_of_search_results(query=search_query)
     if not number_of_results:
         context["message"] = "No matches"
         return HttpResponse(fdc_search_template.render(context, request))
@@ -168,12 +153,13 @@ def fdc_search_results(request):
         context["message"] = "No more results"
         return HttpResponse(fdc_search_template.render(context, request))
 
-    food_objs = api_contacter.search_by_keywords(query=query, page_size=page_size, page_number=page_number)
+    food_objs = api_contacter.search_by_keywords(query=search_query, page_size=page_size, page_number=page_number)
     for food_obj in food_objs:
         food_obj.in_db_already = bool(len(Food.objects.filter(fdc_id=food_obj.fdc_id)))
     context["more_than_one_page"] = number_of_results > page_size
     context['food_objs'] = food_objs
     return HttpResponse(fdc_search_results_template.render(context, request))
+
 
 @require_http_methods(["GET"])
 def fdc_search_fdc_id(request, fdc_id):
@@ -191,7 +177,8 @@ def fdc_search_fdc_id(request, fdc_id):
     context['food_or_recipe_obj'] = context['food_obj'] = food_obj
     return HttpResponse(template.render(context, request))
 
-@require_http_methods(["GET","POST"])
+
+@require_http_methods(["GET", "POST"])
 def fdc_import(request):
     template = loader.get_template('foods/foods_fdc_import.html')
     subordinate_navigation = navigation_link_displayer.full_href_list_callable()
@@ -203,7 +190,7 @@ def fdc_import(request):
     if isinstance(retval, HttpResponse):
         return retval
     fdc_id = retval
-    food_objs = list(Food.objects.filter(fdc_id=fdc_id))
+    food_model_objs = list(Food.objects.filter(fdc_id=fdc_id))
     if len(food_objs):
         context['imported'] = False
         context['food_obj'] = food_model_objs[0]

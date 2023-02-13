@@ -91,10 +91,11 @@ class Ingredient(models.Model, serializable):
 
 
 class Recipe(models.Model, serializable):
-    __columns__ = '_id', 'recipe_name', 'ingredients'
+    __columns__ = '_id', 'recipe_name', 'complete', 'ingredients'
 
     _id                    = models.ObjectIdField(primary_key=True)
     recipe_name            = models.CharField(max_length=200, default="", verbose_name="recipe name")
+    complete               = models.BooleanField(default=True, verbose_name="recipe has been completed")
     ingredients            = models.ArrayField(model_container=Ingredient, verbose_name="recipe ingredients")
 
     class Meta:

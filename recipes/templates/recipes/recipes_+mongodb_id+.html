@@ -8,4 +8,22 @@
 
 {% include "main/_nutrition_facts_table.html" %}
 
+<h4>Ingredients</h4>
+
+<table class="ingredients">
+    <tr>
+        <th>Ingredient</th>
+        <th>Serving Size</th>
+        <th># of Servings</th>
+    </tr>
+    {% for ingredient in recipe_obj.ingredients %}
+    <tr>
+        <td><a href="/foods/{{ ingredient.food.fdc_id }}/">{{ ingredient.food.food_name }}</a></td>
+        <td>{{ ingredient.food.serving_size }}{{ ingredient.food.serving_units }}</td>
+        <td>{{ ingredient.servings_number }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+
 {% endblock %}
