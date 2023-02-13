@@ -18,9 +18,7 @@ DESIGN GOALS
     * then calculate custom RDAs based on bodyweight
 
 
-page brainstorming
-
-app: /foods
+/FOODS APP
 
 pages:
 
@@ -51,7 +49,7 @@ pages:
 /foods/import/$FDC_ID
 
 
-SUMMARY:
+Summary:
 
 [list of foods]
     /foods/list/$PAGE_NO
@@ -68,15 +66,30 @@ SUMMARY:
 [import an FDC food]
     /foods/import/$FDC_ID
 
+[add food to recipe]
+    /foods/$FDC_ID/add
+
+
+/RECIPES APP
+
+[list of recipes] with links to recipes
+    /recipes
+
+[display of recipe]
+    /recipes/<id>
+
+[recipe builder - incept page]
+    /recipes/builder/new
+
+[recipe builder - add food page]
+    /recipes/builder/$ID/add
+
+
+
 
 
 other apps needed:
 
 /daily
 
-/recipes
-
-
-TODO
-
-add pagination to /foods/ foods.views.index()
+/
