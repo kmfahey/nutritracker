@@ -8,6 +8,8 @@ import functools
 import math
 import urllib.parse
 
+from django.shortcuts import redirect
+
 from django.http import HttpResponse
 
 from pymongo import MongoClient
@@ -16,6 +18,27 @@ from pymongo import MongoClient
 get_cgi_params = lambda request: request.GET if request.method == "GET" else request.POST if request.method == "POST" else {}
 
 slice_output_list_by_page = lambda output_list, page_size, current_page: output_list[page_size * (current_page - 1) : page_size * (current_page - 1) + page_size]
+
+
+def retrieve_pagination_params(template, context, request, default_page_size=25, redir_url='', query=False):
+    if query and not redir_url:
+        raise Exception("in retrieve_pagination_params(), called with query=True but redir_url is null; "
+                        "need a url to redirect to if retrieving 'search_query' param")
+    cgi_params = get_cgi_params(request)
+    return_dict = dict()
+    if query:
+        return_dict["search_query"] = cgi_params.get("search_query", '')
+        if not return_dict["search_query"]:
+            return redirect(redir_url)
+    retval = cast_to_int(cgi_params.get("page_size", default_page_size), 'page_size', template, context, request)
+    if isinstance(retval, HttpResponse):
+        return retval
+    return_dict["page_size"] = retval
+    retval = cast_to_int(cgi_params.get("page_number", 1), 'page_number', template, context, request)
+    if isinstance(retval, HttpResponse):
+        return retval
+    return_dict["page_number"] = retval
+    return return_dict
 
 
 def cast_to_int(strval, param_name, template, context, request):
@@ -106,7 +129,7 @@ class Navigation_Links_Displayer:
 
 
 class Recipe_Detailed:
-    __slots__ = 'mongodb_id', 'recipe_name', 'ingredients'
+    __slots__ = 'mongodb_id', 'recipe_name', 'ingredients', 'complete'
 
     # This class calls for 26 properties that all behave identically apart from
     # which symbol they query, so this class generalizes that repeated __get__()
@@ -138,9 +161,10 @@ class Recipe_Detailed:
         def __delete__(self, instance):
             raise AttributeError(f"'{instance.__class__.__name__}' object attribute '{self.symbol}' is read-only")
 
-    def __init__(self, recipe_name, mongodb_id=None, ingredients=[]):
+    def __init__(self, recipe_name, mongodb_id=None, ingredients=[], complete=False):
         self.mongodb_id = mongodb_id
         self.recipe_name = title_case(recipe_name.lower())
+        self.complete = complete
         ingredient_list = list()
         for ingredient_obj in ingredients:
             if isinstance(ingredient_obj, dict):
@@ -153,7 +177,11 @@ class Recipe_Detailed:
 
     @classmethod
     def from_json_obj(self, recipe_json_obj):
-        return self(recipe_name=recipe_json_obj["recipe_name"], mongodb_id=recipe_json_obj["_id"], ingredients=recipe_json_obj["ingredients"])
+        return self(recipe_name=recipe_json_obj["recipe_name"], complete=recipe_json_obj["complete"], mongodb_id=recipe_json_obj["_id"], ingredients=recipe_json_obj["ingredients"])
+
+    @classmethod
+    def from_model_obj(self, recipe_model_obj):
+        return self(recipe_name=recipe_model_obj.recipe_name, complete=bool(recipe_model_obj.complete), mongodb_id=recipe_model_obj._id, ingredients=recipe_model_obj.ingredients)
 
     biotin_B7_mcg          = Summing_Property('biotin_B7_mcg')
     calcium_mg             = Summing_Property('calcium_mg')
@@ -508,6 +536,7 @@ class Fdc_Api_Contacter:
             results_list.append(food_stub_obj.serialize())
         return results_list
 
+
 def generate_pagination_links(url_base, results_count, page_size, current_page, search_query=None):
     if results_count < page_size:
         return ''
@@ -517,7 +546,7 @@ def generate_pagination_links(url_base, results_count, page_size, current_page, 
         if page_number == current_page:
             page_links.append(str(page_number))
         else:
-            url_params = {'page_size':page_size, 'page_number':page_number}
+            url_params = {'page_size': page_size, 'page_number': page_number}
             if search_query is not None:
                 url_params['search_query'] = search_query
             params = urllib.parse.urlencode(url_params)

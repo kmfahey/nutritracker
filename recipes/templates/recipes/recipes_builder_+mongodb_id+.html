@@ -1,0 +1,67 @@
+{% extends "main/_base.html" %}
+
+{% block title %}Recipes - {{ recipe_obj.recipe_name }}{% endblock %}
+
+{% block content %}
+
+<h3>{{ recipe_obj.recipe_name }}</h3>
+
+{% if recipe_obj.ingredients %}
+{% include "main/_nutrition_facts_table.html" %}
+{% else %}
+<p>No nutrition facts yet</p>
+{% endif %}
+
+{% if recipe_obj.ingredients %}
+<h4>Ingredients</h4>
+
+<table class="ingredients">
+    <tr>
+        <th>Ingredient</th>
+        <th>Serving Size</th>
+        <th># of Servings</th>
+    </tr>
+    {% for ingredient in recipe_obj.ingredients %}
+    <tr>
+        <td><a href="/foods/{{ ingredient.food.fdc_id }}/">{{ ingredient.food.food_name }}</a></td>
+        <td>{{ ingredient.food.serving_size }}{{ ingredient.food.serving_units }}</td>
+        <td>{{ ingredient.servings_number }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No ingredients yet</p>
+{% endif %}
+
+<h4>Search for a Food to Add to the Recipe</h4>
+
+<form action="/recipes/search_results/" method="GET">
+    <p>
+        <input type="text" class="larger" name="search_query">
+        <span class="qtrtab"/>
+        Results per page:
+        <select class="larger" name="page_size">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
+        <span class="qtrtab"/>
+        <input class="larger" type="submit" value="Search"></p>
+    </p>
+</form>
+
+{% if recipe_obj.ingredients %}
+<h4>Finish Recipe</h4>
+<form action="/recipes/builder/{{ recipe_obj.mongodb_id }}/" method="GET">
+    <input class="larger" type="submit" value="Finish"/>
+</form>
+{% endif %}
+
+<h4>Delete Recipe</h4>
+<form action="/recipes/builder/{{ recipe_obj.mongodb_id }}/" method="GET">
+    <input class="larger" type="submit" value="Delete"/>
+</form>
+
+{% endblock %}

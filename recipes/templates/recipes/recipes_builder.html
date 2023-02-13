@@ -8,6 +8,8 @@
 
 {% include "recipes/_recipe_obj_foreach.html" %}
 
+<p><a href="/recipes/builder/new/">Create a new recipe</a></p>
+
 {% if more_than_one_page %}{% autoescape off %}{{ pagination_links }}{% endautoescape %}{% endif %}
 
 {% endblock %}

@@ -10,16 +10,17 @@ from operator import and_, attrgetter
 
 from functools import reduce
 
+from django.shortcuts import redirect
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.template import loader
 from django.db.models import Q
 
 from .models import Food, Recipe
-from utils import Recipe_Detailed, Food_Detailed, Navigation_Links_Displayer, generate_pagination_links, slice_output_list_by_page, retrieve_pagination_params
+from utils import Recipe_Detailed, Food_Detailed, Navigation_Links_Displayer, generate_pagination_links, slice_output_list_by_page, retrieve_pagination_params, get_cgi_params
 
 
-navigation_link_displayer = Navigation_Links_Displayer({'/recipes/': "Main Recipes List", '/recipes/search/': "Recipes Search"})
+navigation_link_displayer = Navigation_Links_Displayer({'/recipes/': "Main Recipes List", '/recipes/search/': "Recipes Search", '/recipes/builder/': "Recipe Builder"})
 
 default_page_size = config("DEFAULT_PAGE_SIZE")
 
@@ -33,7 +34,7 @@ default_page_size = config("DEFAULT_PAGE_SIZE")
 # maintainable code, I think the latter wins.
 
 
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "POST"])
 def recipes(request):
     recipes_template = loader.get_template('recipes/recipes.html')
     context = {'more_than_one_page': False, 'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/")}
@@ -44,7 +45,8 @@ def recipes(request):
     page_size = retval["page_size"]
     page_number = retval["page_number"]
 
-    recipe_objs = [Recipe_Detailed.from_json_obj(recipe_model_obj.serialize()) for recipe_model_obj in Recipe.objects.filter()]
+    recipe_objs = [Recipe_Detailed.from_model_obj(recipe_model_obj) for recipe_model_obj in Recipe.objects.filter()]
+    recipe_objs = list(filter(lambda recipe_obj: recipe_obj.complete is True, recipe_objs))
     recipe_objs.sort(key=attrgetter('recipe_name'))
     number_of_results = len(recipe_objs)
     number_of_pages = math.ceil(number_of_results / page_size)
@@ -65,7 +67,7 @@ def recipes(request):
 
 @require_http_methods(["GET"])
 def recipes_mongodb_id(request, mongodb_id):
-    template = loader.get_template('recipes/recipes_+mongodb_id+.html')
+    recipes_mongodb_id_template = loader.get_template('recipes/recipes_+mongodb_id+.html')
     try:
         recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
     except Recipe.DoesNotExist:
@@ -73,15 +75,15 @@ def recipes_mongodb_id(request, mongodb_id):
     recipe_obj = Recipe_Detailed.from_json_obj(recipe_model_obj.serialize())
     context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/")}
     context['recipe_obj'] = context['food_or_recipe_obj'] = recipe_obj
-    return HttpResponse(template.render(context, request))
+    return HttpResponse(recipes_mongodb_id_template.render(context, request))
 
 
 @require_http_methods(["GET"])
 def search(request):
-    template = loader.get_template('recipes/recipes_search.html')
+    recipes_search_template = loader.get_template('recipes/recipes_search.html')
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/search/")
     context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False}
-    return HttpResponse(template.render(context, request))
+    return HttpResponse(recipes_search_template.render(context, request))
 
 
 @require_http_methods(["GET", "POST"])
@@ -122,3 +124,82 @@ def search_results(request):
         context["more_than_one_page"] = False
         context['recipe_objs'] = recipe_objs
     return HttpResponse(search_results_template.render(context, request))
+
+
+@require_http_methods(["GET", "POST"])
+def builder(request):
+    recipes_builder_template = loader.get_template('recipes/recipes_builder.html')
+    context = {'more_than_one_page': False, 'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")}
+
+    retval = retrieve_pagination_params(recipes_builder_template, context, request, default_page_size, query=False)
+    if isinstance(retval, HttpResponse):
+        return retval
+    page_size = retval["page_size"]
+    page_number = retval["page_number"]
+
+    recipe_objs = [Recipe_Detailed.from_model_obj(recipe_model_obj) for recipe_model_obj in Recipe.objects.filter()]
+    recipe_objs = list(filter(lambda recipe_obj: recipe_obj.complete is False, recipe_objs))
+    recipe_objs.sort(key=attrgetter('recipe_name'))
+    number_of_results = len(recipe_objs)
+    number_of_pages = math.ceil(number_of_results / page_size)
+    if page_number > number_of_pages:
+        context["more_than_one_page"] = True
+        context["message"] = "No recipes in the works"
+        context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
+        return HttpResponse(recipes_builder_template.render(context, request))
+
+    if len(recipe_objs) > page_size:
+        recipe_objs = slice_output_list_by_page(recipe_objs, page_size, page_number)
+        context["more_than_one_page"] = True
+        context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
+    context['recipe_objs'] = recipe_objs
+
+    return HttpResponse(recipes_builder_template.render(context, request))
+
+
+@require_http_methods(["GET", "POST"])
+def builder_new(request):
+    cgi_params = get_cgi_params(request)
+    builder_url = "/recipes/builder/new/"
+    recipes_builder_new_template = loader.get_template('recipes/recipes_builder_new.html')
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")}
+
+    if not len(cgi_params.keys()):
+        return HttpResponse(recipes_builder_new_template.render(context, request))
+    else:
+        recipe_name = cgi_params.get('recipe_name', None)
+        if not recipe_name:
+            return redirect(builder_url)
+        recipe_model_obj = Recipe(recipe_name=recipe_name, complete=False, ingredients=list())
+        recipe_model_obj.save()
+        mongodb_id = recipe_model_obj._id
+        return redirect(f"/recipes/builder/{mongodb_id}/")
+
+
+@require_http_methods(["GET", "POST"])
+def builder_mongodb_id(request, mongodb_id):
+    cgi_params = get_cgi_params(request)
+    recipes_builder_new_template = loader.get_template("recipes/recipes_builder_+mongodb_id+.html")
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")}
+    try:
+        recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
+    except Recipe.DoesNotExist:
+        return HttpResponse(f"no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'", status=404)
+    context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
+    return HttpResponse(recipes_builder_new_template.render(context, request))
+
+
+def builder_mongodb_id_ingredients_add(request, mongodb_id):
+    pass
+
+
+def builder_mongodb_id_ingredients_fdc_id_add(request, mongodb_id, fdc_id):
+    pass
+
+
+def builder_mongodb_id_ingredients_fdc_id_add_confirm(request, mongodb_id, fdc_id):
+    pass
+
+
+def builder_mongodb_id_finished(request, mongodb_id):
+    pass
