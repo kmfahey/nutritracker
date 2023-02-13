@@ -1,15 +1,13 @@
 #!/usr/bin/python
 
-from django.db import models
-
-from mongoengine.fields import ObjectIdField
+from djongo import models
 
 
 class Food(models.Model):
-    _id                    = ObjectIdField()
+    id                     = models.BigAutoField(primary_key=True)
     fdc_id                 = models.PositiveIntegerField(     default=0,  verbose_name="Food Data Central ID")
     food_name              = models.CharField(max_length=200, default="", verbose_name="food name")
-    serving_size           = models.PositiveSmallIntegerField(default=1,  verbose_name="serving size")
+    serving_size           = models.FloatField(               default=1,  verbose_name="serving size")
     serving_units          = models.CharField(max_length=30,  default="", verbose_name="serving units")
     energy_kcal            = models.PositiveSmallIntegerField(default=0,  verbose_name="energy (kcal)")
     total_fat_g            = models.PositiveSmallIntegerField(default=0,  verbose_name="total fat (g)")
@@ -42,9 +40,3 @@ class Food(models.Model):
         managed = False
         db_table = 'foods'
         app_label = 'foods'
-
-
-
-
-
-
