@@ -1,12 +1,12 @@
 {% extends "main/_base.html" %}
 
-{% block title %}Main Foods List{% endblock %}
+{% block title %}Main Recipes List{% endblock %}
 
 {% block content %}
 
 {% if message %}<p><b>{{ message }}</b></p>{% endif %}
 
-{% include "foods/_food_obj_foreach.html" %}
+{% include "recipes/_recipe_obj_foreach.html" %}
 
 {% if more_than_one_page %}{% autoescape off %}{{ pagination_links }}{% endautoescape %}{% endif %}
 

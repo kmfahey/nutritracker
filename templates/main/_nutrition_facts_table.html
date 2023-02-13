@@ -1,0 +1,149 @@
+<table class="nutrfacts">
+    <tr>
+        <td colspan="7" class="verylarge"><b>Nutrition Facts</b></td>
+    </tr>
+    <tr>
+        <td><b>Serving Size</b></td>
+        <td></td>
+        <td class="right">{{ food_or_recipe_obj.serving_size|floatformat }}{{ food_or_recipe_obj.serving_units }}</td>
+        <td><span class="halftab"/></td>
+        <td></td>
+        <td></td>
+        <td class="smaller right"><b>% Daily<br/>Value<span class="superscript">*</span></b></td>
+    </tr>
+    <tr>
+        <td colspan="3"><hr/></td>
+        <td><span class="halftab"/></td>
+        <td><b>Potassium</b></td>
+        <td class="right">{{ food_or_recipe_obj.potassium_mg.amount|floatformat }}{{ food_or_recipe_obj.potassium_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.potassium_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td class="smaller" colspan="3"><b>Amount Per Serving</b></td>
+        <td><span class="halftab"/></td>
+        <td><b>Iron</b></td>
+        <td class="right">{{ food_or_recipe_obj.iron_mg.amount|floatformat }}{{ food_or_recipe_obj.iron_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.iron_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td class="muchlarger"><b>Calories</b></td>
+        <td></td>
+        <td class="right muchlarger"><b>{{ food_or_recipe_obj.energy_kcal.amount|floatformat }}</b></td>
+        <td><span class="halftab"/></td>
+        <td><b>Calcium</b></td>
+        <td class="right">{{ food_or_recipe_obj.calcium_mg.amount|floatformat }}{{ food_or_recipe_obj.calcium_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.calcium_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td colspan="3"><hr/></td>
+        <td><span class="halftab"/></td>
+        <td><b>Vitamin E</b></td>
+        <td class="right">{{ food_or_recipe_obj.vitamin_E_mg.amount|floatformat }}{{ food_or_recipe_obj.vitamin_E_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.vitamin_E_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td rowspan="2"></td>
+        <td rowspan="2"></td>
+        <td rowspan="2" class="smaller right"><b>% Daily<br/>Value<span class="superscript">*</span></b></td>
+        <td><span class="halftab"/></td>
+        <td><b>Thiamin (B1)</b></td>
+        <td class="right">{{ food_or_recipe_obj.thiamin_B1_mg.amount|floatformat }}{{ food_or_recipe_obj.thiamin_B1_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.thiamin_B1_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td><span class="halftab"/></td>
+        <td><b>Riboflavin (B2)</b></td>
+        <td class="right">{{ food_or_recipe_obj.riboflavin_B2_mg.amount|floatformat }}{{ food_or_recipe_obj.riboflavin_B2_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.riboflavin_B2_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td><b>Total Fat</b></td>
+        <td class="right">{{ food_or_recipe_obj.total_fat_g.amount|floatformat }}{{ food_or_recipe_obj.total_fat_g.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.total_fat_g.dv_perc|floatformat }}%</td>
+        <td><span class="halftab"/></td>
+        <td><b>Niacin (B3)</b></td>
+        <td class="right">{{ food_or_recipe_obj.niacin_B3_mg.amount|floatformat }}{{ food_or_recipe_obj.niacin_B3_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.niacin_B3_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td> <span class="tab"/> <b>Saturated Fat</b></td>
+        <td class="right">{{ food_or_recipe_obj.saturated_fat_g.amount|floatformat }}{{ food_or_recipe_obj.saturated_fat_g.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.saturated_fat_g.dv_perc|floatformat }}%</td>
+        <td><span class="halftab"/></td>
+        <td><b>Pantothenic Acid (B5)</b></td>
+        <td class="right">{{ food_or_recipe_obj.pantothenic_acid_B5_mg.amount|floatformat }}{{ food_or_recipe_obj.pantothenic_acid_B5_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.pantothenic_acid_B5_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td> <span class="tab"/> <b>Trans Fat</b></td>
+        <td class="right">{{ food_or_recipe_obj.trans_fat_g.amount|floatformat }}{{ food_or_recipe_obj.trans_fat_g.units }}</td>
+        <td></td>
+        <td><span class="halftab"/></td>
+        <td><b>Biotin (B7)</b></td>
+        <td class="right">{{ food_or_recipe_obj.biotin_B7_mcg.amount|floatformat }}{{ food_or_recipe_obj.biotin_B7_mcg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.biotin_B7_mcg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td><b>Cholesterol</b></td>
+        <td class="right">{{ food_or_recipe_obj.cholesterol_mg.amount|floatformat }}{{ food_or_recipe_obj.cholesterol_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.cholesterol_mg.dv_perc|floatformat }}%</td>
+        <td><span class="halftab"/></td>
+        <td><b>Folate (B9)</b></td>
+        <td class="right">{{ food_or_recipe_obj.folate_B9_mcg.amount|floatformat }}{{ food_or_recipe_obj.folate_B9_mcg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.folate_B9_mcg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td><b>Sodium</b></td>
+        <td class="right">{{ food_or_recipe_obj.sodium_mg.amount|floatformat }}{{ food_or_recipe_obj.sodium_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.sodium_mg.dv_perc|floatformat }}%</td>
+        <td><span class="halftab"/></td>
+        <td><b>Phosphorous</b></td>
+        <td class="right">{{ food_or_recipe_obj.phosphorous_mg.amount|floatformat }}{{ food_or_recipe_obj.phosphorous_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.phosphorous_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td><b>Total Carbohydrates</b></td>
+        <td class="right">{{ food_or_recipe_obj.total_carbohydrates_g.amount|floatformat }}{{ food_or_recipe_obj.total_carbohydrates_g.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.total_carbohydrates_g.dv_perc|floatformat }}%</td>
+        <td><span class="halftab"/></td>
+        <td><b>Iodine</b></td>
+        <td class="right">{{ food_or_recipe_obj.iodine_mcg.amount|floatformat }}{{ food_or_recipe_obj.iodine_mcg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.iodine_mcg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td> <span class="tab"/> <b>Dietary Fiber</b></td>
+        <td class="right">{{ food_or_recipe_obj.saturated_fat_g.amount|floatformat }}{{ food_or_recipe_obj.saturated_fat_g.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.saturated_fat_g.dv_perc|floatformat }}%</td>
+        <td><span class="halftab"/></td>
+        <td><b>Magnesium</b></td>
+        <td class="right">{{ food_or_recipe_obj.magnesium_mg.amount|floatformat }}{{ food_or_recipe_obj.magnesium_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.magnesium_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td> <span class="tab"/> <b>Sugars</b></td>
+        <td class="right">{{ food_or_recipe_obj.sugars_g.amount|floatformat }}{{ food_or_recipe_obj.sugars_g.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.sugars_g.dv_perc|floatformat }}%</td>
+        <td><span class="halftab"/></td>
+        <td><b>Zinc</b></td>
+        <td class="right">{{ food_or_recipe_obj.zinc_mg.amount|floatformat }}{{ food_or_recipe_obj.zinc_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.zinc_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td><b>Protein</b></td>
+        <td class="right">{{ food_or_recipe_obj.protein_g.amount|floatformat }}{{ food_or_recipe_obj.protein_g.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.protein_g.dv_perc|floatformat }}%</td>
+        <td><span class="halftab"/></td>
+        <td><b>Copper</b></td>
+        <td class="right">{{ food_or_recipe_obj.copper_mg.amount|floatformat }}{{ food_or_recipe_obj.copper_mg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.copper_mg.dv_perc|floatformat }}%</td>
+    </tr>
+    <tr>
+        <td><b>Vitamin D</b></td>
+        <td class="right">{{ food_or_recipe_obj.vitamin_D_mcg.amount|floatformat }}{{ food_or_recipe_obj.vitamin_D_mcg.units }}</td>
+        <td class="right">{{ food_or_recipe_obj.vitamin_D_mcg.dv_perc|floatformat }}%</td>
+        <td><span class="halftab"/></td>
+        <td colspan="3"></td>
+    </tr>
+    <tr>
+        <td colspan="7"><span class="smaller"><span class="superscript">*</span>The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet.<br/>2,000 calories a day is used for general nutrition advice.</span></td>
+</table>

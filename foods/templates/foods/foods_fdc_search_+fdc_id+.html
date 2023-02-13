@@ -1,4 +1,4 @@
-{% extends "_base.html" %}
+{% extends "main/_base.html" %}
 
 {% block title %}Food - {{ food_obj.food_name }} - from FoodData Central data{% endblock %}
 
@@ -8,7 +8,7 @@
 
 <h3>{{ food_obj.food_name }} - from FoodData Central data</h3>
 
-{% include "_nutrition_facts_table.html" %}
+{% include "main/_nutrition_facts_table.html" %}
 
 {% if food_obj.in_db_already is False %}
 <form action="/foods/fdc_import/" method="GET">

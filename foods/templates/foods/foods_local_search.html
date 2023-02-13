@@ -1,10 +1,10 @@
-{% extends "_base.html" %}
+{% extends "main/_base.html" %}
 
 {% block title %}Local Food Search{% endblock %}
 
 {% block content %}
 
-{% include "_local_search_header.html" %}
+{% include "foods/_local_search_header.html" %}
 
 {% if message %}<p><b>{{ message }}</b></p>{% endif %}
 

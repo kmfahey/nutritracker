@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'foods',
+    'recipes'
 ]
 
 MIDDLEWARE = [
@@ -58,7 +60,9 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR / 'foods/templates/foods'
+            BASE_DIR / 'foods/templates',
+            BASE_DIR / 'recipes/templates',
+            BASE_DIR / 'templates'
             ],
         'APP_DIRS': True,
         'OPTIONS': {

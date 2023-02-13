@@ -26,7 +26,7 @@ fdc_api_key = config("FDC_API_KEY")
 
 @require_http_methods(["GET"])
 def foods(request):
-    foods_template = loader.get_template('foods.html')
+    foods_template = loader.get_template('foods/foods.html')
     cgi_params = get_cgi_params(request)
     context = {'more_than_one_page': False}
 
@@ -39,7 +39,7 @@ def foods(request):
         return retval
     page_number = retval
 
-    food_objs = [Food_Detailed.from_model_object(food_model_obj) for food_model_obj in Food.objects.filter()]
+    food_objs = [Food_Detailed.from_model_obj(food_model_obj) for food_model_obj in Food.objects.filter()]
     food_objs.sort(key=attrgetter('food_name'))
     number_of_results = len(food_objs)
     number_of_pages = math.ceil(number_of_results / page_size)
@@ -60,21 +60,21 @@ def foods(request):
 
 @require_http_methods(["GET"])
 def foods_fdc_id(request, fdc_id):
-    template = loader.get_template('foods_+fdc_id+.html')
+    template = loader.get_template('foods/foods_+fdc_id+.html')
     food_model_objs = Food.objects.filter(fdc_id=fdc_id)
     if not len(food_model_objs):
         return HttpResponse(f"no object in 'foods' collection in 'nutritracker' data store with FDC ID {fdc_id}", status=404)
     elif len(food_model_objs) > 1:
         return HttpResponse(f"inconsistent state: multiple objects matching query for FDC ID {fdc_id}", status=500)
     food_model_obj = food_model_objs[0]
-    food_obj = Food_Detailed.from_model_object(food_model_obj)
+    food_obj = Food_Detailed.from_model_obj(food_model_obj)
     subordinate_navigation = navigation_link_displayer.full_href_list_callable()
-    context = {'food_obj':food_obj, 'subordinate_navigation': subordinate_navigation}
+    context = {'food_obj':food_obj, 'food_or_recipe_obj':food_obj, 'subordinate_navigation': subordinate_navigation}
     return HttpResponse(template.render(context, request))
 
 @require_http_methods(["GET"])
 def local_search(request):
-    template = loader.get_template('foods_local_search.html')
+    template = loader.get_template('foods/foods_local_search.html')
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/foods/local_search/")
     context = {'subordinate_navigation': subordinate_navigation, 'message':'', 'more_than_one_page':False}
     return HttpResponse(template.render(context, request))
@@ -84,8 +84,8 @@ def local_search_results(request):
     search_url = "/foods/local_search/"
     subordinate_navigation = navigation_link_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False}
-    local_search_template = loader.get_template('foods_local_search.html')
-    local_search_results_template = loader.get_template('foods_local_search_results.html')
+    local_search_template = loader.get_template('foods/foods_local_search.html')
+    local_search_results_template = loader.get_template('foods/foods_local_search_results.html')
 
     cgi_params = get_cgi_params(request)
     search_query = cgi_params.get("search_query", '')
@@ -116,7 +116,7 @@ def local_search_results(request):
         context["pagination_links"] = generate_pagination_links("/foods/local_search_results/", len(food_objs), page_size, page_number, search_query=search_query)
         return HttpResponse(local_search_template.render(context, request))
 
-    food_objs = [Food_Detailed.from_model_object(food_model_obj) for food_model_obj in food_objs]
+    food_objs = [Food_Detailed.from_model_obj(food_model_obj) for food_model_obj in food_objs]
     if len(food_objs) > page_size:
         context["more_than_one_page"] = True
         context["pagination_links"] = generate_pagination_links("/foods/local_search_results/", len(food_objs), page_size, page_number, search_query=search_query)
@@ -128,7 +128,7 @@ def local_search_results(request):
 
 @require_http_methods(["GET"])
 def fdc_search(request):
-    template = loader.get_template('foods_fdc_search.html')
+    template = loader.get_template('foods/foods_fdc_search.html')
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/foods/fdc_search/")
     context = {'subordinate_navigation': subordinate_navigation, 'message':''}
     return HttpResponse(template.render(context, request))
@@ -141,8 +141,8 @@ def fdc_search_results(request):
     context = {'subordinate_navigation': subordinate_navigation,
                'message': '',
                'more_than_one_page': False}
-    fdc_search_template = loader.get_template('foods_fdc_search.html')
-    fdc_search_results_template = loader.get_template('foods_fdc_search_results.html')
+    fdc_search_template = loader.get_template('foods/foods_fdc_search.html')
+    fdc_search_results_template = loader.get_template('foods/foods_fdc_search_results.html')
 
     cgi_params = get_cgi_params(request)
     search_query = cgi_params.get("search_query", '')
@@ -177,7 +177,7 @@ def fdc_search_results(request):
 
 @require_http_methods(["GET"])
 def fdc_search_fdc_id(request, fdc_id):
-    template = loader.get_template('foods_fdc_search_+fdc_id+.html')
+    template = loader.get_template('foods/foods_fdc_search_+fdc_id+.html')
     subordinate_navigation = navigation_link_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation}
 
@@ -185,13 +185,15 @@ def fdc_search_fdc_id(request, fdc_id):
     food_obj = api_contacter.look_up_fdc_id(fdc_id)
     if food_obj is None:
         return HttpResponse(f"No such FDC ID in the FoodData Central database: {fdc_id}", status=404)
+    elif food_obj is False:
+        return HttpResponse(f"Internal error in rendering food with ID {fdc_id}", status=500)
     food_obj.in_db_already = bool(len(Food.objects.filter(fdc_id=food_obj.fdc_id)))
-    context['food_obj'] = food_obj
+    context['food_or_recipe_obj'] = context['food_obj'] = food_obj
     return HttpResponse(template.render(context, request))
 
 @require_http_methods(["GET","POST"])
 def fdc_import(request):
-    template = loader.get_template('foods_fdc_import.html')
+    template = loader.get_template('foods/foods_fdc_import.html')
     subordinate_navigation = navigation_link_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation, 'error': False}
     cgi_params = get_cgi_params(request)

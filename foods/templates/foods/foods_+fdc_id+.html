@@ -1,4 +1,4 @@
-{% extends "_base.html" %}
+{% extends "main/_base.html" %}
 
 {% block title %}Food - {{ food_obj.food_name }}{% endblock %}
 
@@ -6,6 +6,6 @@
 
 <h3>{{ food_obj.food_name }}</h3>
 
-{% include "_nutrition_facts_table.html" %}
+{% include "main/_nutrition_facts_table.html" %}
 
 {% endblock %}
