@@ -35,6 +35,54 @@ def get_db_handle(db_name, host, port, username, password):
     return db_handle, client
 
 
+def title_case(strval):
+    is_unc_alnum_punct = lambda strval: re.match("^[A-Za-zÀ-ÿ0-9._'ʼ’]+$", strval)
+
+    capitalize = lambda strval: re.sub("[A-Za-zÀ-ÿ]", lambda m: m.group(0).upper(), strval, count=1)
+
+    title_case_lc_words = {"a", "an", "and", "as", "at", "but", "by", "even", "for", "from", "if", "in", "into", "'n",
+                           "n'", "'n'", "ʼn", "nʼ", "ʼnʼ", "’n", "n’", "’n’", "nor", "now", "of", "off", "on", "or",
+                           "out", "so", "than", "that", "the", "to", "top", "up", "upon", "w", "when", "with", "yet"}
+
+    tokenizing_re = re.compile("(?<=[A-Za-zÀ-ÿ0-9._'ʼ’])(?=[^A-Za-zÀ-ÿ0-9._'ʼ’])"
+                                   "|"
+                               "(?<=[^A-Za-zÀ-ÿ0-9._'ʼ’])(?=[A-Za-zÀ-ÿ0-9._'ʼ’])")
+
+    tokens = tokenizing_re.split(strval)
+
+    output = list()
+    first_alpha_token_index = -1
+    last_alpha_token_index = len(tokens)
+
+    # Sometimes a string will begin or end with a sequence of non-alphanumeric
+    # characters (such as an ellipsis) that count as a token. The rule that the
+    # first and last words in a string to be titlecased only applies to the
+    # first and last _actual words_, not counting non-alphanumeric substrings,
+    # so the indexes of the first and last actual words need to be found.
+    for index, token in zip(range(len(tokens)), tokens):
+        if is_unc_alnum_punct(token):
+            first_alpha_token_index = index
+            break
+    for index, token in zip(range(len(tokens) - 1, -1, -1), reversed(tokens)):
+        if is_unc_alnum_punct(token):
+            last_alpha_token_index = index
+            break
+
+    for index in range(len(tokens)):
+        token = tokens[index]
+        if re.match(r"^([A-Za-zÀ-ÿ]\.){2,}$", token):
+            token = token.upper()
+        elif index == first_alpha_token_index or index == last_alpha_token_index:
+            token = capitalize(token)
+        elif token.lower() in title_case_lc_words:
+            token = token.lower()
+        elif re.match("^([à-ÿa-z'’ʼ]+)$", token):
+            token = capitalize(token)
+        output.append(token)
+
+    return ''.join(output)
+
+
 class Navigation_Links_Displayer:
     __slots__ = 'nav_hrefs_to_texts',
 
@@ -57,6 +105,80 @@ class Navigation_Links_Displayer:
                           for nav_href, nav_link_text in self.nav_hrefs_to_texts.items())
 
 
+class Recipe_Detailed:
+    __slots__ = 'recipe_name', 'ingredients'
+
+    # This class calls for 26 properties that all behave identically apart from
+    # which symbol they query, so this class generalizes that repeated __get__()
+    # method.
+    class Summing_Property:
+        __slots__ = 'symbol', 'memoized'
+
+        def __init__(self, symbol):
+            self.symbol = symbol
+            self.memoized = None
+
+        def __get__(self, instance, instancetype=None):
+            if self.memoized is not None:
+                return self.memoized
+            nutrient_obj = Nutrient.from_symbol(self.symbol)
+            if len(instance.ingredients):
+                nutrient_obj.amount = sum(getattr(ingr_obj.food, self.symbol).amount
+                                          for ingr_obj in instance.ingredients
+                                          if hasattr(ingr_obj.food, self.symbol))
+            self.memoized = nutrient_obj
+            return nutrient_obj
+
+        def __set__(self, instance):
+            raise AttributeError(f"'{instance.__class__.__name__}' object attribute '{self.symbol}' is read-only")
+
+        def __delete__(self, instance):
+            raise AttributeError(f"'{instance.__class__.__name__}' object attribute '{self.symbol}' is read-only")
+
+    def __init__(self, recipe_name, ingredients=[]):
+        self.recipe_name = title_case(recipe_name.lower())
+        ingredient_list = list()
+        for ingredient_obj in ingredients:
+            if isinstance(ingredient_obj, dict):
+                ingredient_list.append(Ingredient_Detailed.from_json_obj(ingredient_obj))
+            elif isinstance(ingredient_obj, Ingredient_Detailed):
+                ingredient_list.append(ingredient_obj)
+            else:
+                raise ValueError(f"Recipe_Detailed.__init__ unable to import ingredient object of type '{ingredient_obj.__class__.__name__}'")
+        self.ingredients = [Ingredient_Detailed.from_json_obj(ingredient_obj) for ingredient_obj in ingredients]
+
+    @classmethod
+    def from_json_obj(self, recipe_json_obj):
+        return self(recipe_name=recipe_json_obj["recipe_name"], ingredients=recipe_json_obj["ingredients"])
+
+    biotin_B7_mcg          = Summing_Property('biotin_B7_mcg')
+    calcium_mg             = Summing_Property('calcium_mg')
+    cholesterol_mg         = Summing_Property('cholesterol_mg')
+    copper_mg              = Summing_Property('copper_mg')
+    dietary_fiber_g        = Summing_Property('dietary_fiber_g')
+    energy_kcal            = Summing_Property('energy_kcal')
+    folate_B9_mcg          = Summing_Property('folate_B9_mcg')
+    iodine_mcg             = Summing_Property('iodine_mcg')
+    iron_mg                = Summing_Property('iron_mg')
+    magnesium_mg           = Summing_Property('magnesium_mg')
+    niacin_B3_mg           = Summing_Property('niacin_B3_mg')
+    pantothenic_acid_B5_mg = Summing_Property('pantothenic_acid_B5_mg')
+    phosphorous_mg         = Summing_Property('phosphorous_mg')
+    potassium_mg           = Summing_Property('potassium_mg')
+    protein_g              = Summing_Property('protein_g')
+    riboflavin_B2_mg       = Summing_Property('riboflavin_B2_mg')
+    saturated_fat_g        = Summing_Property('saturated_fat_g')
+    sodium_mg              = Summing_Property('sodium_mg')
+    sugars_g               = Summing_Property('sugars_g')
+    thiamin_B1_mg          = Summing_Property('thiamin_B1_mg')
+    total_carbohydrates_g  = Summing_Property('total_carbohydrates_g')
+    total_fat_g            = Summing_Property('total_fat_g')
+    trans_fat_g            = Summing_Property('trans_fat_g')
+    vitamin_D_mcg          = Summing_Property('vitamin_D_mcg')
+    vitamin_E_mg           = Summing_Property('vitamin_E_mg')
+    zinc_mg                = Summing_Property('zinc_mg')
+
+
 class Nutrient:
     __slots__ = ('name', 'units', 'fdc_code', 'amount', 'symbol')
 
@@ -68,12 +190,56 @@ class Nutrient:
                     'thiamin_B1_mg': 1.2, 'total_carbohydrates_g': 275, 'total_fat_g': 78,
                     'vitamin_D_mcg': 20, 'vitamin_E_mg': 15, 'zinc_mg': 11}
 
+    nutrient_symbols_to_numbers = {'protein_g': 203, 'total_fat_g': 204, 'total_carbohydrates_g': 205,
+                                   'energy_kcal': 208, 'sugars_g': 269, 'dietary_fiber_g': 291,
+                                   'calcium_mg': 301, 'iron_mg': 303, 'magnesium_mg': 304,
+                                   'phosphorous_mg': 305, 'potassium_mg': 306, 'sodium_mg': 307,
+                                   'zinc_mg': 309, 'copper_mg': 312, 'iodine_mcg': 314,
+                                   'vitamin_E_mg': 323, 'vitamin_D_mcg': 324, 'thiamin_B1_mg': 404,
+                                   'riboflavin_B2_mg': 405, 'niacin_B3_mg': 406,
+                                   'pantothenic_acid_B5_mg': 410, 'biotin_B7_mcg': 416,
+                                   'folate_B9_mcg': 417, 'cholesterol_mg': 601, 'trans_fat_g': 605,
+                                   'saturated_fat_g': 606}
+
+    nutrient_argds = {
+        203: {"name": "protein (g)", "units": "g", "fdc_code": 203, "symbol": 'protein_g'},
+        204: {"name": "total fat (g)", "units": "g", "fdc_code": 204, "symbol": 'total_fat_g'},
+        205: {"name": "total carbohydrates (g)", "units": "g", "fdc_code": 205, "symbol": 'total_carbohydrates_g'},
+        208: {"name": "energy (kcal)", "units": "kcal", "fdc_code": 208, "symbol": 'energy_kcal'},
+        269: {"name": "sugars (g)", "units": "g", "fdc_code": 269, "symbol": 'sugars_g'},
+        291: {"name": "dietary fiber (g)", "units": "g", "fdc_code": 291, "symbol": 'dietary_fiber_g'},
+        301: {"name": "calcium (mg)", "units": "mg", "fdc_code": 301, "symbol": 'calcium_mg'},
+        303: {"name": "iron (mg)", "units": "mg", "fdc_code": 303, "symbol": 'iron_mg'},
+        304: {"name": "magnesium (mg)", "units": "mg", "fdc_code": 304, "symbol": 'magnesium_mg'},
+        305: {"name": "phosphorus (mg)", "units": "mg", "fdc_code": 305, "symbol": 'phosphorous_mg'},
+        306: {"name": "potassium (mg)", "units": "mg", "fdc_code": 306, "symbol": 'potassium_mg'},
+        307: {"name": "sodium (mg)", "units": "mg", "fdc_code": 307, "symbol": 'sodium_mg'},
+        309: {"name": "zinc (mg)", "units": "mg", "fdc_code": 309, "symbol": 'zinc_mg'},
+        312: {"name": "copper (mg)", "units": "mg", "fdc_code": 312, "symbol": 'copper_mg'},
+        314: {"name": "iodine (mcg)", "units": "mcg", "fdc_code": 314, "symbol": 'iodine_mcg'},
+        323: {"name": "vitamin E (mg)", "units": "mg", "fdc_code": 323, "symbol": 'vitamin_E_mg'},
+        324: {"name": "vitamin D (mcg)", "units": "mcg", "fdc_code": 324, "symbol": 'vitamin_D_mcg'},
+        404: {"name": "thiamin (vitamin B1) (mg)", "units": "mg", "fdc_code": 404, "symbol": 'thiamin_B1_mg'},
+        405: {"name": "riboflavin (vitamin B2) (mg)", "units": "mg", "fdc_code": 405, "symbol": 'riboflavin_B2_mg'},
+        406: {"name": "niacin (vitamin B3) (mg)", "units": "mg", "fdc_code": 406, "symbol": 'niacin_B3_mg'},
+        410: {"name": "pantothenic acid (mg)", "units": "mg", "fdc_code": 410, "symbol": 'pantothenic_acid_B5_mg'},
+        416: {"name": "biotin (mcg)", "units": "mcg", "fdc_code": 416, "symbol": 'biotin_B7_mcg'},
+        417: {"name": "folate (mcg)", "units": "mcg", "fdc_code": 417, "symbol": 'folate_B9_mcg'},
+        601: {"name": "cholesterol (mg)", "units": "mg", "fdc_code": 601, "symbol": 'cholesterol_mg'},
+        605: {"name": "trans fat (g)", "units": "g", "fdc_code": 605, "symbol": 'trans_fat_g'},
+        606: {"name": "saturated fat (g)", "units": "g", "fdc_code": 606, "symbol": 'saturated_fat_g'},
+    }
+
     def __init__(self, name, units, fdc_code=0, amount=0, symbol=''):
         self.name = name
         self.units = units
         self.fdc_code = fdc_code
         self.amount = amount
         self.symbol = symbol
+
+    @classmethod
+    def from_symbol(self, symbol):
+        return self(**self.nutrient_argds[self.nutrient_symbols_to_numbers[symbol]])
 
     @property
     def dv_perc(self):
@@ -100,56 +266,6 @@ class Nutrient:
 
 class Abstract_Food(metaclass=abc.ABCMeta):
 
-    nutrient_symbols_to_numbers = {'protein_g': 203, 'total_fat_g': 204, 'total_carbohydrates_g': 205,
-                                   'energy_kcal': 208, 'sugars_g': 269, 'dietary_fiber_g': 291, 'calcium_mg': 301,
-                                   'iron_mg': 303, 'magnesium_mg': 304, 'phosphorous_mg': 305, 'potassium_mg': 306,
-                                   'sodium_mg': 307, 'zinc_mg': 309, 'copper_mg': 312, 'iodine_mcg': 314,
-                                   'vitamin_E_mg': 323, 'vitamin_D_mcg': 324, 'thiamin_B1_mg': 404,
-                                   'riboflavin_B2_mg': 405, 'niacin_B3_mg': 406, 'pantothenic_acid_B5_mg': 410,
-                                   'biotin_B7_mcg': 416, 'folate_B9_mcg': 417, 'cholesterol_mg': 601, 'trans_fat_g': 605,
-                                   'saturated_fat_g': 606}
-
-    nutrients = {
-        203: Nutrient("protein (g)", "g", fdc_code=203, symbol='protein_g'),
-        204: Nutrient("total fat (g)", "g", fdc_code=204, symbol='total_fat_g'),
-        205: Nutrient("total carbohydrates (g)", "g", fdc_code=205, symbol='total_carbohydrates_g'),
-        208: Nutrient("energy (kcal)", "kcal", fdc_code=208, symbol='energy_kcal'),
-        269: Nutrient("sugars (g)", "g", fdc_code=269, symbol='sugars_g'),
-        291: Nutrient("dietary fiber (g)", "g", fdc_code=291, symbol='dietary_fiber_g'),
-        301: Nutrient("calcium (mg)", "mg", fdc_code=301, symbol='calcium_mg'),
-        303: Nutrient("iron (mg)", "mg", fdc_code=303, symbol='iron_mg'),
-        304: Nutrient("magnesium (mg)", "mg", fdc_code=304, symbol='magnesium_mg'),
-        305: Nutrient("phosphorus (mg)", "mg", fdc_code=305, symbol='phosphorous_mg'),
-        306: Nutrient("potassium (mg)", "mg", fdc_code=306, symbol='potassium_mg'),
-        307: Nutrient("sodium (mg)", "mg", fdc_code=307, symbol='sodium_mg'),
-        309: Nutrient("zinc (mg)", "mg", fdc_code=309, symbol='zinc_mg'),
-        312: Nutrient("copper (mg)", "mg", fdc_code=312, symbol='copper_mg'),
-        314: Nutrient("iodine (mcg)", "mcg", fdc_code=314, symbol='iodine_mcg'),
-        323: Nutrient("vitamin E (mg)", "mg", fdc_code=323, symbol='vitamin_E_mg'),
-        324: Nutrient("vitamin D (mcg)", "mcg", fdc_code=324, symbol='vitamin_D_mcg'),
-        404: Nutrient("thiamin (vitamin B1) (mg)", "mg", fdc_code=404, symbol='thiamin_B1_mg'),
-        405: Nutrient("riboflavin (vitamin B2) (mg)", "mg", fdc_code=405, symbol='riboflavin_B2_mg'),
-        406: Nutrient("niacin (vitamin B3) (mg)", "mg", fdc_code=406, symbol='niacin_B3_mg'),
-        410: Nutrient("pantothenic acid (mg)", "mg", fdc_code=410, symbol='pantothenic_acid_B5_mg'),
-        416: Nutrient("biotin (mcg)", "mcg", fdc_code=416, symbol='biotin_B7_mcg'),
-        417: Nutrient("folate (mcg)", "mcg", fdc_code=417, symbol='folate_B9_mcg'),
-        601: Nutrient("cholesterol (mg)", "mg", fdc_code=601, symbol='cholesterol_mg'),
-        605: Nutrient("trans fat (g)", "g", fdc_code=605, symbol='trans_fat_g'),
-        606: Nutrient("saturated fat (g)", "g", fdc_code=606, symbol='saturated_fat_g'),
-    }
-
-    title_case_lc_words = {"a", "an", "and", "as", "at", "but", "by", "even", "for", "from", "if", "in", "into", "'n",
-                           "n'", "'n'", "ʼn", "nʼ", "ʼnʼ", "’n", "n’", "’n’", "nor", "now", "of", "off", "on", "or",
-                           "out", "so", "than", "that", "the", "to", "top", "up", "upon", "w", "when", "with", "yet"}
-
-    tokenizing_re = re.compile("(?<=[A-Za-zÀ-ÿ0-9._'ʼ’])(?=[^A-Za-zÀ-ÿ0-9._'ʼ’])"
-                                   "|"
-                               "(?<=[^A-Za-zÀ-ÿ0-9._'ʼ’])(?=[A-Za-zÀ-ÿ0-9._'ʼ’])")
-
-    _is_unc_alnum_punct = classmethod(lambda self, strval: re.match("^[A-Za-zÀ-ÿ0-9._'ʼ’]+$", strval))
-
-    _capitalize = classmethod(lambda self, strval: re.sub("[A-Za-zÀ-ÿ]", lambda m: m.group(0).upper(), strval, count=1))
-
     @abc.abstractmethod
     def __init__(self):
         pass
@@ -160,45 +276,8 @@ class Abstract_Food(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def from_fdc_json_object(self, json_obj):
+    def from_fdc_json_obj(self, json_obj):
         pass
-
-    @classmethod
-    def _title_case(self, strval):
-
-        tokens = self.tokenizing_re.split(strval)
-
-        output = list()
-        first_alpha_token_index = -1
-        last_alpha_token_index = len(tokens)
-
-        # Sometimes a string will begin or end with a sequence of non-alphanumeric
-        # characters (such as an ellipsis) that count as a token. The rule that the
-        # first and last words in a string to be titlecased only applies to the
-        # first and last _actual words_, not counting non-alphanumeric substrings,
-        # so the indexes of the first and last actual words need to be found.
-        for index, token in zip(range(len(tokens)), tokens):
-            if self._is_unc_alnum_punct(token):
-                first_alpha_token_index = index
-                break
-        for index, token in zip(range(len(tokens) - 1, -1, -1), reversed(tokens)):
-            if self._is_unc_alnum_punct(token):
-                last_alpha_token_index = index
-                break
-
-        for index in range(len(tokens)):
-            token = tokens[index]
-            if re.match(r"^([A-Za-zÀ-ÿ]\.){2,}$", token):
-                token = token.upper()
-            elif index == first_alpha_token_index or index == last_alpha_token_index:
-                token = self._capitalize(token)
-            elif token.lower() in self.title_case_lc_words:
-                token = token.lower()
-            elif re.match("^([à-ÿa-z'’ʼ]+)$", token):
-                token = self._capitalize(token)
-            output.append(token)
-
-        return ''.join(output)
 
 
 class Food_Stub(Abstract_Food):
@@ -206,11 +285,11 @@ class Food_Stub(Abstract_Food):
 
     def __init__(self, fdc_id, food_name):
         self.fdc_id = fdc_id
-        self.food_name = self._title_case(food_name.lower())
+        self.food_name = title_case(food_name.lower())
         self.in_db_already = False
 
     @classmethod
-    def from_fdc_json_object(self, food_json_obj):
+    def from_fdc_json_obj(self, food_json_obj):
         fdc_id = food_json_obj["fdcId"]
         food_name = food_json_obj["description"]
         food_obj = Food_Stub(fdc_id, food_name)
@@ -227,6 +306,20 @@ class Food_Stub(Abstract_Food):
         return {'fdc_id': self.fdc_id, 'food_name': self.food_name, 'calories': self.calories}
 
 
+class Ingredient_Detailed:
+    __slots__ = 'servings_number', 'food'
+
+    def __init__(self, servings_number, food):
+        self.servings_number = servings_number
+        if hasattr(food, 'serialize'):
+            food = food.serialize()
+        self.food = Food_Detailed.from_nt_json_obj(food)
+
+    @classmethod
+    def from_json_obj(self, ingredient_json_obj):
+        return self(servings_number=ingredient_json_obj["servings_number"], food=ingredient_json_obj["food"])
+
+
 class Food_Detailed(Abstract_Food):
     __slots__ = ('fdc_id', 'food_name', 'serving_size', 'serving_units', 'in_db_already', 'biotin_B7_mcg', 'calcium_mg',
                  'cholesterol_mg', 'copper_mg', 'dietary_fiber_g', 'energy_kcal', 'folate_B9_mcg', 'iodine_mcg',
@@ -236,11 +329,11 @@ class Food_Detailed(Abstract_Food):
 
     def __init__(self, fdc_id, food_name, serving_size, serving_units):
         self.fdc_id = fdc_id
-        self.food_name = self._title_case(food_name.lower())
+        self.food_name = title_case(food_name.lower())
         self.serving_size = serving_size
         self.serving_units = serving_units
-        for nutrient_obj in self.nutrients.values():
-            setattr(self, nutrient_obj.symbol, None)
+        for nutrient_argd in Nutrient.nutrient_argds.values():
+            setattr(self, nutrient_argd['symbol'], None)
         self.in_db_already = False
 
     @classmethod
@@ -248,7 +341,7 @@ class Food_Detailed(Abstract_Food):
         nutrient_table = dict()
         for nutrient_json_obj in food_json_obj["foodNutrients"]:
             fdc_code = int(nutrient_json_obj["nutrient"]["number"])
-            if fdc_code not in self.nutrients:
+            if fdc_code not in Nutrient.nutrient_argds:
                 continue
             elif "amount" not in nutrient_json_obj:
                 continue
@@ -256,27 +349,37 @@ class Food_Detailed(Abstract_Food):
                                                 nutrient_json_obj["nutrient"]["unitName"].lower(),
                                                 fdc_code=fdc_code,
                                                 amount=float(nutrient_json_obj["amount"]),
-                                                symbol=self.nutrients[fdc_code].symbol)
+                                                symbol=Nutrient.nutrient_argds[fdc_code]["symbol"])
         return nutrient_table
 
     @classmethod
-    def from_model_object(self, food_model_obj):
+    def from_model_obj(self, food_model_obj):
         fdc_id = food_model_obj.fdc_id
         food_name = food_model_obj.food_name
         serving_size = food_model_obj.serving_size
         serving_units = food_model_obj.serving_units
         food_obj = self(fdc_id, food_name, serving_size, serving_units)
-        for fdc_id, nutrient_obj in self.nutrients.items():
-            nutrient_in_food = nutrient_obj.copy()
-            if hasattr(food_model_obj, nutrient_obj.symbol):
-                nutrient_in_food.amount = getattr(food_model_obj, nutrient_obj.symbol)
+        for fdc_id, nutrient_argd in Nutrient.nutrient_argds.items():
+            nutrient_in_food = Nutrient(**nutrient_argd)
+            if hasattr(food_model_obj, nutrient_in_food.symbol):
+                nutrient_in_food.amount = getattr(food_model_obj, nutrient_in_food.symbol)
             else:
                 nutrient_in_food.amount = 0
-            setattr(food_obj, nutrient_obj.symbol, nutrient_in_food)
+            setattr(food_obj, nutrient_in_food.symbol, nutrient_in_food)
         return food_obj
 
     @classmethod
-    def from_fdc_json_object(self, food_json_obj):
+    def is_usable_json_object(self, food_json_obj):
+        if food_json_obj["dataType"] == "SR Legacy":
+            return ("fdcId" in food_json_obj and "description" in food_json_obj and "foodPortions" in food_json_obj
+                    and len(food_json_obj["foodPortions"])
+                    and "amount" in food_json_obj["foodPortions"][0] and "modifier" in food_json_obj["foodPortions"][0])
+        elif food_json_obj["dataType"] == "Branded":
+            return ("fdcId" in food_json_obj and "description" in food_json_obj
+                    and "servingSize" in food_json_obj and "servingSizeUnit" in food_json_obj)
+
+    @classmethod
+    def from_fdc_json_obj(self, food_json_obj):
         fdc_id = food_json_obj["fdcId"]
         food_name = food_json_obj["description"]
         if food_json_obj["dataType"] == "SR Legacy":
@@ -289,28 +392,28 @@ class Food_Detailed(Abstract_Food):
             raise Exception(f'while processing a food JSON object, unsupported value for property \'dataType\': {food_json_obj["dataType"]}')
         food_obj = self(fdc_id, food_name, serving_size, serving_units)
         nutrient_table = self._food_json_obj_to_nutrient_table(food_json_obj)
-        for fdc_code, nutrient_obj in Food_Detailed.nutrients.items():
+        for fdc_code, nutrient_argd in Nutrient.nutrient_argds.items():
             if fdc_code in nutrient_table:
                 nutrient_in_food = nutrient_table[fdc_code]
-                if nutrient_obj.symbol == "vitamin_D_mcg" and nutrient_in_food.units.upper() == 'IU':
+                if nutrient_in_food.symbol == "vitamin_D_mcg" and nutrient_in_food.units.upper() == 'IU':
                     # The FDC uses IU for vitamin D, but this program stores vitamin
                     # D amounts in micrograms. Converting from IU to mg/mcg is
                     # different for every substance that IU are used with. For
                     # vitamin D, 40 IU == 1 mcg.
                     nutrient_in_food.amount /= 40
                     nutrient_in_food.units = 'mcg'
-                setattr(food_obj, nutrient_obj.symbol, nutrient_in_food)
+                setattr(food_obj, nutrient_argd["symbol"], nutrient_in_food)
             else:
-                nutrient_in_food = nutrient_obj.copy()
+                nutrient_in_food = Nutrient(**nutrient_argd)
                 nutrient_in_food.amount = 0
-                setattr(food_obj, nutrient_obj.symbol, nutrient_in_food)
+                setattr(food_obj, nutrient_in_food.symbol, nutrient_in_food)
         return food_obj
 
     def to_nt_json_code(self):
         return json.dumps(self.serialize())
 
     @classmethod
-    def from_nt_json_object(self, json_content):
+    def from_nt_json_obj(self, json_content):
         const_args = {'fdc_id', 'food_name', 'serving_size', 'serving_units'}
         const_argd = {key: value for key, value in filter(lambda pair: pair[0] in const_args, json_content.items())}
         food_obj = self(**const_argd)
@@ -323,7 +426,7 @@ class Food_Detailed(Abstract_Food):
                     del nutrient_argd['dv_perc']
                 nutrient_in_food = Nutrient(**nutrient_argd)
             else:
-                nutrient_in_food = self.nutrients[self.nutrient_symbols_to_numbers[key]].copy()
+                nutrient_in_food = Nutrient(**Nutrient.nutrient_argds[Nutrient.nutrient_symbols_to_numbers[key]])
                 nutrient_in_food.amount = value
             setattr(food_obj, key, nutrient_in_food)
         return food_obj
@@ -373,7 +476,7 @@ class Fdc_Api_Contacter:
         json_content = self._keyword_search(query, page_size, page_number)
         results_list = list()
         for result_obj in json_content['foods']:
-            results_list.append(Food_Stub.from_fdc_json_object(result_obj))
+            results_list.append(Food_Stub.from_fdc_json_obj(result_obj))
         return results_list
 
     def number_of_search_results(self, query):
@@ -385,7 +488,9 @@ class Fdc_Api_Contacter:
         if response.status_code == 404:
             return None
         json_content = json.loads(response.content)
-        return Food_Detailed.from_fdc_json_object(json_content)
+        if not Food_Detailed.is_usable_json_object(json_content):
+            return False
+        return Food_Detailed.from_fdc_json_obj(json_content)
 
     def retrieve_foods_list(self, food_list_page=1):
         food_list_url = self.get_food_list_url()
@@ -395,7 +500,7 @@ class Fdc_Api_Contacter:
         response = requests.post(food_list_url, json=json_argd)
         results_list = list()
         for response_obj in json.loads(response.content):
-            food_stub_obj = Food_Stub.from_fdc_json_object(response_obj)
+            food_stub_obj = Food_Stub.from_fdc_json_obj(response_obj)
             results_list.append(food_stub_obj.serialize())
         return results_list
 
