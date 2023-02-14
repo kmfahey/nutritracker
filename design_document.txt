@@ -103,16 +103,16 @@ RECIPE BUILDER WORKFLOW
     * (c) features a [Delete] button; form submits via GET to /recipes/builder/$MONGODB_ID/delete
 
 * step 3:
-    * /recipes/builder/$MONGODB_ID/ingredients/add?search_query=$ETC
+    * /recipes/builder/$MONGODB_ID/add_ingredient/?search_query=$ETC
     * a list of matching foods
-    * links click through to /recipes/builder/$MONGODB_ID/ingredients/$FDC_ID/add
+    * links click through to /recipes/builder/$MONGODB_ID/add_ingredient/$FDC_ID
 
 * step 4:
-    * /recipes/builder/$MONGODB_ID/ingredients/$FDC_ID/add
+    * /recipes/builder/$MONGODB_ID/add_ingredient/$FDC_ID
     * displays nutrition block, has a form with a text input for # of servings and an [Add] button
 
 * step 5:
-    * /recipes/builder/$MONGODB_ID/ingredients/$FDC_ID/add/confirm
+    * /recipes/builder/$MONGODB_ID/add_ingredient/$FDC_ID/confirm
     * displays modified nutrition block as figured by # of servings, has a [Confirm] button
     * form submits to /recipes/builder/$MONGODB_ID
 

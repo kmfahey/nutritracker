@@ -6,6 +6,8 @@
 
 <h3>{{ recipe_obj.recipe_name }}</h3>
 
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
 {% if recipe_obj.ingredients %}
 {% include "main/_nutrition_facts_table.html" %}
 {% else %}
@@ -33,24 +35,7 @@
 <p>No ingredients yet</p>
 {% endif %}
 
-<h4>Search for a Food to Add to the Recipe</h4>
-
-<form action="/recipes/search_results/" method="GET">
-    <p>
-        <input type="text" class="larger" name="search_query">
-        <span class="qtrtab"/>
-        Results per page:
-        <select class="larger" name="page_size">
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="25" selected>25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-        </select>
-        <span class="qtrtab"/>
-        <input class="larger" type="submit" value="Search"></p>
-    </p>
-</form>
+{% include("recipes/_recipes_builder_search_header.html") %}
 
 {% if recipe_obj.ingredients %}
 <h4>Finish Recipe</h4>

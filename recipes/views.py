@@ -189,6 +189,7 @@ def builder_mongodb_id(request, mongodb_id):
     return HttpResponse(recipes_builder_new_template.render(context, request))
 
 
+@require_http_methods(["GET", "POST"])
 def builder_mongodb_id_delete(request, mongodb_id):
     cgi_params = get_cgi_params(request)
     recipes_builder_mongodb_id_delete_template = loader.get_template("recipes/recipes_builder_+mongodb_id+_delete.html")
@@ -205,17 +206,58 @@ def builder_mongodb_id_delete(request, mongodb_id):
     return HttpResponse(recipes_builder_mongodb_id_delete_template.render(context, request))
 
 
-def builder_mongodb_id_ingredients_add(request, mongodb_id):
+@require_http_methods(["GET", "POST"])
+def builder_mongodb_id_add_ingredient(request, mongodb_id):
+    search_url = f"/recipes/builder/{mongodb_id}/"
+    subordinate_navigation = navigation_link_displayer.full_href_list_callable()
+    context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False}
+    builder_mongodb_id_add_ingredient_template = loader.get_template('recipes/recipes_builder_+mongodb_id+_add_ingredient.html')
+
+    retval = retrieve_pagination_params(builder_mongodb_id_add_ingredient_template, context, request, default_page_size, search_url, query=True)
+    if isinstance(retval, HttpResponse):
+        return retval
+    search_query = retval["search_query"]
+    page_size = retval["page_size"]
+    page_number = retval["page_number"]
+    kws = search_query.strip().split()
+
+    try:
+        recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
+    except Recipe.DoesNotExist:
+        return HttpResponse(f"no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'", status=404)
+    context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
+
+    # This is equivelant to q_term = (Q(recipe_name__icontains=kws[0]) & Q(recipe_name__icontains=kws[1]) & ... & Q(recipe_name__icontains=kws[-1]))
+    q_term = reduce(and_, (Q(food_name__icontains=kw) for kw in kws))
+    food_objs = list(Food.objects.filter(q_term))
+    food_objs.sort(key=attrgetter('food_name'))
+    if not len(food_objs):
+        context["message"] = "No matches"
+        return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
+    elif len(food_objs) <= page_size and page_number > 1:
+        context["more_than_one_page"] = True
+        context["message"] = "No more results"
+        context["pagination_links"] = generate_pagination_links(f"recipes/builder/{mongodb_id}/add_ingredient/", len(food_objs), page_size, page_number, search_query=search_query)
+        return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
+
+    food_objs = [Food_Detailed.from_model_obj(food_model_obj) for food_model_obj in food_objs]
+    if len(food_objs) > page_size:
+        context["more_than_one_page"] = True
+        context["pagination_links"] = generate_pagination_links(f"recipes/builder/{mongodb_id}/add_ingredient/", len(food_objs), page_size, page_number, search_query=search_query)
+        context['food_objs'] = slice_output_list_by_page(food_objs, page_size, page_number)
+    else:
+        context["more_than_one_page"] = False
+        context['food_objs'] = food_objs
+    return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
+
+
+def builder_mongodb_id_add_ingredient_fdc_id(request, mongodb_id, fdc_id):
     pass
 
 
-def builder_mongodb_id_ingredients_fdc_id_add(request, mongodb_id, fdc_id):
+def builder_mongodb_id_add_ingredient_fdc_id_confirm(request, mongodb_id, fdc_id):
     pass
 
 
-def builder_mongodb_id_ingredients_fdc_id_add_confirm(request, mongodb_id, fdc_id):
-    pass
-
-
-def builder_mongodb_id_finished(request, mongodb_id):
+def builder_mongodb_id_finish(request, mongodb_id):
     pass
