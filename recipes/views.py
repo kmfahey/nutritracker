@@ -189,6 +189,22 @@ def builder_mongodb_id(request, mongodb_id):
     return HttpResponse(recipes_builder_new_template.render(context, request))
 
 
+def builder_mongodb_id_delete(request, mongodb_id):
+    cgi_params = get_cgi_params(request)
+    recipes_builder_mongodb_id_delete_template = loader.get_template("recipes/recipes_builder_+mongodb_id+_delete.html")
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")}
+    button = cgi_params.get('button', None)
+    if button != "Delete":
+        return redirect(f"/recipes/builder/{mongodb_id}/")
+    try:
+        recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
+    except Recipe.DoesNotExist:
+        return HttpResponse(f"no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'", status=404)
+    context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
+    recipe_model_obj.delete()
+    return HttpResponse(recipes_builder_mongodb_id_delete_template.render(context, request))
+
+
 def builder_mongodb_id_ingredients_add(request, mongodb_id):
     pass
 

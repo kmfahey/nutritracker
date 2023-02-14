@@ -54,14 +54,14 @@
 
 {% if recipe_obj.ingredients %}
 <h4>Finish Recipe</h4>
-<form action="/recipes/builder/{{ recipe_obj.mongodb_id }}/" method="GET">
-    <input class="larger" type="submit" value="Finish"/>
+<form action="/recipes/builder/{{ recipe_obj.mongodb_id }}/finish/" method="GET">
+    <input class="larger" name="button" type="submit" value="Finish"/>
 </form>
 {% endif %}
 
 <h4>Delete Recipe</h4>
-<form action="/recipes/builder/{{ recipe_obj.mongodb_id }}/" method="GET">
-    <input class="larger" type="submit" value="Delete"/>
+<form action="/recipes/builder/{{ recipe_obj.mongodb_id }}/delete/" method="GET">
+    <input class="larger" name="button" type="submit" value="Delete"/>
 </form>
 
 {% endblock %}

@@ -133,3 +133,9 @@ other apps needed:
 /daily
 
 /
+
+
+
+TODO:
+
+all non-200 status code return values should render as though with an ErrorDocument

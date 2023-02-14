@@ -22,8 +22,10 @@ urlpatterns = [
 #    path('builder/<str:mongodb_id>/ingredients/<int:fdc_id>/add/',          views.builder_mongodb_id_ingredients_fdc_id_add,         name='recipes_builder_mongodb_id_ingredients_fdc_id_add_slash'),
 #    path('builder/<str:mongodb_id>/ingredients/<int:fdc_id>/add/confirm',   views.builder_mongodb_id_ingredients_fdc_id_add_confirm, name='recipes_builder_mongodb_id_ingredients_fdc_id_add_confirm'),
 #    path('builder/<str:mongodb_id>/ingredients/<int:fdc_id>/add/confirm/',  views.builder_mongodb_id_ingredients_fdc_id_add_confirm, name='recipes_builder_mongodb_id_ingredients_fdc_id_add_confirm_slash'),
-#    path('builder/<str:mongodb_id>/finished',                               views.builder_mongodb_id_finished,                       name='recipes_builder_mongodb_id_finished'),
-#    path('builder/<str:mongodb_id>/finished/',                              views.builder_mongodb_id_finished,                       name='recipes_builder_mongodb_id_finished_slash'),
+#    path('builder/<str:mongodb_id>/finish',                               views.builder_mongodb_id_finish,                       name='recipes_builder_mongodb_id_finish'),
+#    path('builder/<str:mongodb_id>/finish/',                              views.builder_mongodb_id_finish,                       name='recipes_builder_mongodb_id_finish_slash'),
+    path('builder/<str:mongodb_id>/delete',                                 views.builder_mongodb_id_delete,                       name='recipes_builder_mongodb_id_delete'),
+    path('builder/<str:mongodb_id>/delete/',                                views.builder_mongodb_id_delete,                       name='recipes_builder_mongodb_id_delete_slash'),
     path('<str:mongodb_id>',                                                views.recipes_mongodb_id,                                name='recipes_mongodb_id'),
     path('<str:mongodb_id>/',                                               views.recipes_mongodb_id,                                name='recipes_mongodb_id_slash'),
 ]
