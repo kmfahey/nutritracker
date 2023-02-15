@@ -21,12 +21,19 @@
                 <th class="ingredients">Ingredient</th>
                 <th class="ingredients">Serving Size</th>
                 <th class="ingredients"># of Servings</th>
+                <th class="ingredients">To Remove</th>
             </tr>
             {% for ingredient in recipe_obj.ingredients %}
                 <tr>
                     <td><a href="/foods/{{ ingredient.food.fdc_id }}/">{{ ingredient.food.food_name }}</a></td>
                     <td>{{ ingredient.food.serving_size }}{{ ingredient.food.serving_units }}</td>
                     <td>{{ ingredient.servings_number }}</td>
+                    <td>
+                        <form action="/recipes/builder/{{ recipe_obj.mongodb_id }}/remove_ingredient/">
+                            <input type="hidden" name="fdc_id" value="{{ ingredient.food.fdc_id }}"/>
+                            <input class="larger" type="submit" name="button" value="Remove from Recipe"/>
+                        </form>
+                    </td>
                 </tr>
             {% endfor %}
         </table>

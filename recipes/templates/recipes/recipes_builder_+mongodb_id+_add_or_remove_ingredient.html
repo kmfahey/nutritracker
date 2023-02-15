@@ -1,0 +1,53 @@
+{% extends "main/_base.html" %}
+
+{% block title %}Recipe Builder - {{ recipe_obj.recipe_name }} - Ingredient Search Results{% endblock %}
+
+{% block content %}
+
+{% if error is False %}
+    {% include "recipes/_recipes_builder_search_header.html" %}
+
+    {% if mode == "added" %}
+        <p>
+        An ingredient of {{ servings_number }}{{ food_obj.serving_units }} of the <a href="/recipes/builder/{{ recipe_obj.mongodb_id }}/add_ingredient/{{ food_obj.fdc_id }}/">{{ food_obj.food_name }}</a> has been added to your {{ recipe_obj.recipe_name }} recipe.
+            <a href="/recipes/builder/{{ recipe_obj.mongodb_id }}/">Click here</a> to add another ingredient, finish the recipe, or delete it.</a>
+        </p>
+    {% elif mode == "removed" %} 
+        <p>
+            The ingredient of {{ servings_number }}{{ food_obj.serving_units }} of the <a href="/recipes/builder/{{ recipe_obj.mongodb_id }}/add_ingredient/{{ food_obj.fdc_id }}/">{{ food_obj.food_name }}</a> has been removed from your {{ recipe_obj.recipe_name }} recipe.
+            <a href="/recipes/builder/{{ recipe_obj.mongodb_id }}/">Click here</a> to add another ingredient, finish the recipe, or delete it.</a>
+        </p>
+    {% endif %}
+
+    {% if searched %}
+        <h4>Search Results</h4>
+        {% if food_objs %}
+            {% for food_obj in food_objs %}
+                <p>
+                <b><a href="/recipes/builder/{{ recipe_obj.mongodb_id }}/add_ingredient/{{ food_obj.fdc_id }}/">{{ food_obj.food_name }}</a></b><br/>
+                Calories: {{ food_obj.energy_kcal.amount|floatformat }}
+                </p>
+            {% endfor %}
+        {% else %}
+            <p>No results for that query</p>
+        {% endif %}
+    {% elif food_objs %}
+        <h4>Ingredients</h4>
+        {% for food_obj in food_objs %}
+            <p>
+            <b><a href="/recipes/builder/{{ recipe_obj.mongodb_id }}/add_ingredient/{{ food_obj.fdc_id }}/">{{ food_obj.food_name }}</a></b><br/>
+            Calories: {{ food_obj.energy_kcal.amount|floatformat }} <span style="qtrtab" />
+            <form action="/recipes/builder/{{ recipe_obj.mongodb_id }}/remove_ingredient/">
+                <input type="hidden" name="fdc_id" value="{{ food_obj.fdc_id }}"/>
+                <input type="submit" name="button" value="Remove from Recipe"/>
+            </form>
+            </p>
+        {% endfor %}
+    {% endif %}
+{% endif %}
+
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
+{% if more_than_one_page %}{% autoescape off %}{{ pagination_links }}{% endautoescape %}{% endif %}
+
+{% endblock %}

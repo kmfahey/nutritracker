@@ -351,6 +351,10 @@ class Ingredient_Detailed:
     def from_json_obj(self, ingredient_json_obj):
         return self(servings_number=ingredient_json_obj["servings_number"], food=ingredient_json_obj["food"])
 
+    @classmethod
+    def from_model_obj(self, ingredient_model_obj):
+        return self(servings_number=ingredient_model_obj.servings_number, food=ingredient_model_obj.food.serialize())
+
 
 class Food_Detailed(Abstract_Food):
     __slots__ = ('fdc_id', 'food_name', 'serving_size', 'serving_units', 'in_db_already', 'biotin_B7_mcg', 'calcium_mg',

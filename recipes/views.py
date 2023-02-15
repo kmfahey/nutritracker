@@ -219,13 +219,57 @@ def builder_mongodb_id_delete(request, mongodb_id):
     return HttpResponse(recipes_builder_mongodb_id_delete_template.render(context, request))
 
 
+def builder_mongodb_id_remove_ingredient(request, mongodb_id):
+    search_url = f"/recipes/builder/{mongodb_id}/add_ingredient/"
+    subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")
+    context = {'subordinate_navigation': subordinate_navigation, 'more_than_one_page': False, 'error': False, 'message': '',}
+    builder_mongodb_id_add_ingredient_template = loader.get_template('recipes/recipes_builder_+mongodb_id+_add_or_remove_ingredient.html')
+    cgi_params = get_cgi_params(request)
+
+    try:
+        recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
+    except (Recipe.DoesNotExist, InvalidId):
+        context["error"] = True
+        context["message"] = f"Error 404: no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'"
+        return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request), status=404)
+
+    if not len(cgi_params.keys()):
+        return redirect(f"/recipes/builder/{mongodb_id}/add_ingredient/")
+    retval = cast_to_int(cgi_params.get('fdc_id', ''), 'fdc_id', builder_mongodb_id_add_ingredient_template, context, request)
+    if isinstance(retval, HttpResponse):
+        return retval
+    fdc_id = retval
+
+    found = False
+    for index in range(len(recipe_model_obj.ingredients)):
+        if recipe_model_obj.ingredients[index]["food"]["fdc_id"] != fdc_id:
+            continue
+        context["servings_number"] = recipe_model_obj.ingredients[index]["servings_number"]
+        del recipe_model_obj.ingredients[index]
+        found = True
+        break
+    if not found:
+        context["error"] = True
+        context["message"] = f"Error 422: recipe with _id='{mongodb_id}' has no ingredient with fdc_id='{fdc_id}'"
+        return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request), status=422)
+    recipe_model_obj.save()
+    context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
+
+    food_model_obj = Food.objects.get(fdc_id=fdc_id)
+    food_obj = Food_Detailed.from_model_obj(food_model_obj)
+    context["food_obj"] = food_obj
+
+    context["mode"] = "removed"
+    return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
+
+
 @require_http_methods(["GET", "POST"])
 def builder_mongodb_id_add_ingredient(request, mongodb_id):
     cgi_params = get_cgi_params(request)
     search_url = f"/recipes/builder/{mongodb_id}/"
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")
-    context = {'subordinate_navigation': subordinate_navigation, 'more_than_one_page': False, 'saved': False, 'error': False, 'message': ''}
-    builder_mongodb_id_add_ingredient_template = loader.get_template('recipes/recipes_builder_+mongodb_id+_add_ingredient.html')
+    context = {'subordinate_navigation': subordinate_navigation, 'more_than_one_page': False, 'error': False, 'message': '', 'searched': False}
+    builder_mongodb_id_add_ingredient_template = loader.get_template('recipes/recipes_builder_+mongodb_id+_add_or_remove_ingredient.html')
 
     try:
         recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
@@ -237,7 +281,7 @@ def builder_mongodb_id_add_ingredient(request, mongodb_id):
     recipe_obj = Recipe_Detailed.from_model_obj(recipe_model_obj)
     context["recipe_obj"] = recipe_obj
 
-    if len(cgi_params):
+    if "fdc_id" in cgi_params:
         retval = cast_to_int(cgi_params.get('fdc_id', ''), 'fdc_id', builder_mongodb_id_add_ingredient_template, context, request)
         if isinstance(retval, HttpResponse):
             return retval
@@ -267,7 +311,7 @@ def builder_mongodb_id_add_ingredient(request, mongodb_id):
         recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
         recipe_model_obj.ingredients.append(ingredient_obj.serialize())
         recipe_model_obj.save()
-        context["message"] = f"An ingredient of {servings_number}{food_obj.serving_units} of the {food_obj.food_name} has been added to your {recipe_obj.recipe_name} recipe."
+        context["mode"] = "added"
         return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
     else:
         retval = retrieve_pagination_params(builder_mongodb_id_add_ingredient_template, context, request, default_page_size, search_url, query=True)
@@ -276,6 +320,7 @@ def builder_mongodb_id_add_ingredient(request, mongodb_id):
         search_query = retval["search_query"]
         page_size = retval["page_size"]
         page_number = retval["page_number"]
+        context["searched"] = True
         kws = search_query.strip().split()
 
         try:
@@ -308,6 +353,8 @@ def builder_mongodb_id_add_ingredient(request, mongodb_id):
         else:
             context["more_than_one_page"] = False
             context['food_objs'] = food_objs
+
+        context["mode"] = "neutral"
         return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
 
 
