@@ -1,0 +1,14 @@
+{% extends "main/_base.html" %}
+
+{% block title %}User Log In{% endblock %}
+
+{% block content %}
+
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
+<form action="/users/auth/" method="POST">
+    Username: <span class="qtrtab"/> <input type="text" name="username" value="" size="15"/><br/>
+    Password: <span class="qtrtab"/> <input type="text" name="password" value="" size="15"/><br/>
+</form>
+
+{% endblock %}

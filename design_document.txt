@@ -130,12 +130,82 @@ RECIPE BUILDER WORKFLOW
 
 other apps needed:
 
+/users
+
+pages needed
+
+* login page
+    /users
+    * form submits to /users/auth/
+    users.html
+
+* authenatication
+    /users/auth/
+    * if the password pass authentication (using bcrypt again), redirects to /users/$USER_ID/
+    * if the password doesn't authenticate, redirects back to /users/ with ?authenticated=False
+
+* new user page
+    /users/new
+    * user sets name
+    * user sets gender assigned at birth
+    * user sets preferred gender (text field)
+    * user sets preferred pronouns
+    * user sets height
+    * user sets weight
+    * user sets daily activity
+    * user sets weight goals
+    * form submits to /users/new, which then redirects to /users/$USER_ID/password/?new=True
+    users_new.html
+
+* password-setting page
+    * /users/$USER_ID/password/
+    * if new=False, acts like a password reset page and requires entering current password
+    * asks user to enter new password twice
+    * form submits to /users/$USER_ID/ which outputs a message indicating the password has been set
+        * new=True vs. new=False
+    users_+user_id+_password.html
+
+* profile page
+    /users/$USER_ID/
+    * basic profile page
+    # shows user's name, height, weight, BMI, and calories per day
+    * has link to /users/$USER_ID/edit_profile/
+    * form: has [Delete] button
+        * submits to /users/$USER_ID/delete/confirm/
+    users_+user_id+.html
+
+* edit profile page
+    /users/$USER_ID/edit_profile/
+    * user can set or change name
+    * user can set or change height
+    * user can set or change weight
+    * user can set or change daily activity
+    * user can set or change weight goals
+    users_+user_id+_edit_profile.html
+
+* delete user confirm page
+    /users/$USER_ID/confirm_delete
+    * asks the user if they're sure they want to delete their accoutn
+    * form: has [Confirm] button
+        * submits to /users/delete/
+    users_+user_id+_confirm_delete.html
+
+* delete user page
+    /users/delete/
+    * informs user they've deleted their accout
+    users_delete.html
+
+
+
+
+
+
+
 /daily
 
-/
 
 
 
 TODO:
-
-all non-200 status code return values should render as though with an ErrorDocument
+    somehow modify how dv_perc is calculated to use the user's calories per day instead of 2000
+    prepand recipes_ to all view functions in recipes.views

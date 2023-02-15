@@ -35,7 +35,7 @@ default_page_size = config("DEFAULT_PAGE_SIZE")
 # maintainable code, I think the latter wins.
 
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET"])
 def recipes(request):
     recipes_template = loader.get_template('recipes/recipes.html')
     context = {'more_than_one_page': False, 'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/"), 'error': False, 'message': ''}
@@ -91,7 +91,7 @@ def search(request):
     return HttpResponse(recipes_search_template.render(context, request))
 
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET"])
 def search_results(request):
     search_url = "/recipes/search/"
     subordinate_navigation = navigation_link_displayer.full_href_list_callable()
@@ -131,7 +131,7 @@ def search_results(request):
     return HttpResponse(search_results_template.render(context, request))
 
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET"])
 def builder(request):
     recipes_builder_template = loader.get_template('recipes/recipes_builder.html')
     context = {'more_than_one_page': False, 'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/"), 'error': False, 'message': ''}
@@ -162,7 +162,7 @@ def builder(request):
     return HttpResponse(recipes_builder_template.render(context, request))
 
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET"])
 def builder_new(request):
     cgi_params = get_cgi_params(request)
     builder_url = "/recipes/builder/new/"
@@ -181,7 +181,7 @@ def builder_new(request):
         return redirect(f"/recipes/builder/{mongodb_id}/")
 
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET"])
 def builder_mongodb_id(request, mongodb_id):
     cgi_params = get_cgi_params(request)
     recipes_builder_new_template = loader.get_template("recipes/recipes_builder_+mongodb_id+.html")
@@ -198,7 +198,7 @@ def builder_mongodb_id(request, mongodb_id):
     return HttpResponse(recipes_builder_new_template.render(context, request))
 
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET"])
 def builder_mongodb_id_delete(request, mongodb_id):
     cgi_params = get_cgi_params(request)
     recipes_builder_mongodb_id_delete_template = loader.get_template("recipes/recipes_builder_+mongodb_id+_delete.html")
@@ -219,6 +219,7 @@ def builder_mongodb_id_delete(request, mongodb_id):
     return HttpResponse(recipes_builder_mongodb_id_delete_template.render(context, request))
 
 
+@require_http_methods(["GET"])
 def builder_mongodb_id_remove_ingredient(request, mongodb_id):
     search_url = f"/recipes/builder/{mongodb_id}/add_ingredient/"
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")
@@ -263,7 +264,7 @@ def builder_mongodb_id_remove_ingredient(request, mongodb_id):
     return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
 
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET"])
 def builder_mongodb_id_add_ingredient(request, mongodb_id):
     cgi_params = get_cgi_params(request)
     search_url = f"/recipes/builder/{mongodb_id}/"
@@ -358,6 +359,7 @@ def builder_mongodb_id_add_ingredient(request, mongodb_id):
         return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
 
 
+@require_http_methods(["GET"])
 def builder_mongodb_id_add_ingredient_fdc_id(request, mongodb_id, fdc_id):
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")
     context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
@@ -388,6 +390,7 @@ def builder_mongodb_id_add_ingredient_fdc_id(request, mongodb_id, fdc_id):
     return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_template.render(context, request))
 
 
+@require_http_methods(["GET"])
 def builder_mongodb_id_add_ingredient_fdc_id_confirm(request, mongodb_id, fdc_id):
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")
     context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
@@ -434,6 +437,7 @@ def builder_mongodb_id_add_ingredient_fdc_id_confirm(request, mongodb_id, fdc_id
     return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request))
 
 
+@require_http_methods(["GET"])
 def builder_mongodb_id_finish(request, mongodb_id):
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")
     context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
