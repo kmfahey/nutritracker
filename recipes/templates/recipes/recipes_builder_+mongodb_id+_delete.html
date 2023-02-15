@@ -4,12 +4,16 @@
 
 {% block content %}
 
-<h3>{{ recipe_obj.recipe_name }}</h3>
+{% if error is False %}
+    <h3>{{ recipe_obj.recipe_name }}</h3>
 
-<p><b>Deleted</b></p>
+    <p><b>Deleted</b></p>
 
-<p><a href="/recipes/builder/">Back to Recipe Builder</a></p>
+    <p><a href="/recipes/builder/">Back to Recipe Builder</a></p>
 
-<p><a href="/recipes/">Back to Recipes</a></p>
+    <p><a href="/recipes/">Back to Recipes</a></p>
+{% endif %}
+
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
 
 {% endblock %}

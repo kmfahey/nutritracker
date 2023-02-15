@@ -47,8 +47,8 @@ def cast_to_int(strval, param_name, template, context, request):
         assert intval > 0
     except (ValueError, AssertionError):
         context["error"] = True
-        context["message"] = f"value for {param_name} must be an integer greater than zero"
-        return HttpResponse(template.render(context, request))
+        context["message"] = f"Error 422: value for {param_name} must be an integer greater than zero"
+        return HttpResponse(template.render(context, request), status=422)
     return intval
 
 

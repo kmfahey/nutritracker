@@ -38,7 +38,7 @@ default_page_size = config("DEFAULT_PAGE_SIZE")
 @require_http_methods(["GET", "POST"])
 def recipes(request):
     recipes_template = loader.get_template('recipes/recipes.html')
-    context = {'more_than_one_page': False, 'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/")}
+    context = {'more_than_one_page': False, 'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/"), 'error': False, 'message': ''}
 
     retval = retrieve_pagination_params(recipes_template, context, request, default_page_size, query=False)
     if isinstance(retval, HttpResponse):
@@ -69,7 +69,7 @@ def recipes(request):
 @require_http_methods(["GET"])
 def recipes_mongodb_id(request, mongodb_id):
     recipes_mongodb_id_template = loader.get_template('recipes/recipes_+mongodb_id+.html')
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/")}
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/"), 'error': False, 'message': ''}
 
     try:
         recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
@@ -87,7 +87,7 @@ def recipes_mongodb_id(request, mongodb_id):
 def search(request):
     recipes_search_template = loader.get_template('recipes/recipes_search.html')
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/search/")
-    context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False}
+    context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False, 'error': False, 'message': ''}
     return HttpResponse(recipes_search_template.render(context, request))
 
 
@@ -95,7 +95,7 @@ def search(request):
 def search_results(request):
     search_url = "/recipes/search/"
     subordinate_navigation = navigation_link_displayer.full_href_list_callable()
-    context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False}
+    context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False, 'error': False, 'message': ''}
     search_template = loader.get_template('recipes/recipes_search.html')
     search_results_template = loader.get_template('recipes/recipes_search_results.html')
 
@@ -134,7 +134,7 @@ def search_results(request):
 @require_http_methods(["GET", "POST"])
 def builder(request):
     recipes_builder_template = loader.get_template('recipes/recipes_builder.html')
-    context = {'more_than_one_page': False, 'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")}
+    context = {'more_than_one_page': False, 'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/"), 'error': False, 'message': ''}
 
     retval = retrieve_pagination_params(recipes_builder_template, context, request, default_page_size, query=False)
     if isinstance(retval, HttpResponse):
@@ -167,7 +167,7 @@ def builder_new(request):
     cgi_params = get_cgi_params(request)
     builder_url = "/recipes/builder/new/"
     recipes_builder_new_template = loader.get_template('recipes/recipes_builder_new.html')
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")}
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/"), 'error': False, 'message': ''}
 
     if not len(cgi_params.keys()):
         return HttpResponse(recipes_builder_new_template.render(context, request))
@@ -185,11 +185,15 @@ def builder_new(request):
 def builder_mongodb_id(request, mongodb_id):
     cgi_params = get_cgi_params(request)
     recipes_builder_new_template = loader.get_template("recipes/recipes_builder_+mongodb_id+.html")
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")}
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/"), "error": False, 'message': ''}
+
     try:
         recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
-    except Recipe.DoesNotExist:
-        return HttpResponse(f"no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'", status=404)
+    except (Recipe.DoesNotExist, InvalidId):
+        context["error"] = True
+        context["message"] = f"Error 404: no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'"
+        return HttpResponse(recipes_builder_new_template.render(context, request), status=404)
+
     context["food_or_recipe_obj"] = context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
     return HttpResponse(recipes_builder_new_template.render(context, request))
 
@@ -198,14 +202,18 @@ def builder_mongodb_id(request, mongodb_id):
 def builder_mongodb_id_delete(request, mongodb_id):
     cgi_params = get_cgi_params(request)
     recipes_builder_mongodb_id_delete_template = loader.get_template("recipes/recipes_builder_+mongodb_id+_delete.html")
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")}
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/"), 'error': False, 'message': ''}
+
     button = cgi_params.get('button', None)
     if button != "Delete":
         return redirect(f"/recipes/builder/{mongodb_id}/")
     try:
         recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
-    except Recipe.DoesNotExist:
-        return HttpResponse(f"no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'", status=404)
+    except (Recipe.DoesNotExist, InvalidId):
+        context["error"] = True
+        context["message"] = f"Error 404: no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'"
+        return HttpResponse(recipes_builder_mongodb_id_delete_template.render(context, request), status=404)
+
     context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
     recipe_model_obj.delete()
     return HttpResponse(recipes_builder_mongodb_id_delete_template.render(context, request))
@@ -216,13 +224,16 @@ def builder_mongodb_id_add_ingredient(request, mongodb_id):
     cgi_params = get_cgi_params(request)
     search_url = f"/recipes/builder/{mongodb_id}/"
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")
-    context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False, 'saved': False}
+    context = {'subordinate_navigation': subordinate_navigation, 'more_than_one_page': False, 'saved': False, 'error': False, 'message': ''}
     builder_mongodb_id_add_ingredient_template = loader.get_template('recipes/recipes_builder_+mongodb_id+_add_ingredient.html')
 
     try:
         recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
-    except Recipe.DoesNotExist:
-        return HttpResponse(f"no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'", status=404)
+    except (Recipe.DoesNotExist, InvalidId):
+        context["error"] = True
+        context["message"] = f"Error 404: no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'"
+        return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request), status=404)
+
     recipe_obj = Recipe_Detailed.from_model_obj(recipe_model_obj)
     context["recipe_obj"] = recipe_obj
 
@@ -234,17 +245,22 @@ def builder_mongodb_id_add_ingredient(request, mongodb_id):
         servings_number = cgi_params.get('servings_number', None)
         if not servings_number:
             return redirect(f"/recipes/builder/{recipe_obj.mongodb_id}/add_ingredient/")
+
         try:
             servings_number = float(servings_number)
             assert servings_number > 0
         except (ValueError, AssertionError):
             context["error"] = True
-            context["message"] = "value for servings_number must be a floating-point number greater than zero"
-            return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request))
+            context["message"] = "Error 422: value for 'servings_number' must be a floating-point number greater than zero"
+            return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request), status=422)
+
         try:
             food_model_obj = Food.objects.get(fdc_id=fdc_id)
         except Food.DoesNotExist:
-            return HttpResponse(f"no object in 'foods' collection in 'nutritracker' data store with fdc_id='{fdc_id}'", status=404)
+            context["error"] = True
+            context["message"] = f"Error 404: no object in 'foods' collection in 'nutritracker' data store with fdc_id='{fdc_id}'"
+            return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request), status=404)
+
         food_obj = Food_Detailed.from_model_obj(food_model_obj)
         context["food_objs"] = [food_obj]
         ingredient_obj = Ingredient(servings_number=servings_number, food=food_model_obj.serialize())
@@ -265,7 +281,10 @@ def builder_mongodb_id_add_ingredient(request, mongodb_id):
         try:
             recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
         except Recipe.DoesNotExist:
-            return HttpResponse(f"no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'", status=404)
+            context["error"] = True
+            context["message"] = f"Error 404: no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'"
+            return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request), status=404)
+
         context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
 
         # This is equivelant to q_term = (Q(recipe_name__icontains=kws[0]) & Q(recipe_name__icontains=kws[1]) & ... & Q(recipe_name__icontains=kws[-1]))
@@ -294,20 +313,29 @@ def builder_mongodb_id_add_ingredient(request, mongodb_id):
 
 def builder_mongodb_id_add_ingredient_fdc_id(request, mongodb_id, fdc_id):
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")
-    context = {'subordinate_navigation': subordinate_navigation}
+    context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
     builder_mongodb_id_add_ingredient_fdc_id_template = loader.get_template('recipes/recipes_builder_+mongodb_id+_add_ingredient_+fdc_id+.html')
 
     try:
         recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
-    except Recipe.DoesNotExist:
-        return HttpResponse(f"no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'", status=404)
+    except (Recipe.DoesNotExist, InvalidId):
+        context["error"] = True
+        context["message"] = f"Error 404: no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'"
+        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_template.render(context, request), status=404)
+
     context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
 
     food_model_objs = Food.objects.filter(fdc_id=fdc_id)
+
     if not len(food_model_objs):
-        return HttpResponse(f"no object in 'foods' collection in 'nutritracker' data store with FDC ID {fdc_id}", status=404)
+        context["error"] = True
+        context["message"] = f"Error 404: no object in 'foods' collection in 'nutritracker' data store with fdc_id={fdc_id}"
+        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_template.render(context, request), status=404)
     elif len(food_model_objs) > 1:
-        return HttpResponse(f"inconsistent state: multiple objects matching query for FDC ID {fdc_id}", status=500)
+        context["error"] = True
+        context["message"] = f"Error 500: inconsistent state: multiple objects matching query for FDC ID {fdc_id}"
+        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_template.render(context, request), status=500)
+
     food_model_obj = food_model_objs[0]
     context['food_or_recipe_obj'] = context['food_obj'] = Food_Detailed.from_model_obj(food_model_obj)
     return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_template.render(context, request))
@@ -315,27 +343,39 @@ def builder_mongodb_id_add_ingredient_fdc_id(request, mongodb_id, fdc_id):
 
 def builder_mongodb_id_add_ingredient_fdc_id_confirm(request, mongodb_id, fdc_id):
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")
-    context = {'subordinate_navigation': subordinate_navigation, 'error': False}
+    context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
     builder_mongodb_id_add_ingredient_fdc_id_confirm_template = loader.get_template('recipes/recipes_builder_+mongodb_id+_add_ingredient_+fdc_id+_confirm.html')
     cgi_params = get_cgi_params(request)
 
+    try:
+        recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
+    except (Recipe.DoesNotExist, InvalidId):
+        context["error"] = True
+        context["message"] = f"Error 404: no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'"
+        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request), status=404)
+    context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
+
+    try:
+        food_model_obj = Food.objects.get(fdc_id=fdc_id)
+    except Food.DoesNotExist:
+        context["error"] = True
+        context["message"] = f"Error 404: no object in 'foods' collection in 'nutritracker' data store with fdc_id={fdc_id}"
+        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request), status=404)
+    food_obj = Food_Detailed.from_model_obj(food_model_obj)
+
     servings_number = cgi_params.get('servings_number', None)
     if not servings_number:
-        return redirect(f"/recipes/builder/{recipe_obj.mongodb_id}/add_ingredient/")
+        return redirect(f"/recipes/builder/{mongodb_id}/add_ingredient/")
     try:
         servings_number = float(servings_number)
         assert servings_number > 0
     except (ValueError, AssertionError):
         context["error"] = True
-        context["message"] = "value for servings_number must be a floating-point number greater than zero"
-        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request))
+        context["message"] = "Error 422: value for 'servings_number' must be a floating-point number greater than zero"
+        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request), status=422)
 
     context["servings_number"] = servings_number
-    try:
-        food_model_obj = Food.objects.get(fdc_id=fdc_id)
-    except Food.DoesNotExist:
-        return HttpResponse(f"no object in 'foods' collection in 'nutritracker' data store with FDC ID {fdc_id}", status=404)
-    food_obj = Food_Detailed.from_model_obj(food_model_obj)
+
     for nutrient_symbol in Nutrient.nutrient_symbols_to_numbers:
         nutrient_in_food = getattr(food_obj, nutrient_symbol, None)
         if nutrient_in_food is None:
@@ -344,24 +384,21 @@ def builder_mongodb_id_add_ingredient_fdc_id_confirm(request, mongodb_id, fdc_id
     food_obj.serving_size *= servings_number
     context['food_or_recipe_obj'] = context['food_obj'] = food_obj
 
-    try:
-        recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
-    except Recipe.DoesNotExist:
-        return HttpResponse(f"no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'", status=404)
-    context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
-
     return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request))
 
 
 def builder_mongodb_id_finish(request, mongodb_id):
     subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/recipes/builder/")
-    context = {'subordinate_navigation': subordinate_navigation, 'error': False}
+    context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
     builder_mongodb_id_finish_template = loader.get_template('recipes/recipes_builder_+mongodb_id+_finish.html')
 
     try:
         recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
-    except Recipe.DoesNotExist:
-        return HttpResponse(f"no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'", status=404)
+    except (Recipe.DoesNotExist, InvalidId):
+        context["error"] = True
+        context["message"] = f"Error 404: no object in 'recipes' collection in 'nutritracker' data store with _id='{mongodb_id}'"
+        return HttpResponse(builder_mongodb_id_finish_template.render(context, request), status=404)
+
     recipe_model_obj.complete = True
     recipe_model_obj.save()
     recipe_obj = Recipe_Detailed.from_model_obj(recipe_model_obj)

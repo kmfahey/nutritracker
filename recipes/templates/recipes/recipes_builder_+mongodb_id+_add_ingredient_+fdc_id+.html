@@ -6,16 +6,20 @@
 
 <h3>{{ food_obj.food_name }}</h3>
 
-{% include "main/_nutrition_facts_table.html" %}
+{% if error is False %}
+    {% include "main/_nutrition_facts_table.html" %}
 
-<h4 class="hastopmargin">Add Ingredient to Recipe</h4>
+    <h4 class="hastopmargin">Add Ingredient to Recipe</h4>
 
-<form action="/recipes/builder/{{ recipe_obj.mongodb_id }}/add_ingredient/{{ food_obj.fdc_id }}/confirm/" method="GET">
-    Number of Servings (may be less than 1):
-    <span class="qtrtab" />
-    <input class="larger" type="text" name="servings_number" size="30" value="1.0" />
-    <span class="qtrtab" />
-    <input class="larger" type="submit" name="button" value="Add" />
-</form>
+    <form action="/recipes/builder/{{ recipe_obj.mongodb_id }}/add_ingredient/{{ food_obj.fdc_id }}/confirm/" method="GET">
+        Number of Servings (may be less than 1):
+        <span class="qtrtab" />
+        <input class="larger" type="text" name="servings_number" size="30" value="1.0" />
+        <span class="qtrtab" />
+        <input class="larger" type="submit" name="button" value="Add" />
+    </form>
+{% endif %}
+
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
 
 {% endblock %}

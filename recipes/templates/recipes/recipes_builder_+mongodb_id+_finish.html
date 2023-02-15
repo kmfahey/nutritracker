@@ -6,9 +6,11 @@
 
 <h3>{{ recipe_obj.recipe_name }}</h3>
 
-{% include "main/_nutrition_facts_table.html" %}
+{% if error is False %}
+    {% include "main/_nutrition_facts_table.html" %}
 
-<p class="hastopmargin">Your recipe has been marked as complete. It can now be accessed in the <a href="/recipes/">main recipes list</a>.</p>
+    <p class="hastopmargin">Your recipe has been marked as complete. It can now be accessed in the <a href="/recipes/">main recipes list</a>.</p>
+{% endif %}
 
 {% if message %}<p><b>{{ message }}</b></p>{% endif %}
 
