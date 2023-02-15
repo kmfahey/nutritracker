@@ -19,9 +19,9 @@
 
 <table class="ingredients">
     <tr>
-        <th>Ingredient</th>
-        <th>Serving Size</th>
-        <th># of Servings</th>
+        <th class="ingredients">Ingredient</th>
+        <th class="ingredients">Serving Size</th>
+        <th class="ingredients"># of Servings</th>
     </tr>
     {% for ingredient in recipe_obj.ingredients %}
     <tr>
@@ -35,7 +35,7 @@
 <p>No ingredients yet</p>
 {% endif %}
 
-{% include("recipes/_recipes_builder_search_header.html") %}
+{% include "recipes/_recipes_builder_search_header.html" %}
 
 {% if recipe_obj.ingredients %}
 <h4>Finish Recipe</h4>

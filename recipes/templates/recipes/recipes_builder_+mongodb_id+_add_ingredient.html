@@ -6,12 +6,15 @@
 
 {% include "recipes/_recipes_builder_search_header.html" %}
 
+{% if saved %}
+<p>An ingredient of {{ servings_number }}{{ food_obj.serving_units }} of the {{ food_obj.food_name }} has been added to your {{ recipe_obj.recipe_name }} recipe. <a href="/recipes/builder/{{ recipe_obj.mongodb_id }}/">Click here</a> to add another ingredient, finish the recipe, or delete it.</a>
+{% endif %}
+
 {% for food_obj in food_objs %}
     <p>
     <b><a href="/recipes/builder/{{ recipe_obj.mongodb_id }}/add_ingredient/{{ food_obj.fdc_id }}/">{{ food_obj.food_name }}</a></b><br/>
     Calories: {{ food_obj.energy_kcal.amount|floatformat }}
     </p>
-    &nbsp;
 {% endfor %}
 
 {% if message %}<p><b>{{ message }}</b></p>{% endif %}

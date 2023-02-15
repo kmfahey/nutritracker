@@ -1,0 +1,15 @@
+{% extends "main/_base.html" %}
+
+{% block title %}Recipes - {{ recipe_obj.recipe_name }} - Finished{% endblock %}
+
+{% block content %}
+
+<h3>{{ recipe_obj.recipe_name }}</h3>
+
+{% include "main/_nutrition_facts_table.html" %}
+
+<p class="hastopmargin">Your recipe has been marked as complete. It can now be accessed in the <a href="/recipes/">main recipes list</a>.</p>
+
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "main/_base.html" %}
+
+{% block title %}Recipe Builder - {{ recipe_obj.recipe_name }} - Ingredient - {{ food_obj.food_name }}{% endblock %}
+
+{% block content %}
+
+<h3>{{ food_obj.food_name }}</h3>
+
+<h4 class="hastopmargin">Add Ingredient to Recipe</h4>
+
+{% if error %}
+    {% if message %}<p><b>{{ message }}</b></p>{% endif %}
+{% else %}
+    <p>You entered a servings number of {{ servings_number }}{{ food_obj.serving_units }}. Here's the nutrition facts for a serving of that size:</p>
+
+    {% include "main/_nutrition_facts_table.html" %}
+
+    <p>Is this the amount you want to add to your {{ recipe_obj.recipe_name }} recipe?</p>
+
+    <form action="/recipes/builder/{{ recipe_obj.mongodb_id }}/add_ingredient/" method="GET">
+        <input type="hidden" name="fdc_id" value="{{ food_obj.fdc_id }}" />
+        <input type="hidden" name="servings_number" value="{{ servings_number }}" />
+        <input class="larger" type="submit" name="button" value="Confirm" />
+    </form>
+
+    <p>(If not, you can <a href="/recipes/builder/{{ recipe_obj.mongodb_id }}/add_ingredient/">go back</a> to the {{ food_obj.food_name }} ingredient page and enter a different number of servings.)</a>
+{% endif %}
+
+{% endblock %}

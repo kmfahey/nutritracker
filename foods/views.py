@@ -191,7 +191,7 @@ def fdc_import(request):
         return retval
     fdc_id = retval
     food_model_objs = list(Food.objects.filter(fdc_id=fdc_id))
-    if len(food_objs):
+    if len(food_model_objs):
         context['imported'] = False
         context['food_obj'] = food_model_objs[0]
         return HttpResponse(template.render(context, request))
