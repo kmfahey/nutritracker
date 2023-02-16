@@ -14,10 +14,13 @@ from django.template import loader
 from django.db.models import Q
 
 from .models import Food
-from utils import Food_Detailed, Navigation_Links_Displayer, generate_pagination_links, get_cgi_params, slice_output_list_by_page, cast_to_int, Fdc_Api_Contacter, retrieve_pagination_params
+from utils import Food_Detailed, Navigation_Links_Displayer, generate_pagination_links, get_cgi_params, \
+        slice_output_list_by_page, cast_to_int, Fdc_Api_Contacter, retrieve_pagination_params
 
 
-navigation_links_displayer = Navigation_Links_Displayer({'/foods/': "Main Foods List", "/foods/local_search/": "Local Food Search", "/foods/fdc_search/": "FDC Food Search"})
+navigation_links_displayer = Navigation_Links_Displayer({'/foods/': "Main Foods List",
+                                                         "/foods/local_search/": "Local Food Search",
+                                                         "/foods/fdc_search/": "FDC Food Search"})
 
 default_page_size = config("DEFAULT_PAGE_SIZE")
 fdc_api_key = config("FDC_API_KEY")
@@ -59,7 +62,8 @@ def foods_fdc_id(request, fdc_id):
     template = loader.get_template('foods/foods_+fdc_id+.html')
     food_model_objs = Food.objects.filter(fdc_id=fdc_id)
     if not len(food_model_objs):
-        return HttpResponse(f"no object in 'foods' collection in 'nutritracker' data store with FDC ID {fdc_id}", status=404)
+        return HttpResponse(f"no object in 'foods' collection in 'nutritracker' data store with FDC ID {fdc_id}",
+                            status=404)
     elif len(food_model_objs) > 1:
         return HttpResponse(f"inconsistent state: multiple objects matching query for FDC ID {fdc_id}", status=500)
     food_model_obj = food_model_objs[0]
@@ -85,7 +89,8 @@ def local_search_results(request):
     local_search_template = loader.get_template('foods/foods_local_search.html')
     local_search_results_template = loader.get_template('foods/foods_local_search_results.html')
 
-    retval = retrieve_pagination_params(local_search_template, context, request, default_page_size, search_url, query=True)
+    retval = retrieve_pagination_params(local_search_template, context, request, default_page_size, search_url,
+                                        query=True)
     if isinstance(retval, HttpResponse):
         return retval
     search_query = retval["search_query"]
@@ -93,7 +98,8 @@ def local_search_results(request):
     page_number = retval["page_number"]
     kws = search_query.strip().split()
 
-    # This is equivelant to q_term = (Q(food_name__icontains=kws[0]) & Q(food_name__icontains=kws[1]) & ... & Q(food_name__icontains=kws[-1]))
+    # This is equivelant to q_term = (Q(food_name__icontains=kws[0]) & Q(food_name__icontains=kws[1])
+    #                                 & ... & Q(food_name__icontains=kws[-1]))
     q_term = reduce(and_, (Q(food_name__icontains=kw) for kw in kws))
     food_objs = list(Food.objects.filter(q_term))
     food_objs.sort(key=attrgetter('food_name'))
@@ -103,13 +109,15 @@ def local_search_results(request):
     elif len(food_objs) <= page_size and page_number > 1:
         context["more_than_one_page"] = True
         context["message"] = "No more results"
-        context["pagination_links"] = generate_pagination_links("/foods/local_search_results/", len(food_objs), page_size, page_number, search_query=search_query)
+        context["pagination_links"] = generate_pagination_links("/foods/local_search_results/", len(food_objs),
+                                                                page_size, page_number, search_query=search_query)
         return HttpResponse(local_search_template.render(context, request))
 
     food_objs = [Food_Detailed.from_model_obj(food_model_obj) for food_model_obj in food_objs]
     if len(food_objs) > page_size:
         context["more_than_one_page"] = True
-        context["pagination_links"] = generate_pagination_links("/foods/local_search_results/", len(food_objs), page_size, page_number, search_query=search_query)
+        context["pagination_links"] = generate_pagination_links("/foods/local_search_results/", len(food_objs),
+                                                                page_size, page_number, search_query=search_query)
         context['food_objs'] = slice_output_list_by_page(food_objs, page_size, page_number)
     else:
         context["more_than_one_page"] = False
@@ -136,7 +144,8 @@ def fdc_search_results(request):
     fdc_search_template = loader.get_template('foods/foods_fdc_search.html')
     fdc_search_results_template = loader.get_template('foods/foods_fdc_search_results.html')
 
-    retval = retrieve_pagination_params(fdc_search_template, context, request, default_page_size, search_url, query=True)
+    retval = retrieve_pagination_params(fdc_search_template, context, request, default_page_size, search_url,
+                                        query=True)
     if isinstance(retval, HttpResponse):
         return retval
     search_query = retval["search_query"]
@@ -147,7 +156,8 @@ def fdc_search_results(request):
     if not number_of_results:
         context["message"] = "No matches"
         return HttpResponse(fdc_search_template.render(context, request))
-    context["pagination_links"] = generate_pagination_links("/foods/fdc_search_results/", number_of_results, page_size, page_number, search_query=search_query)
+    context["pagination_links"] = generate_pagination_links("/foods/fdc_search_results/", number_of_results, page_size,
+                                                            page_number, search_query=search_query)
     if number_of_results < page_size * (page_number - 1) + 1:
         context["more_than_one_page"] = True
         context["message"] = "No more results"
@@ -209,4 +219,3 @@ def fdc_import(request):
 
     context['food_obj'] = food_model_obj
     return HttpResponse(template.render(context, request))
-

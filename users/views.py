@@ -1,17 +1,9 @@
 #!/usr/bin/python
 
 import math
-import bcrypt
 import html
 import urllib.parse
 
-from bson.objectid import ObjectId, InvalidId
-
-from decouple import config
-
-from operator import and_, attrgetter
-
-from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import redirect
 from django.views.decorators.http import require_http_methods
@@ -41,6 +33,7 @@ generate_nav_links_display_argd = lambda username=None: ({
                                                              "/users/logout/": "Logout"
                                                          })
 
+
 def _collect_account_params_from_cgi(cgi_params, template, context, request):
     return_dict = dict()
 
@@ -52,12 +45,14 @@ def _collect_account_params_from_cgi(cgi_params, template, context, request):
 
     for param_name, lowerb, upperb in (('age', 13, 120),        ('activity_level', 1, 5),
                                        ('weight_goal', -2, 2),  ('height_feet', 4, 8)):
-        retval = cast_to_int(cgi_params.get(param_name, None), param_name, template, context, request, lowerb=lowerb, upperb=upperb)
+        retval = cast_to_int(cgi_params.get(param_name, None), param_name, template, context, request,
+                             lowerb=lowerb, upperb=upperb)
         if isinstance(retval, HttpResponse):
             return retval
         return_dict[param_name] = retval
 
-    retval = cast_to_float(cgi_params.get('height_inches', None), 'height_inches', template, context, request, lowerb=0, upperb=11.999)
+    retval = cast_to_float(cgi_params.get('height_inches', None), 'height_inches', template, context, request,
+                           lowerb=0, upperb=11.999)
     if isinstance(retval, HttpResponse):
         return retval
     return_dict['height_inches'] = retval
@@ -77,7 +72,7 @@ def _retrieve_user_and_account_objs(request, username, template, context):
         return HttpResponse(template.render(context, request), status=404)
     elif not request.user.is_authenticated:
         context['error'] = True
-        context['message'] = f'To access your profile page, please <a href="/users/">login</a>.'
+        context['message'] = 'To access your profile page, please <a href="/users/">login</a>.'
         return HttpResponse(template.render(context, request), status=404)
 
     user_model_obj = request.user
@@ -96,12 +91,14 @@ def _retrieve_user_and_account_objs(request, username, template, context):
 def users(request):
     users_template = loader.get_template('users/users.html')
     navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd())
-    context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
+    context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/users/"),
+               'error': False, 'message': ''}
     return HttpResponse(users_template.render(context, request))
 
 
 @require_http_methods(["POST"])
 def users_auth(request):
+    originating_url = "/users/"
     cgi_params = get_cgi_params(request)
     users_template = loader.get_template('users/users.html')
 
@@ -118,7 +115,7 @@ def users_auth(request):
         context['message'] = "Username must be more than 0 characters long, and at most 32 characters long"
         return HttpResponse(users_template.render(context, request))
     try:
-        account_model_obj = Account.objects.get(username=username)
+        Account.objects.get(username=username)
     except Account.DoesNotExist:
         context['error'] = True
         context['message'] = f"No user account with username='{username}'"
@@ -128,7 +125,7 @@ def users_auth(request):
 
     if user_model_obj is None:
         context['error'] = True
-        context['message'] = f"Password submitted does not match password on record"
+        context['message'] = "Password submitted does not match password on record"
         return HttpResponse(users_template.render(context, request))
 
     login(request, user_model_obj)
@@ -166,7 +163,9 @@ def users_username(request, username):
     context["height_inches"] = round((account_model_obj.height % 1) * 12, 1)
     context["weight"] = round(account_model_obj.weight, 1)
     context["activity_level"] = ACTIVITY_LEVELS_TABLE[account_model_obj.activity_level]
-    context["weight_goal"] = f"{account_model_obj.weight_goal} lb / week" if account_model_obj.weight_goal != 0 else "maintain current weight"
+    context["weight_goal"] = (f"{account_model_obj.weight_goal} lb / week"
+                              if account_model_obj.weight_goal != 0
+                              else "maintain current weight")
 
     height_in_meters = account_model_obj.height * FEET_TO_METERS_CONVERSION_FACTOR
     weight_in_kilograms = account_model_obj.weight * POUNDS_TO_KILOGRAMS_CONVERSION_FACTOR
@@ -177,9 +176,11 @@ def users_username(request, username):
 
     height_in_centimeters = height_in_meters * 100
     if account_model_obj.gender_at_birth == "M":
-        basal_metabolic_rate = 66.473 + (13.7516 * weight_in_kilograms) + (5.0033 * height_in_centimeters) - (6.755 * account_model_obj.age)
+        basal_metabolic_rate = (66.473 + (13.7516 * weight_in_kilograms) + (5.0033 * height_in_centimeters)
+                                - (6.755 * account_model_obj.age))
     else:
-        basal_metabolic_rate = 655.0955 + (9.5634 * weight_in_kilograms) + (1.8496 * height_in_centimeters) - (4.6756 * account_model_obj.age)
+        basal_metabolic_rate = (655.0955 + (9.5634 * weight_in_kilograms) + (1.8496 * height_in_centimeters)
+                                - (4.6756 * account_model_obj.age))
 
     match account_model_obj.activity_level:
         case 1:
@@ -201,7 +202,8 @@ def users_username_edit_profile(request, username):
     profile_url = f"/users/{username}/"
     users_username_edit_profile_template = loader.get_template('users/users_+username+_edit_profile.html')
     navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd(username))
-    context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable(f"/users/{username}/"), 'error': False, 'message': ''}
+    context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable(f"/users/{username}/"),
+               'error': False, 'message': ''}
     cgi_params = get_cgi_params(request)
 
     retval = _retrieve_user_and_account_objs(request, username, users_username_edit_profile_template, context)
@@ -221,7 +223,8 @@ def users_username_edit_profile(request, username):
 
         account_model_obj.save()
 
-        redir_cgi_params = urllib.parse.urlencode({'error': False, 'message': 'Your profile details have been updated.'})
+        redir_cgi_params = urllib.parse.urlencode({'error': False,
+                                                   'message': 'Your profile details have been updated.'})
         return redirect(f"{profile_url}?{redir_cgi_params}")
     else:
         context["username"] = username
@@ -232,8 +235,8 @@ def users_username_edit_profile(request, username):
 
         context["gender_identity"] = account_model_obj.gender_identity
 
-        context["selected_if_he_him"] =    "selected" if account_model_obj.pronouns == "he" else ""
-        context["selected_if_she_her"] =   "selected" if account_model_obj.pronouns == "she" else ""
+        context["selected_if_he_him"] = "selected" if account_model_obj.pronouns == "he" else ""
+        context["selected_if_she_her"] = "selected" if account_model_obj.pronouns == "she" else ""
         context["selected_if_they_them"] = "selected" if account_model_obj.pronouns == "they" else ""
 
         context["age"] = account_model_obj.age
@@ -248,11 +251,11 @@ def users_username_edit_profile(request, username):
         context["selected_if_activity_level_4"] = "selected" if account_model_obj.activity_level == 4 else ""
         context["selected_if_activity_level_5"] = "selected" if account_model_obj.activity_level == 5 else ""
 
-        context["selected_if_weight_goal_plus_2"] = "selected"   if account_model_obj.weight_goal == 2 else ""
-        context["selected_if_weight_goal_plus_1"] = "selected"   if account_model_obj.weight_goal == 1 else ""
+        context["selected_if_weight_goal_plus_2"] = "selected" if account_model_obj.weight_goal == 2 else ""
+        context["selected_if_weight_goal_plus_1"] = "selected" if account_model_obj.weight_goal == 1 else ""
         context["selected_if_weight_goal_maintain"] = "selected" if account_model_obj.weight_goal == 0 else ""
-        context["selected_if_weight_goal_minus_1"] = "selected"  if account_model_obj.weight_goal == -1 else ""
-        context["selected_if_weight_goal_minus_2"] = "selected"  if account_model_obj.weight_goal == -2 else ""
+        context["selected_if_weight_goal_minus_1"] = "selected" if account_model_obj.weight_goal == -1 else ""
+        context["selected_if_weight_goal_minus_2"] = "selected" if account_model_obj.weight_goal == -2 else ""
 
         return HttpResponse(users_username_edit_profile_template.render(context, request))
 
@@ -270,12 +273,14 @@ def users_new_user(request):
         if isinstance(retval, HttpResponse):
             return retval
         account_obj_init_dict = retval
-        account_obj_init_dict['height'] = account_obj_init_dict['height_feet'] + account_obj_init_dict['height_inches'] / 12
+        account_obj_init_dict['height'] = (account_obj_init_dict['height_feet']
+                                           + account_obj_init_dict['height_inches'] / 12)
         del account_obj_init_dict['height_feet'], account_obj_init_dict['height_inches']
 
         user_obj_init_dict = dict()
         for param_name in ('username', 'password_initial', 'password_confirm'):
-            retval = check_str_param(cgi_params.get(param_name, None), param_name, users_new_user_template, context, request, upperb=32)
+            retval = check_str_param(cgi_params.get(param_name, None), param_name, users_new_user_template, context,
+                                     request, upperb=32)
             if isinstance(retval, HttpResponse):
                 return retval
             user_obj_init_dict[param_name] = retval
@@ -284,31 +289,35 @@ def users_new_user(request):
             quoted_reserved_words = tuple(map(lambda strval: "'%s'" % strval, URL_RESERVED_WORDS))
             reserved_words_expr = "%s, or %s" % (", ".join(quoted_reserved_words[:-1]), quoted_reserved_words[-1])
             context['error'] = True
-            context['message'] = f"Username must not be one of {quoted_reserved_words}"
+            context['message'] = f"Username must not be one of {reserved_words_expr}"
             return HttpResponse(users_new_user_template.render(context, request))
         account_obj_init_dict['username'] = user_obj_init_dict['username']
 
         if user_obj_init_dict['password_initial'] != user_obj_init_dict['password_confirm']:
             context['error'] = True
-            context['message'] = f"Passwords do not match"
+            context['message'] = "Passwords do not match"
             return HttpResponse(users_new_user_template.render(context, request))
 
-        user_model_obj = User.objects.create_user(username=user_obj_init_dict["username"], password=user_obj_init_dict["password_initial"])
+        user_model_obj = User.objects.create_user(username=user_obj_init_dict["username"],
+                                                  password=user_obj_init_dict["password_initial"])
         user_model_obj.save()
 
-        user_model_obj = authenticate(username=user_obj_init_dict["username"], password=user_obj_init_dict["password_initial"])
+        user_model_obj = authenticate(username=user_obj_init_dict["username"],
+                                      password=user_obj_init_dict["password_initial"])
 
         if user_model_obj is None:
             context['error'] = True
-            context['message'] = f"Could not authenticate user object with known-good password"
-            return HttpResponse(users_template.render(context, request), status=500)
+            context['message'] = "Could not authenticate user object with known-good password"
+            return HttpResponse(users_new_user_template.render(context, request), status=500)
 
         login(request, user_model_obj)
 
         account_model_obj = Account(**account_obj_init_dict)
         account_model_obj.save()
 
-        redir_cgi_params = urllib.parse.urlencode({'error': False, 'message': 'Your profile details have been set, and your account is ready to use.'})
+        redir_cgi_params = urllib.parse.urlencode({'error': False,
+                                                   'message': 'Your profile details have been set, '
+                                                              'and your account is ready to use.'})
         return redirect(f"/users/{user_model_obj.username}/?{redir_cgi_params}")
     else:
         context["username"] = ""
@@ -345,7 +354,8 @@ def users_username_change_password(request, username):
 
         password_params = dict()
         for param_name in ('current_password', 'new_password_initial', 'new_password_confirm'):
-            retval = check_str_param(cgi_params.get(param_name, None), param_name, users_username_change_password_template, context, request, upperb=32)
+            retval = check_str_param(cgi_params.get(param_name, None), param_name,
+                                     users_username_change_password_template, context, request, upperb=32)
             if isinstance(retval, HttpResponse):
                 return retval
             password_params[param_name] = retval
@@ -354,11 +364,11 @@ def users_username_change_password(request, username):
 
         if user_model_obj is None:
             context['error'] = True
-            context['message'] = f"Current password submitted does not match password on record"
+            context['message'] = "Current password submitted does not match password on record"
             return HttpResponse(users_username_change_password_template.render(context, request))
         elif password_params['new_password_initial'] != password_params['new_password_confirm']:
             context['error'] = True
-            context['message'] = f"Passwords do not match"
+            context['message'] = "Passwords do not match"
             return HttpResponse(users_username_change_password_template.render(context, request))
 
         user_model_obj.set_password(password_params['new_password_initial'])
@@ -372,13 +382,13 @@ def users_username_change_password(request, username):
 
         if user_model_obj is None:
             context['error'] = True
-            context['message'] = f"Could not authenticate user object with known-good password"
-            return HttpResponse(users_template.render(context, request), status=500)
+            context['message'] = "Could not authenticate user object with known-good password"
+            return HttpResponse((users_username_change_password_template.render(context, request), status=500)
 
         login(request, user_model_obj)
 
         context['error'] = False
-        context['message'] = f"Your password has been updated."
+        context['message'] = "Your password has been updated."
 
     return HttpResponse(users_username_change_password_template.render(context, request))
 
@@ -389,7 +399,6 @@ def users_username_confirm_delete_user(request, username):
     navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd(username))
     context = {'subordinate_navigation': navigation_links_displayer.full_href_list_callable(),
                'error': False, 'message': '', 'username': username}
-    cgi_params = get_cgi_params(request)
 
     retval = _retrieve_user_and_account_objs(request, username, users_username_confirm_delete_user_template, context)
     if isinstance(retval, HttpResponse):
@@ -404,7 +413,7 @@ def users_username_confirm_delete_user(request, username):
 @require_http_methods(["GET", "POST"])
 def users_delete_user(request):
     users_delete_user_template = loader.get_template('users/users_delete_user.html')
-    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd(username))
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd())
     context = {'subordinate_navigation': navigation_links_displayer.full_href_list_callable(),
                'error': False, 'message': ''}
     cgi_params = get_cgi_params(request)
@@ -414,7 +423,11 @@ def users_delete_user(request):
         context['message'] = f"No 'username' CGI parameter specified, unable to delete user"
         return HttpResponse(users_delete_user_template.render(context, request))
 
-    username = check_str_param(cgi_params.get('username', None), 'username', users_delete_user_template, context, request)
+    username = check_str_param(cgi_params.get('username', None), 'username', users_delete_user_template, context,
+                               request)
+
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd(username))
+    context['subordinate_navigation'] = navigation_links_displayer.full_href_list_callable(),
 
     retval = _retrieve_user_and_account_objs(request, username, users_delete_user_template, context)
     if isinstance(retval, HttpResponse):
@@ -438,7 +451,7 @@ def users_logout(request):
 
     if not request.user.is_authenticated:
         context['error'] = True
-        context['message'] = f'No user logged in; unable to log out'
+        context['message'] = 'No user logged in; unable to log out'
         return HttpResponse(users_logout_template.render(context, request))
 
     user_model_obj = request.user
@@ -451,4 +464,3 @@ def users_logout(request):
     context['message'] = f"User with username='{user_model_obj.username}' logged out"
 
     return HttpResponse(users_logout_template.render(context, request))
-
