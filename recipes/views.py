@@ -236,7 +236,7 @@ def builder_mongodb_id_remove_ingredient(request, mongodb_id):
 
     if not len(cgi_params.keys()):
         return redirect(f"/recipes/builder/{mongodb_id}/add_ingredient/")
-    retval = cast_to_int(cgi_params.get('fdc_id', ''), 'fdc_id', builder_mongodb_id_add_ingredient_template, context, request)
+    retval = cast_to_int(cgi_params.get('fdc_id', 0), 'fdc_id', builder_mongodb_id_add_ingredient_template, context, request, lowerb=1)
     if isinstance(retval, HttpResponse):
         return retval
     fdc_id = retval
@@ -283,7 +283,7 @@ def builder_mongodb_id_add_ingredient(request, mongodb_id):
     context["recipe_obj"] = recipe_obj
 
     if "fdc_id" in cgi_params:
-        retval = cast_to_int(cgi_params.get('fdc_id', ''), 'fdc_id', builder_mongodb_id_add_ingredient_template, context, request)
+        retval = cast_to_int(cgi_params.get('fdc_id', 0), 'fdc_id', builder_mongodb_id_add_ingredient_template, context, request, lowerb=1)
         if isinstance(retval, HttpResponse):
             return retval
         fdc_id = retval

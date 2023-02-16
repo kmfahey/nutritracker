@@ -186,7 +186,7 @@ def fdc_import(request):
     cgi_params = get_cgi_params(request)
     api_contacter = Fdc_Api_Contacter(fdc_api_key)
 
-    retval = cast_to_int(cgi_params.get('fdc_id', 0), 'fdc_id', template, context, request)
+    retval = cast_to_int(cgi_params.get('fdc_id', 0), 'fdc_id', template, context, request, lowerb=1)
     if isinstance(retval, HttpResponse):
         return retval
     fdc_id = retval
