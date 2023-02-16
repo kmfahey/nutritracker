@@ -251,8 +251,8 @@ def recipes_builder_mongodb_id_remove_ingredient(request, mongodb_id):
         break
     if not found:
         context["error"] = True
-        context["message"] = f"Error 422: recipe with _id='{mongodb_id}' has no ingredient with fdc_id='{fdc_id}'"
-        return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request), status=422)
+        context["message"] = f"recipe with _id='{mongodb_id}' has no ingredient with fdc_id='{fdc_id}'"
+        return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
     recipe_model_obj.save()
     context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
 
@@ -296,8 +296,8 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
             assert servings_number > 0
         except (ValueError, AssertionError):
             context["error"] = True
-            context["message"] = "Error 422: value for 'servings_number' must be a floating-point number greater than zero"
-            return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request), status=422)
+            context["message"] = "value for 'servings_number' must be a floating-point number greater than zero"
+            return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
 
         try:
             food_model_obj = Food.objects.get(fdc_id=fdc_id)
@@ -421,8 +421,8 @@ def recipes_builder_mongodb_id_add_ingredient_fdc_id_confirm(request, mongodb_id
         assert servings_number > 0
     except (ValueError, AssertionError):
         context["error"] = True
-        context["message"] = "Error 422: value for 'servings_number' must be a floating-point number greater than zero"
-        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request), status=422)
+        context["message"] = "value for 'servings_number' must be a floating-point number greater than zero"
+        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request))
 
     context["servings_number"] = servings_number
 

@@ -61,13 +61,13 @@ def cast_to_int(strval, param_name, template, context, request, lowerb=-math.inf
     if strval is None:
         context["error"] = True
         context["message"] = f"a value for {param_name} is required"
-        return HttpResponse(template.render(context, request), status=422)
+        return HttpResponse(template.render(context, request))
     try:
         intval = int(strval)
     except ValueError:
         context["error"] = True
         context["message"] = f"value for {param_name} must be an integer; received {strval}"
-        return HttpResponse(template.render(context, request), status=422)
+        return HttpResponse(template.render(context, request))
     if not (lowerb <= intval <= upperb):
         if lowerb == -math.inf:
             context["message"] = f"value for {param_name} must be an integer less than or equal to {upperb}; received {intval}"
@@ -75,7 +75,7 @@ def cast_to_int(strval, param_name, template, context, request, lowerb=-math.inf
             context["message"] = f"value for {param_name} must be an integer greater than or equal to {lowerb}; received {intval}"
         else:
             context["message"] = f"value for {param_name} must be an integer greater than or equal to {lowerb} and less than or equal to {upperb}; received {intval}"
-        return HttpResponse(template.render(context, request), status=422)
+        return HttpResponse(template.render(context, request))
     return intval
 
 
@@ -83,13 +83,13 @@ def cast_to_float(strval, param_name, template, context, request, lowerb=-math.i
     if strval is None:
         context["error"] = True
         context["message"] = f"a value for {param_name} is required"
-        return HttpResponse(template.render(context, request), status=422)
+        return HttpResponse(template.render(context, request))
     try:
         floatval = float(strval)
     except ValueError:
         context["error"] = True
         context["message"] = f"value for {param_name} must be a floating-point value; received {strval}"
-        return HttpResponse(template.render(context, request), status=422)
+        return HttpResponse(template.render(context, request))
     if not (lowerb <= floatval <= upperb):
         context["error"] = True
         if lowerb == -math.inf:
@@ -98,7 +98,7 @@ def cast_to_float(strval, param_name, template, context, request, lowerb=-math.i
             context["message"] = f"value for {param_name} must be a floating-point value greater than or equal to {lowerb}; received {floatval}"
         else:
             context["message"] = f"value for {param_name} must be a floating-point value greater than or equal to {lowerb} and less than or equal to {upperb}; received {floatval}"
-        return HttpResponse(template.render(context, request), status=422)
+        return HttpResponse(template.render(context, request))
     return floatval
 
 
@@ -112,14 +112,14 @@ def check_str_param(strval, param_name, template, context, request, lowerb=0, up
     if strval is None:
         context["error"] = True
         context["message"] = f"a value for {param_name} is required"
-        return HttpResponse(template.render(context, request), status=422)
+        return HttpResponse(template.render(context, request))
     elif not (lowerb <= len(strval) <= upperb):
         context["error"] = True
         if upperb == math.inf:
             context["message"] = f"value for {param_name} must be a string with length greater than {lowerb} characters long"
         else:
             context["message"] = f"value for {param_name} must be a string with length between {lowerb} characters and {upperb} characters"
-        return HttpResponse(template.render(context, request), status=422)
+        return HttpResponse(template.render(context, request))
     return strval
 
 

@@ -78,19 +78,19 @@ def users_auth(request):
     if not (0 < len(username) <= 32):
         context['error'] = True
         context['message'] = "Username must be more than 0 characters long, and at most 32 characters long"
-        return HttpResponse(users_template.render(context, request), status=422)
+        return HttpResponse(users_template.render(context, request))
     try:
         account_model_obj = Account.objects.get(username=username)
     except Account.DoesNotExist:
         context['error'] = True
         context['message'] = f"No user account with username='{username}'"
-        return HttpResponse(users_template.render(context, request), status=422)
+        return HttpResponse(users_template.render(context, request))
     submitted_password = cgi_params['password'].encode('utf-8')
     authenticates = bcrypt.checkpw(submitted_password, account_model_obj.password_encrypted)
     if not authenticates:
         context['error'] = True
         context['message'] = f"Password submitted does not match password on record"
-        return HttpResponse(users_template.render(context, request), status=422)
+        return HttpResponse(users_template.render(context, request))
 
     return redirect(f"/users/{username}/")
 
@@ -243,13 +243,13 @@ def users_new_user(request):
             reserved_words_expr = "%s, or %s" % (", ".join(quoted_reserved_words[:-1]), quoted_reserved_words[-1])
             context['error'] = True
             context['message'] = f"Username must not be one of {quoted_reserved_words}"
-            return HttpResponse(users_new_user_template.render(context, request), status=422)
+            return HttpResponse(users_new_user_template.render(context, request))
         account_obj_init_dict['username'] = account_other_params['username']
 
         if account_other_params['password_initial'] != account_other_params['password_confirm']:
             context['error'] = True
             context['message'] = f"Passwords do not match"
-            return HttpResponse(users_new_user_template.render(context, request), status=422)
+            return HttpResponse(users_new_user_template.render(context, request))
         password_bytes = account_other_params['password_initial'].encode('utf-8')
         salt = bcrypt.gensalt()
         account_obj_init_dict['password_encrypted'] = bcrypt.hashpw(password_bytes, salt)
@@ -305,11 +305,11 @@ def users_username_change_password(request, username):
         if not authenticates:
             context['error'] = True
             context['message'] = f"Current password submitted does not match password on record"
-            return HttpResponse(users_username_change_password_template.render(context, request), status=422)
+            return HttpResponse(users_username_change_password_template.render(context, request))
         elif password_params['new_password_initial'] != password_params['new_password_confirm']:
             context['error'] = True
             context['message'] = f"Passwords do not match"
-            return HttpResponse(users_username_change_password_template.render(context, request), status=422)
+            return HttpResponse(users_username_change_password_template.render(context, request))
 
         password_bytes = password_params['new_password_initial'].encode('utf-8')
         salt = bcrypt.gensalt()
