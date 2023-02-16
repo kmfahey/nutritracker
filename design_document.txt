@@ -201,4 +201,3 @@ pages needed
 
 TODO:
     somehow modify how dv_perc is calculated to use the user's calories per day instead of 2000
-    prepand recipes_ to all view functions in recipes.views
