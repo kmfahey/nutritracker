@@ -41,35 +41,35 @@ class Food(models.Model, serializable):
 
     _id                    = models.ObjectIdField(primary_key=True)
     fdc_id                 = models.PositiveIntegerField(     default=0,  verbose_name="Food Data Central ID")
-    food_name              = models.CharField(max_length=200, default="", verbose_name="food name")
-    serving_size           = models.FloatField(               default=1,  verbose_name="serving size")
-    serving_units          = models.CharField(max_length=30,  default="", verbose_name="serving units")
-    energy_kcal            = models.PositiveSmallIntegerField(default=0,  verbose_name="energy (kcal)")
-    total_fat_g            = models.PositiveSmallIntegerField(default=0,  verbose_name="total fat (g)")
-    saturated_fat_g        = models.PositiveSmallIntegerField(default=0,  verbose_name="saturated fat (g)")
-    trans_fat_g            = models.PositiveSmallIntegerField(default=0,  verbose_name="trans fat (g)")
-    cholesterol_mg         = models.PositiveSmallIntegerField(default=0,  verbose_name="cholesterol (mg)")
-    sodium_mg              = models.PositiveSmallIntegerField(default=0,  verbose_name="sodium (mg)")
-    total_carbohydrates_g  = models.PositiveSmallIntegerField(default=0,  verbose_name="total carbohydrates (g)")
-    dietary_fiber_g        = models.PositiveSmallIntegerField(default=0,  verbose_name="dietary fiber (g)")
-    sugars_g               = models.PositiveSmallIntegerField(default=0,  verbose_name="sugars (g)")
-    protein_g              = models.PositiveSmallIntegerField(default=0,  verbose_name="protein (g)")
-    vitamin_D_mcg          = models.PositiveSmallIntegerField(default=0,  verbose_name="vitamin D (mcg)")
-    potassium_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="potassium (mg)")
-    iron_mg                = models.PositiveSmallIntegerField(default=0,  verbose_name="iron (mg)")
-    calcium_mg             = models.PositiveSmallIntegerField(default=0,  verbose_name="calcium (mg)")
-    vitamin_E_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="vitamin E (mg)")
-    thiamin_B1_mg          = models.PositiveSmallIntegerField(default=0,  verbose_name="thiamin (vitamin B1) (mg)")
-    riboflavin_B2_mg       = models.PositiveSmallIntegerField(default=0,  verbose_name="riboflavin (vitamin B2) (mg)")
-    niacin_B3_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="niacin (vitamin B3) (mg)")
-    folate_B9_mcg          = models.PositiveSmallIntegerField(default=0,  verbose_name="folate (vitamin B9) (mcg)")
-    biotin_B7_mcg          = models.PositiveSmallIntegerField(default=0,  verbose_name="biotin (vitamin B7) (mcg)")
-    pantothenic_acid_B5_mg = models.PositiveSmallIntegerField(default=0,  verbose_name="pantothenic acid (vitamin B5) (mg)")
-    phosphorous_mg         = models.PositiveSmallIntegerField(default=0,  verbose_name="phosphorus (mg)")
-    iodine_mcg             = models.PositiveSmallIntegerField(default=0,  verbose_name="iodine (mcg)")
-    magnesium_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="magnesium (mg)")
-    zinc_mg                = models.PositiveSmallIntegerField(default=0,  verbose_name="zinc (mg)")
-    copper_mg              = models.PositiveSmallIntegerField(default=0,  verbose_name="copper (mg)")
+    food_name              = models.CharField(max_length=200, default="", verbose_name="Food name")
+    serving_size           = models.FloatField(               default=1,  verbose_name="Serving size")
+    serving_units          = models.CharField(max_length=30,  default="", verbose_name="Serving units")
+    energy_kcal            = models.PositiveSmallIntegerField(default=0,  verbose_name="Energy (kcal)")
+    total_fat_g            = models.PositiveSmallIntegerField(default=0,  verbose_name="Total fat (g)")
+    saturated_fat_g        = models.PositiveSmallIntegerField(default=0,  verbose_name="Saturated fat (g)")
+    trans_fat_g            = models.PositiveSmallIntegerField(default=0,  verbose_name="Trans fat (g)")
+    cholesterol_mg         = models.PositiveSmallIntegerField(default=0,  verbose_name="Cholesterol (mg)")
+    sodium_mg              = models.PositiveSmallIntegerField(default=0,  verbose_name="Sodium (mg)")
+    total_carbohydrates_g  = models.PositiveSmallIntegerField(default=0,  verbose_name="Total carbohydrates (g)")
+    dietary_fiber_g        = models.PositiveSmallIntegerField(default=0,  verbose_name="Dietary fiber (g)")
+    sugars_g               = models.PositiveSmallIntegerField(default=0,  verbose_name="Sugars (g)")
+    protein_g              = models.PositiveSmallIntegerField(default=0,  verbose_name="Protein (g)")
+    vitamin_D_mcg          = models.PositiveSmallIntegerField(default=0,  verbose_name="Vitamin D (mcg)")
+    potassium_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="Potassium (mg)")
+    iron_mg                = models.PositiveSmallIntegerField(default=0,  verbose_name="Iron (mg)")
+    calcium_mg             = models.PositiveSmallIntegerField(default=0,  verbose_name="Calcium (mg)")
+    vitamin_E_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="Vitamin E (mg)")
+    thiamin_B1_mg          = models.PositiveSmallIntegerField(default=0,  verbose_name="Thiamin (vitamin B1) (mg)")
+    riboflavin_B2_mg       = models.PositiveSmallIntegerField(default=0,  verbose_name="Riboflavin (vitamin B2) (mg)")
+    niacin_B3_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="Niacin (vitamin B3) (mg)")
+    folate_B9_mcg          = models.PositiveSmallIntegerField(default=0,  verbose_name="Folate (vitamin B9) (mcg)")
+    biotin_B7_mcg          = models.PositiveSmallIntegerField(default=0,  verbose_name="Biotin (vitamin B7) (mcg)")
+    pantothenic_acid_B5_mg = models.PositiveSmallIntegerField(default=0,  verbose_name="Pantothenic acid (vitamin B5) (mg)")
+    phosphorous_mg         = models.PositiveSmallIntegerField(default=0,  verbose_name="Phosphorus (mg)")
+    iodine_mcg             = models.PositiveSmallIntegerField(default=0,  verbose_name="Iodine (mcg)")
+    magnesium_mg           = models.PositiveSmallIntegerField(default=0,  verbose_name="Magnesium (mg)")
+    zinc_mg                = models.PositiveSmallIntegerField(default=0,  verbose_name="Zinc (mg)")
+    copper_mg              = models.PositiveSmallIntegerField(default=0,  verbose_name="Copper (mg)")
 
     class Meta:
         managed = False
@@ -81,7 +81,7 @@ class Ingredient(models.Model, serializable):
     __columns__ = '_id', 'servings_number', 'food'
 
     _id                    = models.ObjectIdField(primary_key=True)
-    servings_number        = models.FloatField(               default=0,  verbose_name="servings number")
+    servings_number        = models.FloatField(               default=0,  verbose_name="Servings number")
     food                   = models.EmbeddedField(model_container=Food,   verbose_name="Food")
 
     class Meta:
@@ -91,12 +91,13 @@ class Ingredient(models.Model, serializable):
 
 
 class Recipe(models.Model, serializable):
-    __columns__ = '_id', 'recipe_name', 'complete', 'ingredients'
+    __columns__ = '_id', 'owner', 'recipe_name', 'complete', 'ingredients'
 
     _id                    = models.ObjectIdField(primary_key=True)
-    recipe_name            = models.CharField(max_length=200, default="", verbose_name="recipe name")
-    complete               = models.BooleanField(default=True, verbose_name="recipe has been completed")
-    ingredients            = models.ArrayField(model_container=Ingredient, verbose_name="recipe ingredients")
+    owner                  = models.CharField(max_length=32, default="", verbose_name="Username")
+    recipe_name            = models.CharField(max_length=200, default="", verbose_name="Recipe name")
+    complete               = models.BooleanField(default=True, verbose_name="Recipe has been completed")
+    ingredients            = models.ArrayField(model_container=Ingredient, verbose_name="Recipe ingredients")
 
     class Meta:
         managed = False
