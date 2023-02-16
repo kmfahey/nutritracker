@@ -2,6 +2,8 @@
 
 import math
 import bcrypt
+import html
+import urllib.parse
 
 from django.shortcuts import render
 
@@ -18,7 +20,7 @@ from django.template import loader
 
 from .models import Account
 
-from utils import ACTIVITY_LEVELS_TABLE, FEET_TO_METERS_CONVERSION_FACTOR, POUNDS_TO_KILOGRAMS_CONVERSION_FACTOR, BMI_THRESHOLDS, Navigation_Links_Displayer,  get_cgi_params
+from utils import ACTIVITY_LEVELS_TABLE, FEET_TO_METERS_CONVERSION_FACTOR, POUNDS_TO_KILOGRAMS_CONVERSION_FACTOR, BMI_THRESHOLDS, Navigation_Links_Displayer, get_cgi_params, cast_to_int, cast_to_float, check_str_param
 
 
 navigation_link_displayer = Navigation_Links_Displayer({'/users/': 'Login'})
@@ -61,9 +63,11 @@ def users_auth(request):
     return redirect(f"/users/{username}/")
 
 
+@require_http_methods(["GET", "POST"])
 def users_username(request, username):
     users_username_template = loader.get_template('users/users_+username+.html')
     context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
+    cgi_params = get_cgi_params(request)
 
     try:
         account_model_obj = Account.objects.get(username=username)
@@ -72,6 +76,18 @@ def users_username(request, username):
         context['message'] = f"No user account with username='{username}'"
         return HttpResponse(users_username_template.render(context, request), status=404)
     context["account_model_obj"] = account_model_obj
+
+    if cgi_params and 'message' in cgi_params and 'error' in cgi_params:
+        context['error'] = False if cgi_params.get('error', None) == 'False' else True
+        # Since message is a CGI-submitted value that is displayed on a webpage,
+        # it's necessary to sanitize the input. I've opted to escape all HTML
+        # metacharacters using html.escape().
+        context["message"] = html.escape(cgi_params.get("message", ""))
+
+    context["gender_at_birth"] = "male" if account_model_obj.gender_at_birth == "M" else "female"
+    context["pronouns"] = ("he/him" if account_model_obj.pronouns == "he"
+                           else "she/her" if account_model_obj.pronouns == "she"
+                           else "they/them")
 
     context["height_feet"] = math.floor(account_model_obj.height)
     context["height_inches"] = round((account_model_obj.height % 1) * 12, 1)
@@ -107,15 +123,83 @@ def users_username(request, username):
     return HttpResponse(users_username_template.render(context, request))
 
 
+def users_username_edit_profile(request, username):
+    profile_url = f"/users/{username}/"
+    users_username_edit_profile_template = loader.get_template('users/users_+username+_edit_profile.html')
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
+    cgi_params = get_cgi_params(request)
+
+    try:
+        account_model_obj = Account.objects.get(username=username)
+    except Account.DoesNotExist:
+        context['error'] = True
+        context['message'] = f"No user account with username='{username}'"
+        return HttpResponse(users_username_edit_profile_template.render(context, request), status=404)
+    context["account_model_obj"] = account_model_obj
+
+    if len(cgi_params):
+        for param_name in ('display_name', 'gender_at_birth', 'gender_identity', 'pronouns'):
+            retval = check_str_param(cgi_params.get(param_name, None), param_name, users_username_edit_profile_template, context, request)
+            if isinstance(retval, HttpResponse):
+                return retval
+            setattr(account_model_obj, param_name, retval)
+
+        for param_name, lowerb, upperb in (('age', 13, 120), ('activity_level', 1, 5), ('weight_goal', -2, 2), ('height_feet', 4, 8)):
+            retval = cast_to_int(cgi_params.get(param_name, None), param_name, users_username_edit_profile_template, context, request, lowerb=lowerb, upperb=upperb)
+            if isinstance(retval, HttpResponse):
+                return retval
+            setattr(account_model_obj, param_name, retval)
+
+        retval = cast_to_float(cgi_params.get('height_inches', None), 'height_inches', users_username_edit_profile_template, context, request, lowerb=0, upperb=11.999)
+        if isinstance(retval, HttpResponse):
+            return retval
+        setattr(account_model_obj, 'height_inches', retval)
+
+        retval = cast_to_float(cgi_params.get('weight', None), 'weight', users_username_edit_profile_template, context, request)
+        if isinstance(retval, HttpResponse):
+            return retval
+        setattr(account_model_obj, 'weight', retval)
+
+        account_model_obj.save()
+
+        redir_cgi_params = urllib.parse.urlencode({'error': False, 'message': 'Your profile details have been updated.'})
+        return redirect(f"{profile_url}?{redir_cgi_params}")
+    else:
+        context["username"] = username
+
+        context["selected_if_male"] =      "selected" if account_model_obj.gender_at_birth == "M" else ""
+        context["selected_if_female"] =    "selected" if account_model_obj.gender_at_birth == "F" else ""
+
+        context["selected_if_he_him"] =    "selected" if account_model_obj.pronouns == "he" else ""
+        context["selected_if_she_her"] =   "selected" if account_model_obj.pronouns == "she" else ""
+        context["selected_if_they_them"] = "selected" if account_model_obj.pronouns == "they" else ""
+
+        context["height_feet"] = math.floor(account_model_obj.height)
+        context["height_inches"] = round((account_model_obj.height % 1) * 12, 1)
+        context["weight"] = round(account_model_obj.weight, 1)
+
+        context["selected_if_activity_level_1"] = "selected" if account_model_obj.activity_level == 1 else ""
+        context["selected_if_activity_level_2"] = "selected" if account_model_obj.activity_level == 2 else ""
+        context["selected_if_activity_level_3"] = "selected" if account_model_obj.activity_level == 3 else ""
+        context["selected_if_activity_level_4"] = "selected" if account_model_obj.activity_level == 4 else ""
+        context["selected_if_activity_level_5"] = "selected" if account_model_obj.activity_level == 5 else ""
+
+        context["selected_if_weight_goal_plus_2"] = "selected"   if account_model_obj.weight_goal == 2 else ""
+        context["selected_if_weight_goal_plus_1"] = "selected"   if account_model_obj.weight_goal == 1 else ""
+        context["selected_if_weight_goal_maintain"] = "selected" if account_model_obj.weight_goal == 0 else ""
+        context["selected_if_weight_goal_minus_1"] = "selected"  if account_model_obj.weight_goal == -1 else ""
+        context["selected_if_weight_goal_minus_2"] = "selected"  if account_model_obj.weight_goal == -2 else ""
+
+        return HttpResponse(users_username_edit_profile_template.render(context, request))
+
+
 #def users_new(request):
 #    pass
 #
 #def users_username_password(request, username):
 #    pass
-#
-#def users_username_edit_profile(request, username):
-#    pass
-#
+
+
 #def users_username_confirm_delete(request, username):
 #    pass
 #

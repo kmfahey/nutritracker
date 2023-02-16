@@ -9,14 +9,28 @@
 {% if message %}<p><b>{{ message }}</b></p>{% endif %}
 
 {% if error is False %}
-    <table style="width: 50%;">
+    <table style="width: 70%;">
         <tr>
-            <th class="leftaligned">Height</th>
-            <th class="leftaligned">Weight</th>
-            <th class="leftaligned">Activity Level</th>
-            <th class="leftaligned">Weight Goal</th>
+            <th class="leftaligned">Display Name:</th>
+            <th class="leftaligned">Gender Assigned<br/>at Birth:</th>
+            <th class="leftaligned">Gender Identity:</th>
+            <th class="leftaligned" colspan="2">Pronouns:</th>
         </tr>
         <tr>
+            <td>{{ account_model_obj.display_name }}</td>
+            <td>{{ gender_at_birth }}</td>
+            <td>{{ account_model_obj.gender_identity }}</td>
+            <td colspan="2">{{ pronouns }}</td>
+        </tr>
+        <tr>
+            <th class="leftaligned">Age</th>
+            <th class="leftaligned">Height</th>
+            <th class="leftaligned">Weight</th>
+            <th class="leftaligned">Activity&nbsp;Level</th>
+            <th class="leftaligned">Weight&nbsp;Goal</th>
+        </tr>
+        <tr>
+            <td>{{ account_model_obj.age }}</td>
             <td>{{ height_feet }}&#8242;{{ height_inches }}&#8243;</td>
             <td>{{ weight }}</td>
             <td>{{ activity_level }}</td>
@@ -24,14 +38,27 @@
         </tr>
         <tr>
             <th class="leftaligned" colspan="2">Body-Mass Index</th>
-            <th class="leftaligned" colspan="2">Active Metabolic Rate</th>
+            <th class="leftaligned" colspan="3">Active Metabolic Rate <span class="superscript">*</span></th>
         </tr>
         <tr>
             <td colspan="2">{{ body_mass_index }} ({{ bmi_reading }})</td>
-            <td colspan="2">{{ active_metabolic_rate }} Calories</td>
+            <td colspan="3">{{ active_metabolic_rate }} Calories</td>
         </tr>
+        <tr>
+            <td colspan="5" class="smaller">
+                Your active metabolic rate is the number of Calories you burn
+                at your activity level; you must consume that many Calories to
+                maintain your weight. If you wish to lose weight, you need to
+                eat less than this amount, and if you wish to gain weight you
+                need to eat more than this amount.
+            </td>
     </table>
-    <p>Your active metabolic rate is the number of Calories you burn at your activity level; you must consume that many Calories to maintain your weight. If you wish to lose weight, you need to eat less than that amount, and if you wish to gain weight you need to eat more than that amount.</p>
+
+    <p>
+        <a href="/users/{{ account_model_obj.username }}/edit_profile/">
+            <input class="larger" type="submit" name="button" value="Edit Profile"/>
+        </a>
+    </p>
 {% endif %}
 
 {% endblock %}
