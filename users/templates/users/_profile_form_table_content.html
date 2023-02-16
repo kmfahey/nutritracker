@@ -1,0 +1,66 @@
+            <tr>
+                <th class="leftaligned">Display name:</th>
+                <td><input class="larger" type="text" name="display_name" size="30" value="{{ display_name }}"/></td>
+            </tr>
+            <tr>
+                <th class="leftaligned">Gender&nbsp;Assigned at&nbsp;Birth:</th>
+                <td>
+                    <select class="larger" name="gender_at_birth">
+                        <option value="M" {{ selected_if_male }}>Male</option>
+                        <option value="F" {{ selected_if_female }}>Female</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th class="leftaligned">Gender identity:</th>
+                <td><input class="larger" type="text" name="gender_identity" size="30" value="{{ gender_identity }}"/></td>
+            </tr>
+            <tr>
+                <th class="leftaligned">Preferred pronouns:</th>
+                <td>
+                    <select class="larger" name="pronouns">
+                        <option value="he" {{ selected_if_he_him }}>he/him</option>
+                        <option value="she"{{ selected_if_she_her }}>she/her</option>
+                        <option value="they"{{ selected_if_they_them }}>they/them</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th class="leftaligned">Age:</th>
+                <td><input class="larger" type="text" name="age" size="8" value="{{ age }}"/></td>
+            </tr>
+            <tr>
+                <th class="leftaligned">Height:</th>
+                <td>
+                    <input class="larger" type="text" name="height_feet" value="{{ height_feet }}" size="8"/> feet,
+                    <input class="larger" type="text" name="height_inches" value="{{ height_inches }}" size="8"/> inches
+                </td>
+            </tr>
+            <tr>
+                <th class="leftaligned">Weight:</th>
+                <td><input class="larger" type="text" name="weight" value="{{ weight }}" size="8"/> lb.</td>
+            </tr>
+            <tr>
+                <th class="leftaligned">Activity Level:</th>
+                <td>
+                    <select class="larger" name="activity_level">
+                        <option value="1" {{ selected_if_activity_level_1 }}>Sedentary</option>
+                        <option value="2" {{ selected_if_activity_level_2 }}>Lightly active</option>
+                        <option value="3" {{ selected_if_activity_level_3 }}>Moderately active</option>
+                        <option value="4" {{ selected_if_activity_level_4 }}>Active</option>
+                        <option value="5" {{ selected_if_activity_level_5 }}>Very active</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th class="leftaligned">Weight Goal:</th>
+                <td>
+                    <select class="larger" name="weight_goal">
+                        <option value="2" {{ selected_if_weight_goal_plus_2 }}>Gain 2 lb / week</option>
+                        <option value="1" {{ selected_if_weight_goal_plus_1 }}>Gain 1 lb / week</option>
+                        <option value="0" {{ selected_if_weight_goal_maintain }}>Maintain current weight</option>
+                        <option value="-1" {{ selected_if_weight_goal_minus_1 }}>Lose 1 lb / week</option>
+                        <option value="-2" {{ selected_if_weight_goal_minus_2 }}>Lose 2 lb / week</option>
+                    </select>
+                </td>
+            </tr>

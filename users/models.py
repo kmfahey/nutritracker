@@ -6,7 +6,8 @@ from djongo import models
 
 
 class Account(models.Model):
-    __columns__ = '_id', 'username', 'password_encrypted', 'display_name', 'gender_at_birth', 'gender_identity', 'pronouns', 'height', 'weight', 'activity_level', 'weight_goal'
+    __columns__ = ('_id', 'username', 'password_encrypted', 'display_name', 'gender_at_birth', 'gender_identity',
+                   'pronouns', 'age', 'height', 'weight', 'activity_level', 'weight_goal')
 
     _id                 = models.ObjectIdField(primary_key=True)
     username            = models.CharField(max_length=32,       default="",  verbose_name="Username")

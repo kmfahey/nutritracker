@@ -1,0 +1,37 @@
+{% extends "main/_base.html" %}
+
+{% block title %}Create New User{% endblock %}
+
+{% block content %}
+
+<h3>Create New User</h3>
+
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
+<p>Please fill in your personal details to create your account.</p>
+
+{% if error is False %}
+    <form action="/users/new_user/" method="POST">
+        {% csrf_token %}
+
+        <table style="width: 70%">
+            <tr>
+                <th class="leftaligned">Username:</th>
+                <td><input class="larger" type="text" name="username" size="32"/></td>
+            </tr>
+            <tr>
+                <th class="leftaligned">Password:</th>
+                <td><input class="larger" type="password" name="password_initial" size="32"/></td>
+            </tr>
+            <tr>
+                <th class="leftaligned">Password (again, to confirm):</th>
+                <td><input class="larger" type="password" name="password_confirm" size="32"/></td>
+            </tr>
+            {% include "users/_profile_form_table_content.html" %}
+        </table>
+
+        <input class="larger hastopmargin" type="submit" name="button" value="Create User"/>
+    </form>
+{% endif %}
+
+{% endblock %}

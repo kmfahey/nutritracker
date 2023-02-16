@@ -20,10 +20,42 @@ from django.template import loader
 
 from .models import Account
 
-from utils import ACTIVITY_LEVELS_TABLE, FEET_TO_METERS_CONVERSION_FACTOR, POUNDS_TO_KILOGRAMS_CONVERSION_FACTOR, BMI_THRESHOLDS, Navigation_Links_Displayer, get_cgi_params, cast_to_int, cast_to_float, check_str_param
+from utils import ACTIVITY_LEVELS_TABLE, FEET_TO_METERS_CONVERSION_FACTOR, POUNDS_TO_KILOGRAMS_CONVERSION_FACTOR, \
+        BMI_THRESHOLDS, Navigation_Links_Displayer, get_cgi_params, cast_to_int, cast_to_float, check_str_param
 
+
+URL_RESERVED_WORDS = ('new_user', 'delete_user', 'auth')
 
 navigation_link_displayer = Navigation_Links_Displayer({'/users/': 'Login'})
+
+
+def _collect_user_params_from_cgi(cgi_params, template, context, request):
+    return_dict = dict()
+
+    for param_name in ('display_name', 'gender_at_birth', 'gender_identity', 'pronouns'):
+        retval = check_str_param(cgi_params.get(param_name, None), param_name, template, context, request)
+        if isinstance(retval, HttpResponse):
+            return retval
+        return_dict[param_name] = retval
+
+    for param_name, lowerb, upperb in (('age', 13, 120),        ('activity_level', 1, 5),
+                                       ('weight_goal', -2, 2),  ('height_feet', 4, 8)):
+        retval = cast_to_int(cgi_params.get(param_name, None), param_name, template, context, request, lowerb=lowerb, upperb=upperb)
+        if isinstance(retval, HttpResponse):
+            return retval
+        return_dict[param_name] = retval
+
+    retval = cast_to_float(cgi_params.get('height_inches', None), 'height_inches', template, context, request, lowerb=0, upperb=11.999)
+    if isinstance(retval, HttpResponse):
+        return retval
+    return_dict['height_inches'] = retval
+
+    retval = cast_to_float(cgi_params.get('weight', None), 'weight', template, context, request)
+    if isinstance(retval, HttpResponse):
+        return retval
+    return_dict['weight'] = retval
+
+    return return_dict
 
 
 @require_http_methods(["GET"])
@@ -123,6 +155,7 @@ def users_username(request, username):
     return HttpResponse(users_username_template.render(context, request))
 
 
+@require_http_methods(["GET", "POST"])
 def users_username_edit_profile(request, username):
     profile_url = f"/users/{username}/"
     users_username_edit_profile_template = loader.get_template('users/users_+username+_edit_profile.html')
@@ -138,27 +171,13 @@ def users_username_edit_profile(request, username):
     context["account_model_obj"] = account_model_obj
 
     if len(cgi_params):
-        for param_name in ('display_name', 'gender_at_birth', 'gender_identity', 'pronouns'):
-            retval = check_str_param(cgi_params.get(param_name, None), param_name, users_username_edit_profile_template, context, request)
-            if isinstance(retval, HttpResponse):
-                return retval
-            setattr(account_model_obj, param_name, retval)
-
-        for param_name, lowerb, upperb in (('age', 13, 120), ('activity_level', 1, 5), ('weight_goal', -2, 2), ('height_feet', 4, 8)):
-            retval = cast_to_int(cgi_params.get(param_name, None), param_name, users_username_edit_profile_template, context, request, lowerb=lowerb, upperb=upperb)
-            if isinstance(retval, HttpResponse):
-                return retval
-            setattr(account_model_obj, param_name, retval)
-
-        retval = cast_to_float(cgi_params.get('height_inches', None), 'height_inches', users_username_edit_profile_template, context, request, lowerb=0, upperb=11.999)
+        retval = _collect_user_params_from_cgi(cgi_params, users_username_edit_profile_template, context, request)
         if isinstance(retval, HttpResponse):
             return retval
-        setattr(account_model_obj, 'height_inches', retval)
+        account_obj_update_dict = retval
 
-        retval = cast_to_float(cgi_params.get('weight', None), 'weight', users_username_edit_profile_template, context, request)
-        if isinstance(retval, HttpResponse):
-            return retval
-        setattr(account_model_obj, 'weight', retval)
+        for attr_name, attr_val in account_obj_update_dict.items():
+            setattr(account_model_obj, attr_name, attr_val)
 
         account_model_obj.save()
 
@@ -166,13 +185,18 @@ def users_username_edit_profile(request, username):
         return redirect(f"{profile_url}?{redir_cgi_params}")
     else:
         context["username"] = username
+        context["display_name"] = account_model_obj.display_name
 
         context["selected_if_male"] =      "selected" if account_model_obj.gender_at_birth == "M" else ""
         context["selected_if_female"] =    "selected" if account_model_obj.gender_at_birth == "F" else ""
 
+        context["gender_identity"] = account_model_obj.gender_identity
+
         context["selected_if_he_him"] =    "selected" if account_model_obj.pronouns == "he" else ""
         context["selected_if_she_her"] =   "selected" if account_model_obj.pronouns == "she" else ""
         context["selected_if_they_them"] = "selected" if account_model_obj.pronouns == "they" else ""
+
+        context["age"] = account_model_obj.age
 
         context["height_feet"] = math.floor(account_model_obj.height)
         context["height_inches"] = round((account_model_obj.height % 1) * 12, 1)
@@ -193,9 +217,63 @@ def users_username_edit_profile(request, username):
         return HttpResponse(users_username_edit_profile_template.render(context, request))
 
 
-#def users_new(request):
-#    pass
-#
+def users_new_user(request):
+    users_new_user_template = loader.get_template('users/users_new_user.html')
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
+    cgi_params = get_cgi_params(request)
+
+    if len(cgi_params):
+        retval = _collect_user_params_from_cgi(cgi_params, users_new_user_template, context, request)
+        if isinstance(retval, HttpResponse):
+            return retval
+        account_obj_init_dict = retval
+        account_obj_init_dict['height'] = account_obj_init_dict['height_feet'] + account_obj_init_dict['height_inches'] / 12
+        del account_obj_init_dict['height_feet'], account_obj_init_dict['height_inches']
+
+        account_other_params = dict()
+        for param_name in ('username', 'password_initial', 'password_confirm'):
+            retval = check_str_param(cgi_params.get(param_name, None), param_name, users_new_user_template, context, request, upperb=32)
+            if isinstance(retval, HttpResponse):
+                return retval
+            account_other_params[param_name] = retval
+
+        if account_other_params['username'] in URL_RESERVED_WORDS:
+            quoted_reserved_words = tuple(map(lambda strval: "'%s'" % strval, URL_RESERVED_WORDS))
+            reserved_words_expr = "%s, or %s" % (", ".join(quoted_reserved_words[:-1]), quoted_reserved_words[-1])
+            context['error'] = True
+            context['message'] = f"Username must not be one of {quoted_reserved_words}"
+            return HttpResponse(users_new_user_template.render(context, request), status=422)
+        account_obj_init_dict['username'] = account_other_params['username']
+
+        if account_other_params['password_initial'] != account_other_params['password_confirm']:
+            context['error'] = True
+            context['message'] = f"Passwords do not match"
+            return HttpResponse(users_new_user_template.render(context, request), status=422)
+        password_bytes = account_other_params['password_initial'].encode('utf-8')
+        salt = bcrypt.gensalt()
+        account_obj_init_dict['password_encrypted'] = bcrypt.hashpw(password_bytes, salt)
+
+        account_model_obj = Account(**account_obj_init_dict)
+        account_model_obj.save()
+
+        redir_cgi_params = urllib.parse.urlencode({'error': False, 'message': 'Your profile details have been set, and your account is ready to use.'})
+        return redirect(f"/users/{account_model_obj.username}/?{redir_cgi_params}")
+    else:
+        context["username"] = ""
+        context["display_name"] = ""
+        context["selected_if_male"] = "selected"
+        context["gender_identity"] = ""
+        context["selected_if_he_him"] = "selected"
+        context["age"] = ""
+        context["height_feet"] = ""
+        context["height_inches"] = ""
+        context["weight"] = ""
+        context["selected_if_activity_level_3"] = "selected"
+        context["selected_if_weight_goal_maintain"] = "selected"
+
+        return HttpResponse(users_new_user_template.render(context, request))
+
+
 #def users_username_password(request, username):
 #    pass
 
