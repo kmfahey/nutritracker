@@ -17,7 +17,7 @@ from .models import Food
 from utils import Food_Detailed, Navigation_Links_Displayer, generate_pagination_links, get_cgi_params, slice_output_list_by_page, cast_to_int, Fdc_Api_Contacter, retrieve_pagination_params
 
 
-navigation_link_displayer = Navigation_Links_Displayer({'/foods/': "Main Foods List", "/foods/local_search/": "Local Food Search", "/foods/fdc_search/": "FDC Food Search"})
+navigation_links_displayer = Navigation_Links_Displayer({'/foods/': "Main Foods List", "/foods/local_search/": "Local Food Search", "/foods/fdc_search/": "FDC Food Search"})
 
 default_page_size = config("DEFAULT_PAGE_SIZE")
 fdc_api_key = config("FDC_API_KEY")
@@ -48,7 +48,7 @@ def foods(request):
         food_objs = slice_output_list_by_page(food_objs, page_size, page_number)
         context["more_than_one_page"] = True
         context["pagination_links"] = generate_pagination_links("/foods/", number_of_results, page_size, page_number)
-    context['subordinate_navigation'] = navigation_link_displayer.href_list_wo_one_callable("/foods/")
+    context['subordinate_navigation'] = navigation_links_displayer.href_list_wo_one_callable("/foods/")
     context['food_objs'] = food_objs
 
     return HttpResponse(foods_template.render(context, request))
@@ -64,7 +64,7 @@ def foods_fdc_id(request, fdc_id):
         return HttpResponse(f"inconsistent state: multiple objects matching query for FDC ID {fdc_id}", status=500)
     food_model_obj = food_model_objs[0]
     food_obj = Food_Detailed.from_model_obj(food_model_obj)
-    subordinate_navigation = navigation_link_displayer.full_href_list_callable()
+    subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'food_obj': food_obj, 'food_or_recipe_obj': food_obj, 'subordinate_navigation': subordinate_navigation}
     return HttpResponse(template.render(context, request))
 
@@ -72,7 +72,7 @@ def foods_fdc_id(request, fdc_id):
 @require_http_methods(["GET"])
 def local_search(request):
     template = loader.get_template('foods/foods_local_search.html')
-    subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/foods/local_search/")
+    subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/foods/local_search/")
     context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False}
     return HttpResponse(template.render(context, request))
 
@@ -80,7 +80,7 @@ def local_search(request):
 @require_http_methods(["GET", "POST"])
 def local_search_results(request):
     search_url = "/foods/local_search/"
-    subordinate_navigation = navigation_link_displayer.full_href_list_callable()
+    subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False}
     local_search_template = loader.get_template('foods/foods_local_search.html')
     local_search_results_template = loader.get_template('foods/foods_local_search_results.html')
@@ -120,7 +120,7 @@ def local_search_results(request):
 @require_http_methods(["GET"])
 def fdc_search(request):
     template = loader.get_template('foods/foods_fdc_search.html')
-    subordinate_navigation = navigation_link_displayer.href_list_wo_one_callable("/foods/fdc_search/")
+    subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/foods/fdc_search/")
     context = {'subordinate_navigation': subordinate_navigation, 'message': ''}
     return HttpResponse(template.render(context, request))
 
@@ -129,7 +129,7 @@ def fdc_search(request):
 def fdc_search_results(request):
     search_url = "/foods/fdc_search/"
     api_contacter = Fdc_Api_Contacter(fdc_api_key)
-    subordinate_navigation = navigation_link_displayer.full_href_list_callable()
+    subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation,
                'message': '',
                'more_than_one_page': False}
@@ -164,7 +164,7 @@ def fdc_search_results(request):
 @require_http_methods(["GET"])
 def fdc_search_fdc_id(request, fdc_id):
     template = loader.get_template('foods/foods_fdc_search_+fdc_id+.html')
-    subordinate_navigation = navigation_link_displayer.full_href_list_callable()
+    subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation}
 
     api_contacter = Fdc_Api_Contacter(fdc_api_key)
@@ -181,7 +181,7 @@ def fdc_search_fdc_id(request, fdc_id):
 @require_http_methods(["GET", "POST"])
 def fdc_import(request):
     template = loader.get_template('foods/foods_fdc_import.html')
-    subordinate_navigation = navigation_link_displayer.full_href_list_callable()
+    subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation, 'error': False}
     cgi_params = get_cgi_params(request)
     api_contacter = Fdc_Api_Contacter(fdc_api_key)

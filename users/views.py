@@ -12,7 +12,7 @@ from decouple import config
 from operator import and_, attrgetter
 
 from django.shortcuts import render
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import redirect
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
@@ -25,10 +25,21 @@ from utils import ACTIVITY_LEVELS_TABLE, FEET_TO_METERS_CONVERSION_FACTOR, POUND
         BMI_THRESHOLDS, Navigation_Links_Displayer, get_cgi_params, cast_to_int, cast_to_float, check_str_param
 
 
-URL_RESERVED_WORDS = ('new_user', 'delete_user', 'auth')
+URL_RESERVED_WORDS = ('new_user', 'delete_user', 'auth', 'logout')
 
-navigation_link_displayer = Navigation_Links_Displayer({'/users/': 'Login'})
 
+generate_nav_links_display_argd = lambda username=None: ({
+                                                             "/users/": "Login",
+                                                             "/users/new_user/": "Create User",
+                                                             "/users/logout/": "Logout"
+                                                         } if username is None else {
+                                                             "/users/": "Login", "/users/new_user/": "Create User",
+                                                             f"/users/{username}/": "View Profile",
+                                                             f"/users/{username}/edit_profile/": "Edit Profile",
+                                                             f"/users/{username}/change_password/": "Change Password",
+                                                             f"/users/{username}/confirm_delete_user/": "Delete User",
+                                                             "/users/logout/": "Logout"
+                                                         })
 
 def _collect_account_params_from_cgi(cgi_params, template, context, request):
     return_dict = dict()
@@ -84,7 +95,8 @@ def _retrieve_user_and_account_objs(request, username, template, context):
 @require_http_methods(["GET"])
 def users(request):
     users_template = loader.get_template('users/users.html')
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd())
+    context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
     return HttpResponse(users_template.render(context, request))
 
 
@@ -92,11 +104,14 @@ def users(request):
 def users_auth(request):
     cgi_params = get_cgi_params(request)
     users_template = loader.get_template('users/users.html')
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
 
     if not len(cgi_params.keys()) or 'username' not in cgi_params or 'password' not in cgi_params:
         return redirect(originating_url)
     username = cgi_params['username']
+
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd(username))
+    context = {'subordinate_navigation': navigation_links_displayer.full_href_list_callable(),
+               'error': False, 'message': ''}
 
     if not (0 < len(username) <= 32):
         context['error'] = True
@@ -124,13 +139,15 @@ def users_auth(request):
 @require_http_methods(["GET", "POST"])
 def users_username(request, username):
     users_username_template = loader.get_template('users/users_+username+.html')
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
     cgi_params = get_cgi_params(request)
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd(username))
+    context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable(f"/users/{username}/"),
+               'error': False, 'message': ''}
 
     retval = _retrieve_user_and_account_objs(request, username, users_username_template, context)
     if isinstance(retval, HttpResponse):
         return retval
-    _, account_model_obj = retval
+    user_model_obj, account_model_obj = retval
     context["user_model_obj"], context["account_model_obj"] = retval
 
     if cgi_params and 'message' in cgi_params and 'error' in cgi_params:
@@ -183,7 +200,8 @@ def users_username(request, username):
 def users_username_edit_profile(request, username):
     profile_url = f"/users/{username}/"
     users_username_edit_profile_template = loader.get_template('users/users_+username+_edit_profile.html')
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd(username))
+    context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable(f"/users/{username}/"), 'error': False, 'message': ''}
     cgi_params = get_cgi_params(request)
 
     retval = _retrieve_user_and_account_objs(request, username, users_username_edit_profile_template, context)
@@ -242,7 +260,9 @@ def users_username_edit_profile(request, username):
 @require_http_methods(["GET", "POST"])
 def users_new_user(request):
     users_new_user_template = loader.get_template('users/users_new_user.html')
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd())
+    context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/users/"),
+               'error': False, 'message': ''}
     cgi_params = get_cgi_params(request)
 
     if len(cgi_params):
@@ -309,7 +329,9 @@ def users_new_user(request):
 @require_http_methods(["GET", "POST"])
 def users_username_change_password(request, username):
     users_username_change_password_template = loader.get_template('users/users_+username+_change_password.html')
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"),
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd(username))
+    context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable(
+                                                                        f"/users/{username}/change_password/"),
                'error': False, 'message': '', 'username': username}
     cgi_params = get_cgi_params(request)
 
@@ -364,7 +386,8 @@ def users_username_change_password(request, username):
 @require_http_methods(["GET"])
 def users_username_confirm_delete_user(request, username):
     users_username_confirm_delete_user_template = loader.get_template('users/users_+username+_confirm_delete_user.html')
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"),
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd(username))
+    context = {'subordinate_navigation': navigation_links_displayer.full_href_list_callable(),
                'error': False, 'message': '', 'username': username}
     cgi_params = get_cgi_params(request)
 
@@ -381,7 +404,8 @@ def users_username_confirm_delete_user(request, username):
 @require_http_methods(["GET", "POST"])
 def users_delete_user(request):
     users_delete_user_template = loader.get_template('users/users_delete_user.html')
-    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"),
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd(username))
+    context = {'subordinate_navigation': navigation_links_displayer.full_href_list_callable(),
                'error': False, 'message': ''}
     cgi_params = get_cgi_params(request)
 
@@ -403,4 +427,28 @@ def users_delete_user(request):
     context['message'] = f"User account with username='{username}' deleted"
 
     return HttpResponse(users_delete_user_template.render(context, request))
+
+
+@require_http_methods(["GET"])
+def users_logout(request):
+    users_logout_template = loader.get_template('users/users_logout.html')
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd())
+    context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/users/logout/"),
+               'error': False, 'message': ''}
+
+    if not request.user.is_authenticated:
+        context['error'] = True
+        context['message'] = f'No user logged in; unable to log out'
+        return HttpResponse(users_logout_template.render(context, request))
+
+    user_model_obj = request.user
+
+    navigation_links_displayer = Navigation_Links_Displayer(generate_nav_links_display_argd(user_model_obj.username))
+    context['subordinate_navigation'] = navigation_links_displayer.href_list_wo_one_callable("/users/logout/")
+
+    logout(request)
+
+    context['message'] = f"User with username='{user_model_obj.username}' logged out"
+
+    return HttpResponse(users_logout_template.render(context, request))
 
