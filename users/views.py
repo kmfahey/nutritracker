@@ -217,6 +217,7 @@ def users_username_edit_profile(request, username):
         return HttpResponse(users_username_edit_profile_template.render(context, request))
 
 
+@require_http_methods(["GET", "POST"])
 def users_new_user(request):
     users_new_user_template = loader.get_template('users/users_new_user.html')
     context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
@@ -274,8 +275,53 @@ def users_new_user(request):
         return HttpResponse(users_new_user_template.render(context, request))
 
 
-#def users_username_password(request, username):
-#    pass
+@require_http_methods(["GET", "POST"])
+def users_username_change_password(request, username):
+    users_username_change_password_template = loader.get_template('users/users_+username+_change_password.html')
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"),
+               'error': False, 'message': '', 'username': username}
+    cgi_params = get_cgi_params(request)
+
+    try:
+        account_model_obj = Account.objects.get(username=username)
+    except Account.DoesNotExist:
+        context['error'] = True
+        context['message'] = f"No user account with username='{username}'"
+        return HttpResponse(users_username_change_password_template.render(context, request), status=404)
+
+    if (len(cgi_params) and 'current_password' in cgi_params and 'new_password_initial' in cgi_params
+            and 'new_password_confirm' in cgi_params):
+
+        password_params = dict()
+        for param_name in ('current_password', 'new_password_initial', 'new_password_confirm'):
+            retval = check_str_param(cgi_params.get(param_name, None), param_name, users_username_change_password_template, context, request, upperb=32)
+            if isinstance(retval, HttpResponse):
+                return retval
+            password_params[param_name] = retval
+
+        submitted_password = password_params['current_password'].encode('utf-8')
+        authenticates = bcrypt.checkpw(submitted_password, account_model_obj.password_encrypted)
+
+        if not authenticates:
+            context['error'] = True
+            context['message'] = f"Current password submitted does not match password on record"
+            return HttpResponse(users_username_change_password_template.render(context, request), status=422)
+        elif password_params['new_password_initial'] != password_params['new_password_confirm']:
+            context['error'] = True
+            context['message'] = f"Passwords do not match"
+            return HttpResponse(users_username_change_password_template.render(context, request), status=422)
+
+        password_bytes = password_params['new_password_initial'].encode('utf-8')
+        salt = bcrypt.gensalt()
+        account_model_obj.password_encrypted = bcrypt.hashpw(password_bytes, salt)
+
+        account_model_obj.save()
+        context['error'] = False
+        context['message'] = f"Your password has been updated."
+
+    return HttpResponse(users_username_change_password_template.render(context, request))
+
+
 
 
 #def users_username_confirm_delete(request, username):

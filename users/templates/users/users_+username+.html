@@ -52,11 +52,16 @@
                 eat less than this amount, and if you wish to gain weight you
                 need to eat more than this amount.
             </td>
+        </tr>
     </table>
 
     <p>
         <a href="/users/{{ account_model_obj.username }}/edit_profile/">
             <input class="larger" type="submit" name="button" value="Edit Profile"/>
+        </a>
+        <span class="halftab"/>
+        <a href="/users/{{ account_model_obj.username }}/change_password/">
+            <input class="larger" type="submit" name="button" value="Change Password"/>
         </a>
     </p>
 {% endif %}
