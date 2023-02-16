@@ -46,11 +46,11 @@
         </tr>
         <tr>
             <td colspan="5" class="smaller">
-                Your active metabolic rate is the number of Calories you burn
-                at your activity level; you must consume that many Calories to
-                maintain your weight. If you wish to lose weight, you need to
-                eat less than this amount, and if you wish to gain weight you
-                need to eat more than this amount.
+                <span class="superscript">*</span> Your active metabolic rate is
+                the number of Calories you burn at your activity level; you must
+                consume that many Calories to maintain your weight. If you wish
+                to lose weight, you need to eat less than this amount, and if
+                you wish to gain weight you need to eat more than this amount.
             </td>
         </tr>
     </table>
@@ -62,6 +62,10 @@
         <span class="halftab"/>
         <a href="/users/{{ account_model_obj.username }}/change_password/">
             <input class="larger" type="submit" name="button" value="Change Password"/>
+        </a>
+        <span class="halftab"/>
+        <a href="/users/{{ account_model_obj.username }}/confirm_delete_user/">
+            <input class="larger" type="submit" name="button" value="Delete User"/>
         </a>
     </p>
 {% endif %}

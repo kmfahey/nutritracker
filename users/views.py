@@ -322,10 +322,49 @@ def users_username_change_password(request, username):
     return HttpResponse(users_username_change_password_template.render(context, request))
 
 
+@require_http_methods(["GET"])
+def users_username_confirm_delete_user(request, username):
+    users_username_confirm_delete_user_template = loader.get_template('users/users_+username+_confirm_delete_user.html')
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"),
+               'error': False, 'message': '', 'username': username}
+    cgi_params = get_cgi_params(request)
+
+    try:
+        account_model_obj = Account.objects.get(username=username)
+    except Account.DoesNotExist:
+        context['error'] = True
+        context['message'] = f"No user account with username='{username}'"
+        return HttpResponse(users_username_confirm_delete_user_template.render(context, request), status=404)
+
+    context['message'] = "Are you sure you want to delete your account?"
+
+    return HttpResponse(users_username_confirm_delete_user_template.render(context, request))
 
 
-#def users_username_confirm_delete(request, username):
-#    pass
-#
-#def users_delete(request):
-#    pass
+@require_http_methods(["GET", "POST"])
+def users_delete_user(request):
+    users_delete_user_template = loader.get_template('users/users_delete_user.html')
+    context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"),
+               'error': False, 'message': ''}
+    cgi_params = get_cgi_params(request)
+
+    if not len(cgi_params) or 'username' not in cgi_params:
+        context['error'] = True
+        context['message'] = f"No 'username' CGI parameter specified, unable to delete user"
+        return HttpResponse(users_delete_user_template.render(context, request))
+
+    username = check_str_param(cgi_params.get('username', None), 'username', users_delete_user_template, context, request)
+
+    try:
+        account_model_obj = Account.objects.get(username=username)
+    except Account.DoesNotExist:
+        context['error'] = True
+        context['message'] = f"No user account with username='{username}'"
+        return HttpResponse(users_delete_user_template.render(context, request))
+
+    account_model_obj.delete()
+
+    context['message'] = f"User account with username='{username}' deleted"
+
+    return HttpResponse(users_delete_user_template.render(context, request))
+
