@@ -196,11 +196,21 @@ pages needed
     users_delete.html
 
 
-
-/daily
-
 TODO:
     somehow modify how dv_perc is calculated to use the user's calories per day instead of 2000
-    implement /users/$USERID/logout/
-    set up /users/ nav subhead links properly
-    remove spurious callable use in navigation_links_displayer
+
+
+modifications needed now that user tracking exists:
+
+assign each recipe an owner and make that recipe visible to only that owner
+
+add [Edit] buttons to recipe listing that reopen a recipe to editing
+
+add [Add to Daily Tracking] buttons to food listing and completed-recipes listing
+    => form's action lands on /tracker/
+
+/daily/ might actually be a pretty small app?
+
+
+
+
