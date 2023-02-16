@@ -5,19 +5,20 @@ import bcrypt
 import html
 import urllib.parse
 
-from django.shortcuts import render
-
 from bson.objectid import ObjectId, InvalidId
 
 from decouple import config
 
 from operator import and_, attrgetter
 
+from django.shortcuts import render
+from django.contrib.auth import authenticate, login
 from django.shortcuts import redirect
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.template import loader
 
+from django.contrib.auth.models import User
 from .models import Account
 
 from utils import ACTIVITY_LEVELS_TABLE, FEET_TO_METERS_CONVERSION_FACTOR, POUNDS_TO_KILOGRAMS_CONVERSION_FACTOR, \
@@ -29,7 +30,7 @@ URL_RESERVED_WORDS = ('new_user', 'delete_user', 'auth')
 navigation_link_displayer = Navigation_Links_Displayer({'/users/': 'Login'})
 
 
-def _collect_user_params_from_cgi(cgi_params, template, context, request):
+def _collect_account_params_from_cgi(cgi_params, template, context, request):
     return_dict = dict()
 
     for param_name in ('display_name', 'gender_at_birth', 'gender_identity', 'pronouns'):
@@ -56,6 +57,28 @@ def _collect_user_params_from_cgi(cgi_params, template, context, request):
     return_dict['weight'] = retval
 
     return return_dict
+
+
+def _retrieve_user_and_account_objs(request, username, template, context):
+    if request.user.username != username:
+        context['error'] = True
+        context['message'] = f"You are not the user with username='{username}', you may not access this page."
+        return HttpResponse(template.render(context, request), status=404)
+    elif not request.user.is_authenticated:
+        context['error'] = True
+        context['message'] = f'To access your profile page, please <a href="/users/">login</a>.'
+        return HttpResponse(template.render(context, request), status=404)
+
+    user_model_obj = request.user
+
+    try:
+        account_model_obj = Account.objects.get(username=username)
+    except Account.DoesNotExist:
+        context['error'] = True
+        context['message'] = f"No account with username='{username}'"
+        return HttpResponse(template.render(context, request), status=500)
+
+    return user_model_obj, account_model_obj
 
 
 @require_http_methods(["GET"])
@@ -85,12 +108,15 @@ def users_auth(request):
         context['error'] = True
         context['message'] = f"No user account with username='{username}'"
         return HttpResponse(users_template.render(context, request))
-    submitted_password = cgi_params['password'].encode('utf-8')
-    authenticates = bcrypt.checkpw(submitted_password, account_model_obj.password_encrypted)
-    if not authenticates:
+
+    user_model_obj = authenticate(username=username, password=cgi_params['password'])
+
+    if user_model_obj is None:
         context['error'] = True
         context['message'] = f"Password submitted does not match password on record"
         return HttpResponse(users_template.render(context, request))
+
+    login(request, user_model_obj)
 
     return redirect(f"/users/{username}/")
 
@@ -101,13 +127,11 @@ def users_username(request, username):
     context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
     cgi_params = get_cgi_params(request)
 
-    try:
-        account_model_obj = Account.objects.get(username=username)
-    except Account.DoesNotExist:
-        context['error'] = True
-        context['message'] = f"No user account with username='{username}'"
-        return HttpResponse(users_username_template.render(context, request), status=404)
-    context["account_model_obj"] = account_model_obj
+    retval = _retrieve_user_and_account_objs(request, username, users_username_template, context)
+    if isinstance(retval, HttpResponse):
+        return retval
+    _, account_model_obj = retval
+    context["user_model_obj"], context["account_model_obj"] = retval
 
     if cgi_params and 'message' in cgi_params and 'error' in cgi_params:
         context['error'] = False if cgi_params.get('error', None) == 'False' else True
@@ -162,16 +186,14 @@ def users_username_edit_profile(request, username):
     context = {'subordinate_navigation': navigation_link_displayer.href_list_wo_one_callable("/users/"), 'error': False, 'message': ''}
     cgi_params = get_cgi_params(request)
 
-    try:
-        account_model_obj = Account.objects.get(username=username)
-    except Account.DoesNotExist:
-        context['error'] = True
-        context['message'] = f"No user account with username='{username}'"
-        return HttpResponse(users_username_edit_profile_template.render(context, request), status=404)
-    context["account_model_obj"] = account_model_obj
+    retval = _retrieve_user_and_account_objs(request, username, users_username_edit_profile_template, context)
+    if isinstance(retval, HttpResponse):
+        return retval
+    _, account_model_obj = retval
+    context["user_model_obj"], context["account_model_obj"] = retval
 
     if len(cgi_params):
-        retval = _collect_user_params_from_cgi(cgi_params, users_username_edit_profile_template, context, request)
+        retval = _collect_account_params_from_cgi(cgi_params, users_username_edit_profile_template, context, request)
         if isinstance(retval, HttpResponse):
             return retval
         account_obj_update_dict = retval
@@ -224,41 +246,50 @@ def users_new_user(request):
     cgi_params = get_cgi_params(request)
 
     if len(cgi_params):
-        retval = _collect_user_params_from_cgi(cgi_params, users_new_user_template, context, request)
+        retval = _collect_account_params_from_cgi(cgi_params, users_new_user_template, context, request)
         if isinstance(retval, HttpResponse):
             return retval
         account_obj_init_dict = retval
         account_obj_init_dict['height'] = account_obj_init_dict['height_feet'] + account_obj_init_dict['height_inches'] / 12
         del account_obj_init_dict['height_feet'], account_obj_init_dict['height_inches']
 
-        account_other_params = dict()
+        user_obj_init_dict = dict()
         for param_name in ('username', 'password_initial', 'password_confirm'):
             retval = check_str_param(cgi_params.get(param_name, None), param_name, users_new_user_template, context, request, upperb=32)
             if isinstance(retval, HttpResponse):
                 return retval
-            account_other_params[param_name] = retval
+            user_obj_init_dict[param_name] = retval
 
-        if account_other_params['username'] in URL_RESERVED_WORDS:
+        if user_obj_init_dict['username'] in URL_RESERVED_WORDS:
             quoted_reserved_words = tuple(map(lambda strval: "'%s'" % strval, URL_RESERVED_WORDS))
             reserved_words_expr = "%s, or %s" % (", ".join(quoted_reserved_words[:-1]), quoted_reserved_words[-1])
             context['error'] = True
             context['message'] = f"Username must not be one of {quoted_reserved_words}"
             return HttpResponse(users_new_user_template.render(context, request))
-        account_obj_init_dict['username'] = account_other_params['username']
+        account_obj_init_dict['username'] = user_obj_init_dict['username']
 
-        if account_other_params['password_initial'] != account_other_params['password_confirm']:
+        if user_obj_init_dict['password_initial'] != user_obj_init_dict['password_confirm']:
             context['error'] = True
             context['message'] = f"Passwords do not match"
             return HttpResponse(users_new_user_template.render(context, request))
-        password_bytes = account_other_params['password_initial'].encode('utf-8')
-        salt = bcrypt.gensalt()
-        account_obj_init_dict['password_encrypted'] = bcrypt.hashpw(password_bytes, salt)
+
+        user_model_obj = User.objects.create_user(username=user_obj_init_dict["username"], password=user_obj_init_dict["password_initial"])
+        user_model_obj.save()
+
+        user_model_obj = authenticate(username=user_obj_init_dict["username"], password=user_obj_init_dict["password_initial"])
+
+        if user_model_obj is None:
+            context['error'] = True
+            context['message'] = f"Could not authenticate user object with known-good password"
+            return HttpResponse(users_template.render(context, request), status=500)
+
+        login(request, user_model_obj)
 
         account_model_obj = Account(**account_obj_init_dict)
         account_model_obj.save()
 
         redir_cgi_params = urllib.parse.urlencode({'error': False, 'message': 'Your profile details have been set, and your account is ready to use.'})
-        return redirect(f"/users/{account_model_obj.username}/?{redir_cgi_params}")
+        return redirect(f"/users/{user_model_obj.username}/?{redir_cgi_params}")
     else:
         context["username"] = ""
         context["display_name"] = ""
@@ -282,12 +313,10 @@ def users_username_change_password(request, username):
                'error': False, 'message': '', 'username': username}
     cgi_params = get_cgi_params(request)
 
-    try:
-        account_model_obj = Account.objects.get(username=username)
-    except Account.DoesNotExist:
-        context['error'] = True
-        context['message'] = f"No user account with username='{username}'"
-        return HttpResponse(users_username_change_password_template.render(context, request), status=404)
+    retval = _retrieve_user_and_account_objs(request, username, users_username_change_password_template, context)
+    if isinstance(retval, HttpResponse):
+        return retval
+    user_model_obj, account_model_obj = retval
 
     if (len(cgi_params) and 'current_password' in cgi_params and 'new_password_initial' in cgi_params
             and 'new_password_confirm' in cgi_params):
@@ -299,10 +328,9 @@ def users_username_change_password(request, username):
                 return retval
             password_params[param_name] = retval
 
-        submitted_password = password_params['current_password'].encode('utf-8')
-        authenticates = bcrypt.checkpw(submitted_password, account_model_obj.password_encrypted)
+        user_model_obj = authenticate(username=username, password=password_params["current_password"])
 
-        if not authenticates:
+        if user_model_obj is None:
             context['error'] = True
             context['message'] = f"Current password submitted does not match password on record"
             return HttpResponse(users_username_change_password_template.render(context, request))
@@ -311,11 +339,22 @@ def users_username_change_password(request, username):
             context['message'] = f"Passwords do not match"
             return HttpResponse(users_username_change_password_template.render(context, request))
 
-        password_bytes = password_params['new_password_initial'].encode('utf-8')
-        salt = bcrypt.gensalt()
-        account_model_obj.password_encrypted = bcrypt.hashpw(password_bytes, salt)
+        user_model_obj.set_password(password_params['new_password_initial'])
+        user_model_obj.save()
 
-        account_model_obj.save()
+        # I don't actually know whether the session created by login() would
+        # stop working if the password used to authenticate for it was changed,
+        # but that's my expectation, so I'm re-authenticating with the password
+        # just set.
+        user_model_obj = authenticate(username=username, password=password_params['new_password_initial'])
+
+        if user_model_obj is None:
+            context['error'] = True
+            context['message'] = f"Could not authenticate user object with known-good password"
+            return HttpResponse(users_template.render(context, request), status=500)
+
+        login(request, user_model_obj)
+
         context['error'] = False
         context['message'] = f"Your password has been updated."
 
@@ -329,12 +368,10 @@ def users_username_confirm_delete_user(request, username):
                'error': False, 'message': '', 'username': username}
     cgi_params = get_cgi_params(request)
 
-    try:
-        account_model_obj = Account.objects.get(username=username)
-    except Account.DoesNotExist:
-        context['error'] = True
-        context['message'] = f"No user account with username='{username}'"
-        return HttpResponse(users_username_confirm_delete_user_template.render(context, request), status=404)
+    retval = _retrieve_user_and_account_objs(request, username, users_username_confirm_delete_user_template, context)
+    if isinstance(retval, HttpResponse):
+        return retval
+    user_model_obj, account_model_obj = retval
 
     context['message'] = "Are you sure you want to delete your account?"
 
@@ -355,13 +392,12 @@ def users_delete_user(request):
 
     username = check_str_param(cgi_params.get('username', None), 'username', users_delete_user_template, context, request)
 
-    try:
-        account_model_obj = Account.objects.get(username=username)
-    except Account.DoesNotExist:
-        context['error'] = True
-        context['message'] = f"No user account with username='{username}'"
-        return HttpResponse(users_delete_user_template.render(context, request))
+    retval = _retrieve_user_and_account_objs(request, username, users_delete_user_template, context)
+    if isinstance(retval, HttpResponse):
+        return retval
+    user_model_obj, account_model_obj = retval
 
+    user_model_obj.delete()
     account_model_obj.delete()
 
     context['message'] = f"User account with username='{username}' deleted"

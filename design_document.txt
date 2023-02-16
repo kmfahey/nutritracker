@@ -202,3 +202,4 @@ pages needed
 TODO:
     somehow modify how dv_perc is calculated to use the user's calories per day instead of 2000
     update login process to set a session cookie, track that in the db, figure out how to get all other view functions to read it & load session object
+    implement /users/$USERID/logout/

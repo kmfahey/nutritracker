@@ -6,14 +6,13 @@ from djongo import models
 
 
 class Account(models.Model):
-    __columns__ = ('_id', 'username', 'password_encrypted', 'display_name', 'gender_at_birth', 'gender_identity',
-                   'pronouns', 'age', 'height', 'weight', 'activity_level', 'weight_goal')
+    __columns__ = ('_id', 'display_name', 'gender_at_birth', 'gender_identity', 'pronouns', 'age', 'height', 'weight',
+                   'activity_level', 'weight_goal')
 
     _id                 = models.ObjectIdField(primary_key=True)
-    username            = models.CharField(max_length=32,       default="",  verbose_name="Username")
                         # This is a Binary object because bcrypt.hashpw and bcrypt.checkpw take
                         # their arguments as bytes objects, not str
-    password_encrypted  = models.BinaryField(max_length=80,     default=b'', verbose_name="Password")
+    username            = models.CharField(max_length=32,       default="",  verbose_name="Username")
     display_name        = models.CharField(max_length=200,      default="",  verbose_name="Display name")
     gender_at_birth     = models.CharField(max_length=1,        default="",  verbose_name="Gender at birth")
     gender_identity     = models.CharField(max_length=200,      default="",  verbose_name="Gender identity")

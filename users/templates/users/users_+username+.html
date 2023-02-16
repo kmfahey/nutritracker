@@ -56,15 +56,15 @@
     </table>
 
     <p>
-        <a href="/users/{{ account_model_obj.username }}/edit_profile/">
+        <a href="/users/{{ user_model_obj.username }}/edit_profile/">
             <input class="larger" type="submit" name="button" value="Edit Profile"/>
         </a>
         <span class="halftab"/>
-        <a href="/users/{{ account_model_obj.username }}/change_password/">
+        <a href="/users/{{ user_model_obj.username }}/change_password/">
             <input class="larger" type="submit" name="button" value="Change Password"/>
         </a>
         <span class="halftab"/>
-        <a href="/users/{{ account_model_obj.username }}/confirm_delete_user/">
+        <a href="/users/{{ user_model_obj.username }}/confirm_delete_user/">
             <input class="larger" type="submit" name="button" value="Delete User"/>
         </a>
     </p>
