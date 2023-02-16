@@ -20,6 +20,18 @@ get_cgi_params = lambda request: request.GET if request.method == "GET" else req
 slice_output_list_by_page = lambda output_list, page_size, current_page: output_list[page_size * (current_page - 1) : page_size * (current_page - 1) + page_size]
 
 
+ACTIVITY_LEVELS_TABLE = {1: "Sedentary", 2: "Lightly active", 3: "Moderately active", 4: "Active", 5: "Very active"}
+
+FEET_TO_METERS_CONVERSION_FACTOR = 0.304800609601
+
+POUNDS_TO_KILOGRAMS_CONVERSION_FACTOR = 0.45359237
+
+BMI_THRESHOLDS = ((0,    18.4,     "underweight"),
+                  (18.5, 24.9,     "healthy"),
+                  (25.0, 29.9,     "overweight"),
+                  (30.0, math.inf, "obese"))
+
+
 def retrieve_pagination_params(template, context, request, default_page_size=25, redir_url='', query=False):
     if query and not redir_url:
         raise Exception("in retrieve_pagination_params(), called with query=True but redir_url is null; "

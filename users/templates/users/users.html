@@ -8,7 +8,9 @@
 
 <form action="/users/auth/" method="POST">
     Username: <span class="qtrtab"/> <input type="text" name="username" value="" size="15"/><br/>
-    Password: <span class="qtrtab"/> <input type="text" name="password" value="" size="15"/><br/>
+    Password: <span class="qtrtab"/> <input type="password" name="password" value="" size="15"/><br/>
+    {% csrf_token %}
+    <input class="larger" type="submit" name="button" value="Log In"/>
 </form>
 
 {% endblock %}
