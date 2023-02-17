@@ -383,7 +383,7 @@ def users_username_change_password(request, username):
         if user_model_obj is None:
             context['error'] = True
             context['message'] = "Could not authenticate user object with known-good password"
-            return HttpResponse((users_username_change_password_template.render(context, request), status=500)
+            return HttpResponse(users_username_change_password_template.render(context, request), status=500)
 
         login(request, user_model_obj)
 

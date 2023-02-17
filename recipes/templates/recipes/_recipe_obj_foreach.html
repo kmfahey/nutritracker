@@ -1,6 +1,9 @@
 {% for recipe_obj in recipe_objs %}
     <p>
-    <b><a href="/recipes/{{ recipe_obj.mongodb_id }}/">{{ recipe_obj.recipe_name }}</a></b><br/>
-    Calories: {{ recipe_obj.energy_kcal.amount|floatformat }}
+        <b><a href="/recipes/{{ recipe_obj.mongodb_id }}/">{{ recipe_obj.recipe_name }}</a></b><br/>
+        Calories: {{ recipe_obj.energy_kcal.amount|floatformat }}<br/>
+        <a href="/recipes/builder/{{ recipe_obj.mongodb_id }}/open_for_editing/">
+            <input class="larger" type="submit" name="button" value="Edit"/>
+        </a>
     </p>
 {% endfor %}
