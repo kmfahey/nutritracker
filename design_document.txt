@@ -196,21 +196,55 @@ pages needed
     users_delete.html
 
 
-TODO:
-    somehow modify how dv_perc is calculated to use the user's calories per day instead of 2000
-
 
 modifications needed now that user tracking exists:
-
-assign each recipe an owner and make that recipe visible to only that owner
-
-add [Edit] buttons to recipe listing that reopen a recipe to editing
 
 add [Add to Daily Tracking] buttons to food listing and completed-recipes listing
     => form's action lands on /tracker/
 
-/daily/ might actually be a pretty small app?
+TRACKER:
+
+    * /tracker/
+        * errors out if no user is logged in
+        * lists foods & recipes committed to the tracker today
+        * each food has an [Edit Record] button
+
+    * /tracker/$ISODATE/
+        * errors out if no user is logged in
+        * lists foods committed to the tracker on the specified day
+        * each food has an [Edit Record] button
+            * link to /tracker/$ISODATE/food_record/$FDC_ID/ OR /tracker/$ISODATE/recipe_record/$MONGODB_ID/, depending
+        * errors out if asked to display a day in the future
+
+    * /tracker/$ISODATE/food_record/$FDC_ID/
+        * errors out if no user is logged in
+        * lists the nutrition facts of the # of servings the record indicate were consumed
+        * text input at the bottom which is pre-filled with the # of servings
+        * [Update] button to update the record with the new servings #
+            * action="/tracker/$ISODATE/food_record/$FDC_ID/"
+        * [Delete] button to remove the record from that day's tracker
+            * action="/tracker/$ISODATE/"
+
+    * /tracker/$ISODATE/recipe_record/$FDC_ID/
+        * errors out if no user is logged in
+        * lists the nutrition facts of the # of servings the record indicate were consumed
+        * text input at the bottom which is pre-filled with the # of servings
+        * [Update] button to update the record with the new servings #
+            * action="/tracker/$ISODATE/recipe_record/$FDC_ID/"
+        * [Delete] button to remove the record from that day's tracker
+            * action="/tracker/$ISODATE/"
 
 
+TODO:
+    somehow modify how dv_perc is calculated to use the user's calories per day instead of 2000
+    add option to /foods/ to add a food by manually entering all its information
+    replace all instances of fdc_id with an identifier that can be *either* an fdc_id *or* a mongodb_id
 
+    FOODS:
+
+    * /foods/add_food/
+        * presents a big table form to enter all 29 values that define a food object
+        * serving_units comes in a popup menu
+        * [Save] button commits the food to the database
+            * action="/foods/add_food/", once the food has a mongodb_id, redirects to "/foods/$MONGODB_ID/"
 
