@@ -248,3 +248,4 @@ TODO:
         * [Save] button commits the food to the database
             * action="/foods/add_food/", once the food has a mongodb_id, redirects to "/foods/$MONGODB_ID/"
 
+    * globally retrofit all foods.views functions to handle either fdc_id or nt_id

@@ -6,6 +6,7 @@ from djongo import models
 class Food(models.Model):
     id                     = models.BigAutoField(primary_key=True)
     fdc_id                 = models.PositiveIntegerField(     default=0,  verbose_name="Food Data Central ID")
+    nt_hash_id             = models.PositiveIntegerField(     default=0,  verbose_name="Nutritracker hash ID")
     food_name              = models.CharField(max_length=200, default="", verbose_name="Food name")
     serving_size           = models.FloatField(               default=1,  verbose_name="Serving size")
     serving_units          = models.CharField(max_length=30,  default="", verbose_name="Serving units")
