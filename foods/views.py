@@ -74,7 +74,7 @@ def foods_fdc_id(request, fdc_id):
 
 
 @require_http_methods(["GET"])
-def local_search(request):
+def foods_local_search(request):
     template = loader.get_template('foods/foods_local_search.html')
     subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/foods/local_search/")
     context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False}
@@ -82,7 +82,7 @@ def local_search(request):
 
 
 @require_http_methods(["GET", "POST"])
-def local_search_results(request):
+def foods_local_search_results(request):
     search_url = "/foods/local_search/"
     subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False}
@@ -126,7 +126,7 @@ def local_search_results(request):
 
 
 @require_http_methods(["GET"])
-def fdc_search(request):
+def foods_fdc_search(request):
     template = loader.get_template('foods/foods_fdc_search.html')
     subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/foods/fdc_search/")
     context = {'subordinate_navigation': subordinate_navigation, 'message': ''}
@@ -134,7 +134,7 @@ def fdc_search(request):
 
 
 @require_http_methods(["GET", "POST"])
-def fdc_search_results(request):
+def foods_fdc_search_results(request):
     search_url = "/foods/fdc_search/"
     api_contacter = Fdc_Api_Contacter(fdc_api_key)
     subordinate_navigation = navigation_links_displayer.full_href_list_callable()
@@ -172,7 +172,7 @@ def fdc_search_results(request):
 
 
 @require_http_methods(["GET"])
-def fdc_search_fdc_id(request, fdc_id):
+def foods_fdc_search_fdc_id(request, fdc_id):
     template = loader.get_template('foods/foods_fdc_search_+fdc_id+.html')
     subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation}
@@ -189,7 +189,7 @@ def fdc_search_fdc_id(request, fdc_id):
 
 
 @require_http_methods(["GET", "POST"])
-def fdc_import(request):
+def foods_fdc_import(request):
     template = loader.get_template('foods/foods_fdc_import.html')
     subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation, 'error': False}
