@@ -1,0 +1,13 @@
+{% extends "main/_base.html" %}
+
+{% block title %}Food - Add Food{% endblock %}
+
+{% block content %}
+
+<h3>Add Food</h3>
+
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
+{% include "_food_add_or_edit_block.html" %}
+
+{% endblock %}

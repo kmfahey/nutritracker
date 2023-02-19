@@ -54,14 +54,14 @@ def _fetch_recipe_or_404(mongodb_id, template, context, request):
 
 @require_http_methods(["GET"])
 def recipes(request):
-    recipes_template = loader.get_template('recipes/recipes.html')
+    template = loader.get_template('recipes/recipes.html')
     context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/recipes/"),
                'more_than_one_page': False, 'error': False, 'message': ''}
 
     user_model_obj = _retrieve_user_obj(request)
 
     if user_model_obj is not None:
-        retval = retrieve_pagination_params(recipes_template, context, request, default_page_size, query=False)
+        retval = retrieve_pagination_params(template, context, request, default_page_size, query=False)
         if isinstance(retval, HttpResponse):
             return retval
         page_size = retval["page_size"]
@@ -77,7 +77,7 @@ def recipes(request):
             context["more_than_one_page"] = True
             context["message"] = "No more results"
             context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
-            return HttpResponse(recipes_template.render(context, request))
+            return HttpResponse(template.render(context, request))
 
         if len(recipe_objs) > page_size:
             recipe_objs = slice_output_list_by_page(recipe_objs, page_size, page_number)
@@ -89,32 +89,32 @@ def recipes(request):
         context["message"] = "You are not logged in; no recipes to display."
         context["pagination_links"] = ""
         context['recipe_objs'] = ()
-    return HttpResponse(recipes_template.render(context, request))
+    return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
 def recipes_mongodb_id(request, mongodb_id):
-    recipes_mongodb_id_template = loader.get_template('recipes/recipes_+mongodb_id+.html')
+    template = loader.get_template('recipes/recipes_+mongodb_id+.html')
     context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/recipes/"),
                'error': False, 'message': ''}
 
-    retval = _fetch_recipe_or_404(mongodb_id, recipes_mongodb_id_template, context, request)
+    retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
     if isinstance(retval, HttpResponse):
         return retval
     recipe_model_obj = retval
 
     recipe_obj = Recipe_Detailed.from_json_obj(recipe_model_obj.serialize())
     context['recipe_obj'] = context['food_or_recipe_obj'] = recipe_obj
-    return HttpResponse(recipes_mongodb_id_template.render(context, request))
+    return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
 def recipes_search(request):
-    recipes_search_template = loader.get_template('recipes/recipes_search.html')
+    template = loader.get_template('recipes/recipes_search.html')
     subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/recipes/search/")
     context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False,
                'error': False, 'message': ''}
-    return HttpResponse(recipes_search_template.render(context, request))
+    return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
@@ -123,10 +123,10 @@ def recipes_search_results(request):
     subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False,
                'error': False, 'message': ''}
-    search_template = loader.get_template('recipes/recipes_search.html')
-    search_results_template = loader.get_template('recipes/recipes_search_results.html')
+    template = loader.get_template('recipes/recipes_search.html')
+    template = loader.get_template('recipes/recipes_search_results.html')
 
-    retval = retrieve_pagination_params(search_template, context, request, default_page_size, search_url, query=True)
+    retval = retrieve_pagination_params(template, context, request, default_page_size, search_url, query=True)
     if isinstance(retval, HttpResponse):
         return retval
     search_query = retval["search_query"]
@@ -141,13 +141,13 @@ def recipes_search_results(request):
     recipe_objs.sort(key=attrgetter('recipe_name'))
     if not len(recipe_objs):
         context["message"] = "No matches"
-        return HttpResponse(search_template.render(context, request))
+        return HttpResponse(template.render(context, request))
     elif len(recipe_objs) <= page_size and page_number > 1:
         context["more_than_one_page"] = True
         context["message"] = "No more results"
         context["pagination_links"] = generate_pagination_links("/recipes/search_results/", len(recipe_objs),
                                                                 page_size, page_number, search_query=search_query)
-        return HttpResponse(search_template.render(context, request))
+        return HttpResponse(template.render(context, request))
 
     recipe_objs = [Recipe_Detailed.from_model_obj(recipe_model_obj) for recipe_model_obj in recipe_objs]
     if len(recipe_objs) > page_size:
@@ -158,16 +158,16 @@ def recipes_search_results(request):
     else:
         context["more_than_one_page"] = False
         context['recipe_objs'] = recipe_objs
-    return HttpResponse(search_results_template.render(context, request))
+    return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
 def recipes_builder(request):
-    recipes_builder_template = loader.get_template('recipes/recipes_builder.html')
+    template = loader.get_template('recipes/recipes_builder.html')
     context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/"),
                'more_than_one_page': False, 'error': False, 'message': ''}
 
-    retval = retrieve_pagination_params(recipes_builder_template, context, request, default_page_size, query=False)
+    retval = retrieve_pagination_params(template, context, request, default_page_size, query=False)
     if isinstance(retval, HttpResponse):
         return retval
     page_size = retval["page_size"]
@@ -182,7 +182,7 @@ def recipes_builder(request):
         context["more_than_one_page"] = True
         context["message"] = "No recipes in the works"
         context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
-        return HttpResponse(recipes_builder_template.render(context, request))
+        return HttpResponse(template.render(context, request))
 
     if len(recipe_objs) > page_size:
         recipe_objs = slice_output_list_by_page(recipe_objs, page_size, page_number)
@@ -190,19 +190,19 @@ def recipes_builder(request):
         context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
     context['recipe_objs'] = recipe_objs
 
-    return HttpResponse(recipes_builder_template.render(context, request))
+    return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
 def recipes_builder_new(request):
     cgi_params = get_cgi_params(request)
     builder_url = "/recipes/builder/new/"
-    recipes_builder_new_template = loader.get_template('recipes/recipes_builder_new.html')
+    template = loader.get_template('recipes/recipes_builder_new.html')
     context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/"),
                'error': False, 'message': ''}
 
     if not len(cgi_params.keys()):
-        return HttpResponse(recipes_builder_new_template.render(context, request))
+        return HttpResponse(template.render(context, request))
     else:
         recipe_name = cgi_params.get('recipe_name', None)
         if not recipe_name:
@@ -215,23 +215,23 @@ def recipes_builder_new(request):
 
 @require_http_methods(["GET"])
 def recipes_builder_mongodb_id(request, mongodb_id):
-    recipes_builder_new_template = loader.get_template("recipes/recipes_builder_+mongodb_id+.html")
+    template = loader.get_template("recipes/recipes_builder_+mongodb_id+.html")
     context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/"),
                "error": False, 'message': ''}
 
-    retval = _fetch_recipe_or_404(mongodb_id, recipes_builder_new_template, context, request)
+    retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
     if isinstance(retval, HttpResponse):
         return retval
     recipe_model_obj = retval
 
     context["food_or_recipe_obj"] = context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
-    return HttpResponse(recipes_builder_new_template.render(context, request))
+    return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
 def recipes_builder_mongodb_id_delete(request, mongodb_id):
     cgi_params = get_cgi_params(request)
-    recipes_builder_mongodb_id_delete_template = loader.get_template("recipes/recipes_builder_+mongodb_id+_delete.html")
+    template = loader.get_template("recipes/recipes_builder_+mongodb_id+_delete.html")
     context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/"),
                'error': False, 'message': ''}
 
@@ -239,14 +239,14 @@ def recipes_builder_mongodb_id_delete(request, mongodb_id):
     if button != "Delete":
         return redirect(f"/recipes/builder/{mongodb_id}/")
 
-    retval = _fetch_recipe_or_404(mongodb_id, recipes_builder_mongodb_id_delete_template, context, request)
+    retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
     if isinstance(retval, HttpResponse):
         return retval
     recipe_model_obj = retval
 
     context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
     recipe_model_obj.delete()
-    return HttpResponse(recipes_builder_mongodb_id_delete_template.render(context, request))
+    return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
@@ -254,11 +254,11 @@ def recipes_builder_mongodb_id_remove_ingredient(request, mongodb_id):
     subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/")
     context = {'subordinate_navigation': subordinate_navigation, 'more_than_one_page': False, 'error': False,
                'message': ''}
-    builder_mongodb_id_add_ingredient_template = loader.get_template(
+    template = loader.get_template(
                                                  'recipes/recipes_builder_+mongodb_id+_add_or_remove_ingredient.html')
     cgi_params = get_cgi_params(request)
 
-    retval = _fetch_recipe_or_404(mongodb_id, builder_mongodb_id_add_ingredient_template, context, request)
+    retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
     if isinstance(retval, HttpResponse):
         return retval
     recipe_model_obj = retval
@@ -266,7 +266,7 @@ def recipes_builder_mongodb_id_remove_ingredient(request, mongodb_id):
     if not len(cgi_params.keys()):
         return redirect(f"/recipes/builder/{mongodb_id}/add_ingredient/")
 
-    retval = cast_to_int(cgi_params.get('fdc_id', 0), 'fdc_id', builder_mongodb_id_add_ingredient_template, context,
+    retval = cast_to_int(cgi_params.get('fdc_id', 0), 'fdc_id', template, context,
                          request, lowerb=1)
     if isinstance(retval, HttpResponse):
         return retval
@@ -283,7 +283,7 @@ def recipes_builder_mongodb_id_remove_ingredient(request, mongodb_id):
     if not found:
         context["error"] = True
         context["message"] = f"recipe with _id='{mongodb_id}' has no ingredient with fdc_id='{fdc_id}'"
-        return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
+        return HttpResponse(template.render(context, request))
     recipe_model_obj.save()
     context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
 
@@ -292,7 +292,7 @@ def recipes_builder_mongodb_id_remove_ingredient(request, mongodb_id):
     context["food_obj"] = food_obj
 
     context["mode"] = "removed"
-    return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
+    return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
@@ -302,10 +302,10 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
     subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/")
     context = {'subordinate_navigation': subordinate_navigation, 'more_than_one_page': False, 'error': False,
                'message': '', 'searched': False}
-    builder_mongodb_id_add_ingredient_template = loader.get_template(
+    template = loader.get_template(
                                                  'recipes/recipes_builder_+mongodb_id+_add_or_remove_ingredient.html')
 
-    retval = _fetch_recipe_or_404(mongodb_id, builder_mongodb_id_add_ingredient_template, context, request)
+    retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
     if isinstance(retval, HttpResponse):
         return retval
     recipe_model_obj = retval
@@ -314,7 +314,7 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
     context["recipe_obj"] = recipe_obj
 
     if "fdc_id" in cgi_params:
-        retval = cast_to_int(cgi_params.get('fdc_id', 0), 'fdc_id', builder_mongodb_id_add_ingredient_template,
+        retval = cast_to_int(cgi_params.get('fdc_id', 0), 'fdc_id', template,
                              context, request, lowerb=1)
         if isinstance(retval, HttpResponse):
             return retval
@@ -329,7 +329,7 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
         except (ValueError, AssertionError):
             context["error"] = True
             context["message"] = "value for 'servings_number' must be a floating-point number greater than zero"
-            return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
+            return HttpResponse(template.render(context, request))
 
         try:
             food_model_obj = Food.objects.get(fdc_id=fdc_id)
@@ -337,7 +337,7 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
             context["error"] = True
             context["message"] = (f"Error 404: no object in 'foods' collection in 'nutritracker' "
                                   f"data store with fdc_id='{fdc_id}'")
-            return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request), status=404)
+            return HttpResponse(template.render(context, request), status=404)
 
         food_obj = Food_Detailed.from_model_obj(food_model_obj)
         context["food_objs"] = [food_obj]
@@ -346,9 +346,9 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
         recipe_model_obj.ingredients.append(ingredient_obj.serialize())
         recipe_model_obj.save()
         context["mode"] = "added"
-        return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
+        return HttpResponse(template.render(context, request))
     else:
-        retval = retrieve_pagination_params(builder_mongodb_id_add_ingredient_template, context, request,
+        retval = retrieve_pagination_params(template, context, request,
                                             default_page_size, search_url, query=True)
         if isinstance(retval, HttpResponse):
             return retval
@@ -358,7 +358,7 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
         context["searched"] = True
         kws = search_query.strip().split()
 
-        retval = _fetch_recipe_or_404(mongodb_id, builder_mongodb_id_add_ingredient_template, context, request)
+        retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
         if isinstance(retval, HttpResponse):
             return retval
         recipe_model_obj = retval
@@ -372,14 +372,14 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
         food_objs.sort(key=attrgetter('food_name'))
         if not len(food_objs):
             context["message"] = "No matches"
-            return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
+            return HttpResponse(template.render(context, request))
         elif len(food_objs) <= page_size and page_number > 1:
             context["more_than_one_page"] = True
             context["message"] = "No more results"
             context["pagination_links"] = generate_pagination_links(f"recipes/builder/{mongodb_id}/add_ingredient/",
                                                                     len(food_objs), page_size, page_number,
                                                                     search_query=search_query)
-            return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
+            return HttpResponse(template.render(context, request))
 
         food_objs = [Food_Detailed.from_model_obj(food_model_obj) for food_model_obj in food_objs]
         if len(food_objs) > page_size:
@@ -393,17 +393,17 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
             context['food_objs'] = food_objs
 
         context["mode"] = "neutral"
-        return HttpResponse(builder_mongodb_id_add_ingredient_template.render(context, request))
+        return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
 def recipes_builder_mongodb_id_add_ingredient_fdc_id(request, mongodb_id, fdc_id):
     subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/")
     context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
-    builder_mongodb_id_add_ingredient_fdc_id_template = loader.get_template(
+    template = loader.get_template(
                                                     'recipes/recipes_builder_+mongodb_id+_add_ingredient_+fdc_id+.html')
 
-    retval = _fetch_recipe_or_404(mongodb_id, builder_mongodb_id_add_ingredient_fdc_id_template, context, request)
+    retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
     if isinstance(retval, HttpResponse):
         return retval
     recipe_model_obj = retval
@@ -416,27 +416,27 @@ def recipes_builder_mongodb_id_add_ingredient_fdc_id(request, mongodb_id, fdc_id
         context["error"] = True
         context["message"] = (f"Error 404: no object in 'foods' collection in 'nutritracker' "
                               f"data store with fdc_id={fdc_id}")
-        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_template.render(context, request), status=404)
+        return HttpResponse(template.render(context, request), status=404)
     elif len(food_model_objs) > 1:
         context["error"] = True
         context["message"] = f"Error 500: inconsistent state: multiple objects matching query for FDC ID {fdc_id}"
-        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_template.render(context, request), status=500)
+        return HttpResponse(template.render(context, request), status=500)
 
     food_model_obj = food_model_objs[0]
     context['food_or_recipe_obj'] = context['food_obj'] = Food_Detailed.from_model_obj(food_model_obj)
-    return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_template.render(context, request))
+    return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
 def recipes_builder_mongodb_id_add_ingredient_fdc_id_confirm(request, mongodb_id, fdc_id):
     subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/")
     context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
-    builder_mongodb_id_add_ingredient_fdc_id_confirm_template = loader.get_template(
+    template = loader.get_template(
                                                                 'recipes/recipes_builder_+mongodb_id+_add_ingredient_'
                                                                 '+fdc_id+_confirm.html')
     cgi_params = get_cgi_params(request)
 
-    retval = _fetch_recipe_or_404(mongodb_id, builder_mongodb_id_add_ingredient_fdc_id_confirm_template, context, request)
+    retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
     if isinstance(retval, HttpResponse):
         return retval
     recipe_model_obj = retval
@@ -449,7 +449,7 @@ def recipes_builder_mongodb_id_add_ingredient_fdc_id_confirm(request, mongodb_id
         context["error"] = True
         context["message"] = (f"Error 404: no object in 'foods' collection in 'nutritracker' "
                               f"data store with fdc_id={fdc_id}")
-        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request),
+        return HttpResponse(template.render(context, request),
                             status=404)
     food_obj = Food_Detailed.from_model_obj(food_model_obj)
 
@@ -462,7 +462,7 @@ def recipes_builder_mongodb_id_add_ingredient_fdc_id_confirm(request, mongodb_id
     except (ValueError, AssertionError):
         context["error"] = True
         context["message"] = "value for 'servings_number' must be a floating-point number greater than zero"
-        return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request))
+        return HttpResponse(template.render(context, request))
 
     context["servings_number"] = servings_number
 
@@ -474,16 +474,16 @@ def recipes_builder_mongodb_id_add_ingredient_fdc_id_confirm(request, mongodb_id
     food_obj.serving_size *= servings_number
     context['food_or_recipe_obj'] = context['food_obj'] = food_obj
 
-    return HttpResponse(builder_mongodb_id_add_ingredient_fdc_id_confirm_template.render(context, request))
+    return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
 def recipes_builder_mongodb_id_finish(request, mongodb_id):
     subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/")
     context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
-    builder_mongodb_id_finish_template = loader.get_template('recipes/recipes_builder_+mongodb_id+_finish.html')
+    template = loader.get_template('recipes/recipes_builder_+mongodb_id+_finish.html')
 
-    retval = _fetch_recipe_or_404(mongodb_id, builder_mongodb_id_finish_template, context, request)
+    retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
     if isinstance(retval, HttpResponse):
         return retval
     recipe_model_obj = retval
@@ -492,13 +492,13 @@ def recipes_builder_mongodb_id_finish(request, mongodb_id):
     recipe_model_obj.save()
     context["food_or_recipe_obj"] = context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
 
-    return HttpResponse(builder_mongodb_id_finish_template.render(context, request))
+    return HttpResponse(template.render(context, request))
 
 
 @require_http_methods(["GET"])
 def recipes_builder_mongodb_id_open_for_editing(request, mongodb_id):
     originating_url = "/recipes/"
-    recipes_builder_mongodb_id_template = loader.get_template('recipes/recipes_builder_+mongodb_id+.html')
+    template = loader.get_template('recipes/recipes_builder_+mongodb_id+.html')
     subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
 
@@ -507,7 +507,7 @@ def recipes_builder_mongodb_id_open_for_editing(request, mongodb_id):
     if user_model_obj is None:
         return redirect(originating_url)
 
-    retval = _fetch_recipe_or_404(mongodb_id, recipes_builder_mongodb_id_template, context, request)
+    retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
     if isinstance(retval, HttpResponse):
         return retval
     recipe_model_obj = retval

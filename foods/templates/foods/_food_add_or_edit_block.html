@@ -1,0 +1,126 @@
+<table class="larger">
+    <tr>
+        <th class="leftaligned">Food Name</th>
+        <td><input type="text" name="food_name" value="{{ food_obj.food_name }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Serving Size</th>
+        <td>
+            <input type="text" name="serving_size" value="{{ food_obj.serving_size }}" size="15"/>
+            <span class="qtrtab"/>
+            <select name="serving_units">
+                <option value="cups" {{ selected_if_serving_units_is_cup }}>cups</option>
+                <option value="floz" {{ selected_if_serving_units_is_floz }}>fluid ounces</option>
+                <option value="g" {{ selected_if_serving_units_is_g }}>grams</option>
+                <option value="oz" {{ selected_if_serving_units_is_oz }}>dry ounces</option>
+                <option value="tbsp" {{ selected_if_serving_units_is_tbsp }}>tablespoons</option>
+                <option value="tsp" {{ selected_if_serving_units_is_tsp }}>teaspoons</option>
+            </select>
+        </td>
+    <td><input type="text" name="serving_units" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Calories</th>
+        <td><input type="text" name="energy_kcal" value="{{ food_obj.energy_kcal }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Biotin (vitamin B7)</th>
+        <td><input type="text" name="biotin_B7_mcg" value="{{ food_obj.biotin_B7_mcg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Calcium</th>
+        <td><input type="text" name="calcium_mg" value="{{ food_obj.calcium_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Cholesterol</th>
+        <td><input type="text" name="cholesterol_mg" value="{{ food_obj.cholesterol_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Copper</th>
+        <td><input type="text" name="copper_mg" value="{{ food_obj.copper_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Folate (vitamin B9)</th>
+        <td><input type="text" name="folate_B9_mcg" value="{{ food_obj.folate_B9_mcg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Iodine</th>
+        <td><input type="text" name="iodine_mcg" value="{{ food_obj.iodine_mcg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Iron</th>
+        <td><input type="text" name="iron_mg" value="{{ food_obj.iron_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Magnesium</th>
+        <td><input type="text" name="magnesium_mg" value="{{ food_obj.magnesium_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Niacin (vitamin B3)</th>
+        <td><input type="text" name="niacin_B3_mg" value="{{ food_obj.niacin_B3_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Pantothenic Acid (vitamin B5)</th>
+        <td><input type="text" name="pantothenic_acid_B5_mg" value="{{ food_obj.pantothenic_acid_B5_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Phosphorous</th>
+        <td><input type="text" name="phosphorous_mg" value="{{ food_obj.phosphorous_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Potassium</th>
+        <td><input type="text" name="potassium_mg" value="{{ food_obj.potassium_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Protein</th>
+        <td><input type="text" name="protein_g" value="{{ food_obj.protein_g }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Riboflavin (vitamin B2)</th>
+        <td><input type="text" name="riboflavin_B2_mg" value="{{ food_obj.riboflavin_B2_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Sodium</th>
+        <td><input type="text" name="sodium_mg" value="{{ food_obj.sodium_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Thiamin (vitamin B1)</th>
+        <td><input type="text" name="thiamin_B1_mg" value="{{ food_obj.thiamin_B1_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Total Carbohydrate</th>
+        <td><input type="text" name="total_carbohydrates_g" value="{{ food_obj.total_carbohydrates_g }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned"><span class="halfqtr"/>Dietary Fiber</th>
+        <td><input type="text" name="dietary_fiber_g" value="{{ food_obj.dietary_fiber_g }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned"><span class="halfqtr"/>Sugars</th>
+        <td><input type="text" name="sugars_g" value="{{ food_obj.sugars_g }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Total Fat</th>
+        <td><input type="text" name="total_fat_g" value="{{ food_obj.total_fat_g }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned"><span class="halfqtr"/>Saturated Fat</th>
+        <td><input type="text" name="saturated_fat_g" value="{{ food_obj.saturated_fat_g }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned"><span class="halfqtr"/>Trans Fat</th>
+        <td><input type="text" name="trans_fat_g" value="{{ food_obj.trans_fat_g }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Vitamin D</th>
+        <td><input type="text" name="vitamin_D_mcg" value="{{ food_obj.vitamin_D_mcg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Vitamin E</th>
+        <td><input type="text" name="vitamin_E_mg" value="{{ food_obj.vitamin_E_mg }}" size="15"/></td>
+    </tr>
+    <tr>
+        <th class="leftaligned">Zinc</th>
+        <td><input type="text" name="zinc_mg" value="{{ food_obj.zinc_mg }}" size="15"/></td>
+    </tr>
+</table>
