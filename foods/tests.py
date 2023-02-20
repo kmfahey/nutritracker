@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import html
+
 from django.test.client import RequestFactory
 from django.test import TestCase
 
@@ -26,7 +28,7 @@ food_model_objs_argds = [
      "potassium_mg": 52, "iron_mg": 0, "calcium_mg": 6, "vitamin_E_mg": 0, "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0,
      "niacin_B3_mg": 0, "folate_B9_mcg": 2, "biotin_B7_mcg": 0, "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 4,
      "iodine_mcg": 0, "magnesium_mg": 2, "zinc_mg": 0, "copper_mg": 0},
-    {"fdc_id": 1944909, "food_name": ' Artisan Smooth & Creamy Gelato, Toasted Coconut', "serving_size": 106,
+    {"fdc_id": 1944909, "food_name": 'Artisan Smooth & Creamy Gelato, Toasted Coconut', "serving_size": 106,
      "serving_units": 'g', "energy_kcal": 198, "total_fat_g": 10, "saturated_fat_g": 8, "trans_fat_g": 0,
      "cholesterol_mg": 14, "sodium_mg": 52, "total_carbohydrates_g": 25, "dietary_fiber_g": 4, "sugars_g": 21,
      "protein_g": 4, "vitamin_D_mcg": 0, "potassium_mg": 170, "iron_mg": 0, "calcium_mg": 123, "vitamin_E_mg": 0,
@@ -100,12 +102,36 @@ class test_foods(TestCase):
         for food_argd in food_model_objs_argds:
             food_model_obj = Food(**food_argd)
             food_model_obj.save()
-            self.food_names.append(food_model_obj.food_name)
+            self.food_names.append(html.escape(food_model_obj.food_name, quote=True))
         self.food_names.sort()
 
-    def test_foods(self):
+    def test_foods_normal(self):
         request = request_factory.get("/foods/")
-        response = foods(request)
+        content = foods(request).content.decode('utf-8')
+        indexes = list()
+        for food_name in self.food_names:
+            assert food_name in content, f"'{food_name}' not in output of foods.views.foods()"
+            indexes.append(content.index(food_name))
+        for i in range(1, len(indexes) - 1):
+            assert indexes[i - 1] < indexes[i] < indexes[i + 1], \
+                    "food names not sorted in output of foods.views.foods(): " \
+                    f"'{food_name[indexes[i - 1]]}', '{food_name[indexes[i]]}', " \
+                    f"'{food_name[indexes[i + 1]]}' disordered"
+
+    def test_foods_pagination(self):
+        request = request_factory.get("/foods/", data={'page_number': 1, 'page_size': 10})
+        content = foods(request).content.decode('utf-8')
+        indexes = list()
+        for food_name in self.food_names[:10]:
+            assert food_name in content, f"'{food_name}' not in output of foods.views.foods() "\
+                                         f"with params {{'page_number': 1, 'page_size': 10}}"
+        for food_name in self.food_names[10:]:
+            assert food_name not in content, f"'{food_name}' in output of foods.views.foods() with "\
+                                             f"params {{'page_number': 1, 'page_size': 10}}  when it "\
+                                             "shouldn't be; pagination went wrong"
+        assert '<a href="/foods/?page_size=10&page_number=2">2</a>' in content, \
+               "output of foods.views.foods() with params {'page_number': 1, 'page_size': 10} "\
+               "doesn't contain pagination link to page 2"
 
     def tearDown(self):
         for food_model_obj in Food.objects.filter():
