@@ -234,6 +234,9 @@ class test_foods_local_search(foods_test_case):
         assert response.status_code == 200, \
                 "returned content from calling foods_local_search() does not have status_code == 200"
 
+
+class test_foods_local_search_results(foods_test_case):
+
     def test_foods_local_search_results_normal(self):
         cgi_data = {'search_query': 'Bread', 'page_number': 1, 'page_size': 25}
         request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
@@ -275,4 +278,13 @@ class test_foods_local_search(foods_test_case):
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         assert "No matches" in content, f"calling foods_local_search(request) with a non-matching search_query " \
                 "doesn't return a page containing 'No matches'"
+
+
+class test_foods_fdc_search(foods_test_case):
+
+    def test_foods_fdc_search_normal(self):
+        request = self.request_factory.get("/foods/fdc_search/")
+        response = foods(request)
+        assert response.status_code == 200, \
+                "returned content from calling foods_fdc_search() does not have status_code == 200"
 
