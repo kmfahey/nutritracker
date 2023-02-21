@@ -146,13 +146,13 @@ class test_foods(foods_test_case):
                "output of foods.views.foods() with params {'page_number': 1, 'page_size': 10} "\
                "doesn't contain pagination link to page 2"
 
-    def test_foods_pagination_bad_arg(self):
+    def test_foods_pagination_error_bad_arg(self):
         request = self.request_factory.get("/foods/", data={'page_number': 'one', 'page_size': 10})
         content = foods(request).content.decode('utf-8')
         assert "value for page_number must be an integer; received &#x27;one&#x27;" in content, \
                 "calling foods() with params {'page_number': 'one', 'page_size': 10} did not produce the correct error"
 
-    def test_foods_pagination_overshooting_arg(self):
+    def test_foods_pagination_error_overshooting_arg(self):
         request = self.request_factory.get("/foods/", data={'page_number': 3, 'page_size': 10})
         content = foods(request).content.decode('utf-8')
         assert "No more results" in content, \
@@ -165,7 +165,7 @@ class test_foods_fdc_id(foods_test_case):
     def test_foods_fdc_id_normal(self):
         food_model_obj_argd = random.choice(food_model_objs_argds)
         fdc_id = food_model_obj_argd["fdc_id"]
-        food_name = food_model_obj_argd["food_name"]
+        food_name = html.escape(food_model_obj_argd["food_name"])
         request = self.request_factory.get(f"/foods/{fdc_id}/")
         content = foods_fdc_id(request, fdc_id).content.decode('utf-8')
         assert food_model_obj_argd["food_name"] in content, f"calling foods_fdc_id(request, fdc_id={fdc_id}) "\
@@ -182,3 +182,42 @@ class test_foods_fdc_id(foods_test_case):
                 assert re.search(f">{nutrient_name}<.*\n.*>{nutrient_amount}{nutrient_units}<", content), \
                         f"returned content from foods_fdc_id(request, fdc_id={fdc_id}) does not contain '{nutrient_name}' "\
                         f"followed on the next line by '>{nutrient_amount}{nutrient_units}<'"
+
+    def test_foods_fdc_id_error_invalid_id(self):
+        # The fdc ids found in food_model_objs_argds are roughly in the range
+        # [2**17, 2**22] == [131072, 4194304]
+        spurious_fdc_id = random.randint(2**17, 2**22)
+        # Just in case by some chance the random fdc id actually occurs in the
+        # stored argds
+        while any(food_argd["fdc_id"] == spurious_fdc_id for food_argd in food_model_objs_argds):
+            spurious_fdc_id = random.randint(2**17, 2**22)
+        request = self.request_factory.get(f"/foods/{spurious_fdc_id}/")
+        response = foods_fdc_id(request, spurious_fdc_id)
+        content = response.content.decode('utf-8')
+        assert response.status_code == 404, "returned content from calling foods_fdc_id() with an invalid fdc_id " \
+                "doesn't return a response with status_code == 404"
+        assert f"no object in 'foods' collection in 'nutritracker' data store with FDC ID {spurious_fdc_id}" in content, \
+                "returned content from calling foods_fdc_id() with an invalid fdc_id doesn't return document with " \
+                "correct error message"
+
+    def test_foods_fdc_id_error_id_with_duplicate_objs(self):
+        first_food_argd = random.choice(food_model_objs_argds)
+        first_fdc_id = first_food_argd["fdc_id"]
+        second_food_argd = random.choice(food_model_objs_argds)
+        while second_food_argd is first_food_argd:
+            second_food_argd = random.choice(food_model_objs_argds)
+        second_fdc_id = second_food_argd["fdc_id"]
+        second_food_model_obj = Food.objects.get(fdc_id=second_fdc_id)
+        second_food_model_obj.fdc_id = first_fdc_id
+        second_food_model_obj.save()
+        request = self.request_factory.get(f"/foods/{first_fdc_id}/")
+        response = foods_fdc_id(request, first_fdc_id)
+        content = response.content.decode('utf-8')
+        assert response.status_code == 500, "returned content from calling foods_fdc_id() with an fdc_id that occurs " \
+                "twice in the data store doesn't return a response with status_code == 500"
+        assert f"inconsistent state: multiple objects matching query for FDC ID {first_fdc_id}" in content, \
+                "returned content from calling foods_fdc_id() with an fdc_id that occurs twice in the data store " \
+                "doesn't return document with correct error message"
+
+
+
