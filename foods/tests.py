@@ -135,8 +135,15 @@ class test_foods(TestCase):
     def test_foods_pagination_bad_arg(self):
         request = request_factory.get("/foods/", data={'page_number': 'one', 'page_size': 10})
         content = foods(request).content.decode('utf-8')
-        assert ("value for page_number must be an integer; received &#x27;one&#x27;" in content), \
+        assert "value for page_number must be an integer; received &#x27;one&#x27;" in content, \
                 "calling foods() with params {'page_number': 'one', 'page_size': 10} did not produce the correct error"
+
+    def test_foods_pagination_overshooting_arg(self):
+        request = request_factory.get("/foods/", data={'page_number': 3, 'page_size': 10})
+        content = foods(request).content.decode('utf-8')
+        assert "No more results" in content, \
+                "calling foods() with params {'page_number': 3, 'page_size': 10} "\
+                "did not produce 'No more results' message"
 
     def tearDown(self):
         for food_model_obj in Food.objects.filter():
