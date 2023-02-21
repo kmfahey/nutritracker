@@ -3,6 +3,7 @@
 import html
 import random
 import re
+import urllib.parse
 
 from django.test.client import RequestFactory
 from django.test import TestCase
@@ -227,17 +228,35 @@ class test_foods_local_search(foods_test_case):
     # test, since this suite is not testing the structure of the templates. The
     # response is tested for existing and the suite moves on. This test is more
     # useful to catch if foods_local_search() has started throwing an exception.
-    def test_foods_local_search(self):
+    def test_foods_local_search_normal(self):
         request = self.request_factory.get("/foods/local_search/")
         response = foods(request)
         assert response.status_code == 200, \
                 "returned content from calling foods_local_search() does not have status_code == 200"
 
-    def test_foods_local_search_results(self):
-        request = self.request_factory.get("/foods/local_search_results/", data={'search_query': 'Bread', 'page_number': 1, 'page_size': 25})
+    def test_foods_local_search_results_normal(self):
+        cgi_data = {'search_query': 'Bread', 'page_number': 1, 'page_size': 25}
+        request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
         content = foods(request).content.decode('utf-8')
         matching_food_names = [food_argd["food_name"] for food_argd in food_model_objs_argds if "Bread" in food_argd["food_name"]]
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
         for food_name in matching_food_names:
-            assert food_name in content
+            assert food_name in content, f"calling foods_local_search(request) with CGI params {cgi_query_string} " \
+                    "doesn't return a page with all matching food_names listed"
 
+    def test_foods_local_search_results_normal(self):
+        cgi_data = {'search_query': 'Bread', 'page_number': 1, 'page_size': 1}
+        request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
+        content = foods_local_search_results(request).content.decode('utf-8')
+        bread_re = re.compile("bread", re.I)
+        matching_food_names = sorted([html.escape(food_argd["food_name"]) for food_argd in food_model_objs_argds
+                                                                              if bread_re.search(food_argd["food_name"])])
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        assert matching_food_names[0] in content, f"calling foods_local_search(request) with CGI params " \
+                f"{cgi_query_string} didn't return a page which doesn't return a page containing '{matching_food_names[0]}'"
+        assert matching_food_names[1] not in content, f"calling foods_local_search(request) with CGI params " \
+                f"{cgi_query_string} returned a page which contains '{matching_food_names[1]}'"
+        assert '<a href="/foods/local_search_results/?page_size=1&page_number=2&search_query=Bread">2</a>' in content, \
+                "output of foods.views.foods() with params " \
+                f"{cgi_query_string} doesn't contain pagination link to page 2"
 
