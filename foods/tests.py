@@ -260,3 +260,11 @@ class test_foods_local_search(foods_test_case):
                 "output of foods.views.foods() with params " \
                 f"{cgi_query_string} doesn't contain pagination link to page 2"
 
+    def test_foods_local_search_results_error_no_matches(self):
+        cgi_data = {'search_query': 'Rowrbazzle', 'page_number': 1, 'page_size': 1}
+        request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
+        content = foods_local_search_results(request).content.decode('utf-8')
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        assert "No matches" in content, f"calling foods_local_search(request) with a non-matching search_query " \
+                "doesn't return a page containing 'No matches'"
+
