@@ -8,7 +8,7 @@ from django.test.client import RequestFactory
 from django.test import TestCase
 
 from .models import Food
-from .views import foods, foods_fdc_id, foods_local_search
+from .views import foods, foods_fdc_id, foods_local_search, foods_local_search_results
 
 
 food_params_to_nutrient_names = \
@@ -232,4 +232,12 @@ class test_foods_local_search(foods_test_case):
         response = foods(request)
         assert response.status_code == 200, \
                 "returned content from calling foods_local_search() does not have status_code == 200"
+
+    def test_foods_local_search_results(self):
+        request = self.request_factory.get("/foods/local_search_results/", data={'search_query': 'Bread', 'page_number': 1, 'page_size': 25})
+        content = foods(request).content.decode('utf-8')
+        matching_food_names = [food_argd["food_name"] for food_argd in food_model_objs_argds if "Bread" in food_argd["food_name"]]
+        for food_name in matching_food_names:
+            assert food_name in content
+
 
