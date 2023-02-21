@@ -8,7 +8,7 @@ from django.test.client import RequestFactory
 from django.test import TestCase
 
 from .models import Food
-from .views import foods, foods_fdc_id
+from .views import foods, foods_fdc_id, foods_local_search
 
 
 food_params_to_nutrient_names = \
@@ -86,7 +86,8 @@ food_model_objs_argds = [
          fdc_id=169761, folate_B9_mcg=26, food_name='Wheat Flour, White, All-Purpose, Unenriched', iodine_mcg=0,
          iron_mg=1, magnesium_mg=22, niacin_B3_mg=1, pantothenic_acid_B5_mg=0, phosphorous_mg=108, potassium_mg=107,
          protein_g=10, riboflavin_B2_mg=0, saturated_fat_g=0, serving_size=1, serving_units='cup', sodium_mg=2,
-         sugars_g=0, thiamin_B1_mg=0, total_carbohydrates_g=76, total_fat_g=0, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0, zinc_mg=0),
+         sugars_g=0, thiamin_B1_mg=0, total_carbohydrates_g=76, total_fat_g=0, trans_fat_g=0, vitamin_D_mcg=0,
+         vitamin_E_mg=0, zinc_mg=0),
     dict(biotin_B7_mcg=0, calcium_mg=0, cholesterol_mg=0, copper_mg=0, dietary_fiber_g=0, energy_kcal=0, fdc_id=175040,
          folate_B9_mcg=0, food_name='Leavening Agents, Baking Soda', iodine_mcg=0, iron_mg=0, magnesium_mg=0,
          niacin_B3_mg=0, pantothenic_acid_B5_mg=0, phosphorous_mg=0, potassium_mg=0, protein_g=0, riboflavin_B2_mg=0,
@@ -168,7 +169,7 @@ class test_foods_fdc_id(foods_test_case):
         food_name = html.escape(food_model_obj_argd["food_name"])
         request = self.request_factory.get(f"/foods/{fdc_id}/")
         content = foods_fdc_id(request, fdc_id).content.decode('utf-8')
-        assert food_model_obj_argd["food_name"] in content, f"calling foods_fdc_id(request, fdc_id={fdc_id}) "\
+        assert food_name in content, f"calling foods_fdc_id(request, fdc_id={fdc_id}) "\
                 f"returned content that did not contain food_name value '{food_name}'"
         for food_param, nutrient_name in food_params_to_nutrient_names.items():
             nutrient_amount = re.escape(str(food_model_obj_argd[food_param]))
@@ -220,4 +221,15 @@ class test_foods_fdc_id(foods_test_case):
                 "doesn't return document with correct error message"
 
 
+class test_foods_local_search(foods_test_case):
+
+    # /foods/local_search/ is essentially a static page, so there's not much to
+    # test, since this suite is not testing the structure of the templates. The
+    # response is tested for existing and the suite moves on. This test is more
+    # useful to catch if foods_local_search() has started throwing an exception.
+    def test_foods_local_search(self):
+        request = self.request_factory.get("/foods/local_search/")
+        response = foods(request)
+        assert response.status_code == 200, \
+                "returned content from calling foods_local_search() does not have status_code == 200"
 
