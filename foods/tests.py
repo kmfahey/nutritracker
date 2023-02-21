@@ -121,7 +121,6 @@ class test_foods(TestCase):
     def test_foods_pagination(self):
         request = request_factory.get("/foods/", data={'page_number': 1, 'page_size': 10})
         content = foods(request).content.decode('utf-8')
-        indexes = list()
         for food_name in self.food_names[:10]:
             assert food_name in content, f"'{food_name}' not in output of foods.views.foods() "\
                                          f"with params {{'page_number': 1, 'page_size': 10}}"
@@ -132,6 +131,12 @@ class test_foods(TestCase):
         assert '<a href="/foods/?page_size=10&page_number=2">2</a>' in content, \
                "output of foods.views.foods() with params {'page_number': 1, 'page_size': 10} "\
                "doesn't contain pagination link to page 2"
+
+    def test_foods_pagination_bad_arg(self):
+        request = request_factory.get("/foods/", data={'page_number': 'one', 'page_size': 10})
+        content = foods(request).content.decode('utf-8')
+        assert ("value for page_number must be an integer; received &#x27;one&#x27;" in content), \
+                "calling foods() with params {'page_number': 'one', 'page_size': 10} did not produce the correct error"
 
     def tearDown(self):
         for food_model_obj in Food.objects.filter():

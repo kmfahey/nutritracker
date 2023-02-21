@@ -66,15 +66,15 @@ def cast_to_int(strval, param_name, template, context, request, lowerb=-math.inf
         intval = int(strval)
     except ValueError:
         context["error"] = True
-        context["message"] = f"value for {param_name} must be an integer; received {strval}"
+        context["message"] = f"value for {param_name} must be an integer; received '{strval}'"
         return HttpResponse(template.render(context, request))
     if not (lowerb <= intval <= upperb):
         if lowerb == -math.inf:
-            context["message"] = f"value for {param_name} must be an integer less than or equal to {upperb}; received {intval}"
+            context["message"] = f"value for {param_name} must be an integer less than or equal to {upperb}; received '{intval}'"
         elif upperb == math.inf:
-            context["message"] = f"value for {param_name} must be an integer greater than or equal to {lowerb}; received {intval}"
+            context["message"] = f"value for {param_name} must be an integer greater than or equal to {lowerb}; received '{intval}'"
         else:
-            context["message"] = f"value for {param_name} must be an integer greater than or equal to {lowerb} and less than or equal to {upperb}; received {intval}"
+            context["message"] = f"value for {param_name} must be an integer greater than or equal to {lowerb} and less than or equal to {upperb}; received '{intval}'"
         return HttpResponse(template.render(context, request))
     return intval
 
@@ -104,11 +104,11 @@ def cast_to_float(strval, param_name, template, context, request, lowerb=-math.i
 
 def check_str_param(strval, param_name, template, context, request, lowerb=0, upperb=math.inf):
     if lowerb != -math.inf and isinstance(lowerb, float):
-        raise ValueError(f"cast_to_int() called with float value for 'lowerb': {lowerb}")
+        raise ValueError(f"check_str_param() called with float value for 'lowerb': {lowerb}")
     elif upperb != math.inf and isinstance(upperb, float):
-        raise ValueError(f"cast_to_int() called with float value for 'upperb': {upperb}")
+        raise ValueError(f"check_str_param() called with float value for 'upperb': {upperb}")
     elif lowerb < 0:
-        raise ValueError(f"cast_to_int() called with value for 'lowerb' less than 0: {lowerb}")
+        raise ValueError(f"check_str_param() called with value for 'lowerb' less than 0: {lowerb}")
     if strval is None:
         context["error"] = True
         context["message"] = f"a value for {param_name} is required"
