@@ -4,12 +4,14 @@ import html
 import random
 import re
 import urllib.parse
+import json
 
 from django.test.client import RequestFactory
 from django.test import TestCase
 
 from .models import Food
 from .views import foods, foods_fdc_id, foods_local_search, foods_local_search_results
+from utils import Food_Stub
 
 
 food_params_to_nutrient_names = \
@@ -101,6 +103,25 @@ food_model_objs_argds = [
          sugars_g=0, thiamin_B1_mg=0, total_carbohydrates_g=46, total_fat_g=0, trans_fat_g=0, vitamin_D_mcg=0,
          vitamin_E_mg=0, zinc_mg=0)
 ]
+
+
+class Mock_Fdc_Api_Contacter:
+
+    with open("./test/mock_api_query_results.json", "r") as mock_api_json:
+        search_results_prefetched_json = mock_api_json.read()
+        search_results_parsed_json = json.loads(search_results_prefetched_json)
+
+    def __init__(self, unneeded_api_key):
+        pass
+
+    def number_of_search_results(self, query):
+        return len(self.search_results_parsed_json['foods'])
+
+    def search_by_keywords(self, query, page_size=25, page_number=1):
+        results_list = list()
+        for result_obj in self.search_results_parsed_json['foods']:
+            results_list.append(Food_Stub.from_fdc_json_obj(result_obj))
+        return results_list
 
 
 class foods_test_case(TestCase):
@@ -288,3 +309,5 @@ class test_foods_fdc_search(foods_test_case):
         assert response.status_code == 200, \
                 "returned content from calling foods_fdc_search() does not have status_code == 200"
 
+
+#class test_foods_fdc_search_results(foods_test_case):

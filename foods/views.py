@@ -156,9 +156,9 @@ def foods_fdc_search(request):
 
 
 @require_http_methods(["GET", "POST"])
-def foods_fdc_search_results(request):
+def foods_fdc_search_results(request, fdc_api_contacter=Fdc_Api_Contacter):
     search_url = "/foods/fdc_search/"
-    api_contacter = Fdc_Api_Contacter(FDC_API_KEY)
+    api_contacter = fdc_api_contacter(FDC_API_KEY)
     subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation,
                'message': '',
