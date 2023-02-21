@@ -1,101 +1,107 @@
 #!/usr/bin/python
 
 import html
+import random
+import re
 
 from django.test.client import RequestFactory
 from django.test import TestCase
 
 from .models import Food
-from .views import foods
+from .views import foods, foods_fdc_id
 
+
+food_params_to_nutrient_names = \
+    dict(biotin_B7_mcg="Biotin (B7)", calcium_mg="Calcium", cholesterol_mg="Cholesterol", copper_mg="Copper",
+         dietary_fiber_g="Dietary Fiber", energy_kcal="Calories", folate_B9_mcg="Folate (B9)", iodine_mcg="Iodine",
+         iron_mg="Iron", magnesium_mg="Magnesium", niacin_B3_mg="Niacin (B3)",
+         pantothenic_acid_B5_mg="Pantothenic Acid (B5)", phosphorous_mg="Phosphorous", potassium_mg="Potassium",
+         protein_g="Protein", riboflavin_B2_mg="Riboflavin (B2)", saturated_fat_g="Saturated Fat", sodium_mg="Sodium",
+         sugars_g="Sugars", thiamin_B1_mg="Thiamin (B1)", total_carbohydrates_g="Total Carbohydrates",
+         total_fat_g="Total Fat", trans_fat_g="Trans Fat", vitamin_D_mcg="Vitamin D", vitamin_E_mg="Vitamin E",
+         zinc_mg="Zinc")
+
+food_params_to_units = \
+    dict(biotin_B7_mcg="mcg", calcium_mg="mg", cholesterol_mg="mg", copper_mg="mg", dietary_fiber_g="g",
+         energy_kcal="kcal", folate_B9_mcg="mcg", iodine_mcg="mcg", iron_mg="mg", magnesium_mg="mg", niacin_B3_mg="mg",
+         pantothenic_acid_B5_mg="mg", phosphorous_mg="mg", potassium_mg="mg", protein_g="g", riboflavin_B2_mg="mg",
+         saturated_fat_g="g", sodium_mg="mg", sugars_g="g", thiamin_B1_mg="mg", total_carbohydrates_g="g",
+         total_fat_g="g", trans_fat_g="g", vitamin_D_mcg="mcg", vitamin_E_mg="mg", zinc_mg="mg")
 
 food_model_objs_argds = [
-    {"fdc_id": 2103038, "food_name": 'Angus Roasted Beef', "serving_size": 56, "serving_units": 'g', "energy_kcal": 125,
-     "total_fat_g": 3, "saturated_fat_g": 0, "trans_fat_g": 0, "cholesterol_mg": 54, "sodium_mg": 571,
-     "total_carbohydrates_g": 0, "dietary_fiber_g": 0, "sugars_g": 0, "protein_g": 23, "vitamin_D_mcg": 0,
-     "potassium_mg": 0, "iron_mg": 1, "calcium_mg": 0, "vitamin_E_mg": 0, "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0,
-     "niacin_B3_mg": 0, "folate_B9_mcg": 0, "biotin_B7_mcg": 0, "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 0,
-     "iodine_mcg": 0, "magnesium_mg": 0, "zinc_mg": 0, "copper_mg": 0 },
-    {"fdc_id": 2103039, "food_name": 'Cornbread', "serving_size": 94, "serving_units": 'g', "energy_kcal": 287,
-     "total_fat_g": 7, "saturated_fat_g": 2, "trans_fat_g": 0, "cholesterol_mg": 48, "sodium_mg": 500,
-     "total_carbohydrates_g": 52, "dietary_fiber_g": 1, "sugars_g": 20, "protein_g": 4, "vitamin_D_mcg": 0,
-     "potassium_mg": 0, "iron_mg": 1, "calcium_mg": 64, "vitamin_E_mg": 0, "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0,
-     "niacin_B3_mg": 0, "folate_B9_mcg": 0, "biotin_B7_mcg": 0, "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 0,
-     "iodine_mcg": 0, "magnesium_mg": 0, "zinc_mg": 0, "copper_mg": 0},
-    {"fdc_id": 169640, "food_name": 'Honey', "serving_size": 1, "serving_units": 'cup', "energy_kcal": 304,
-     "total_fat_g": 0, "saturated_fat_g": 0, "trans_fat_g": 0, "cholesterol_mg": 0, "sodium_mg": 4,
-     "total_carbohydrates_g": 82, "dietary_fiber_g": 0, "sugars_g": 82, "protein_g": 0, "vitamin_D_mcg": 0,
-     "potassium_mg": 52, "iron_mg": 0, "calcium_mg": 6, "vitamin_E_mg": 0, "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0,
-     "niacin_B3_mg": 0, "folate_B9_mcg": 2, "biotin_B7_mcg": 0, "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 4,
-     "iodine_mcg": 0, "magnesium_mg": 2, "zinc_mg": 0, "copper_mg": 0},
-    {"fdc_id": 1944909, "food_name": 'Artisan Smooth & Creamy Gelato, Toasted Coconut', "serving_size": 106,
-     "serving_units": 'g', "energy_kcal": 198, "total_fat_g": 10, "saturated_fat_g": 8, "trans_fat_g": 0,
-     "cholesterol_mg": 14, "sodium_mg": 52, "total_carbohydrates_g": 25, "dietary_fiber_g": 4, "sugars_g": 21,
-     "protein_g": 4, "vitamin_D_mcg": 0, "potassium_mg": 170, "iron_mg": 0, "calcium_mg": 123, "vitamin_E_mg": 0,
-     "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0, "niacin_B3_mg": 0, "folate_B9_mcg": 0, "biotin_B7_mcg": 0,
-     "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 0, "iodine_mcg": 0, "magnesium_mg": 0, "zinc_mg": 0, "copper_mg": 0},
-    {"fdc_id": 1970473, "food_name": 'Milk', "serving_size": 240, "serving_units": 'ml', "energy_kcal": 71,
-     "total_fat_g": 3, "saturated_fat_g": 2, "trans_fat_g": 0, "cholesterol_mg": 15, "sodium_mg": 58,
-     "total_carbohydrates_g": 5, "dietary_fiber_g": 0, "sugars_g": 5, "protein_g": 3, "vitamin_D_mcg": 0,
-     "potassium_mg": 179, "iron_mg": 0, "calcium_mg": 138, "vitamin_E_mg": 0, "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0,
-     "niacin_B3_mg": 0, "folate_B9_mcg": 0, "biotin_B7_mcg": 0, "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 104,
-     "iodine_mcg": 0, "magnesium_mg": 0, "zinc_mg": 0, "copper_mg": 0},
-    {"fdc_id": 2031685, "food_name": 'Rooibos Caffeine-Free Red Tea Bags, Rooibos', "serving_size": 2,
-     "serving_units": 'g', "energy_kcal": 0, "total_fat_g": 0, "saturated_fat_g": 0, "trans_fat_g": 0,
-     "cholesterol_mg": 0, "sodium_mg": 0, "total_carbohydrates_g": 0, "dietary_fiber_g": 0, "sugars_g": 0,
-     "protein_g": 0, "vitamin_D_mcg": 0, "potassium_mg": 0, "iron_mg": 0, "calcium_mg": 0, "vitamin_E_mg": 0,
-     "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0, "niacin_B3_mg": 0, "folate_B9_mcg": 0, "biotin_B7_mcg": 0,
-     "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 0, "iodine_mcg": 0, "magnesium_mg": 0, "zinc_mg": 0, "copper_mg": 0},
-    {"fdc_id": 946384, "food_name": 'Splenda, No Calorie Granulated Sweetner', "serving_size": 0.5, "serving_units": 'g',
-     "energy_kcal": 0, "total_fat_g": 0, "saturated_fat_g": 0, "trans_fat_g": 0, "cholesterol_mg": 0, "sodium_mg": 0,
-     "total_carbohydrates_g": 200, "dietary_fiber_g": 0, "sugars_g": 0, "protein_g": 0, "vitamin_D_mcg": 0,
-     "potassium_mg": 0, "iron_mg": 0, "calcium_mg": 0, "vitamin_E_mg": 0, "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0,
-     "niacin_B3_mg": 0, "folate_B9_mcg": 0, "biotin_B7_mcg": 0, "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 0,
-     "iodine_mcg": 0, "magnesium_mg": 0, "zinc_mg": 0, "copper_mg": 0},
-    {"fdc_id": 1886332, "food_name": 'Whole Wheat Bread', "serving_size": 43, "serving_units": 'g', "energy_kcal": 233,
-     "total_fat_g": 3, "saturated_fat_g": 0, "trans_fat_g": 0, "cholesterol_mg": 0, "sodium_mg": 395,
-     "total_carbohydrates_g": 44, "dietary_fiber_g": 7, "sugars_g": 6, "protein_g": 11, "vitamin_D_mcg": 0,
-     "potassium_mg": 0, "iron_mg": 2, "calcium_mg": 47, "vitamin_E_mg": 0, "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0,
-     "niacin_B3_mg": 2, "folate_B9_mcg": 19, "biotin_B7_mcg": 0, "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 0,
-     "iodine_mcg": 0, "magnesium_mg": 0, "zinc_mg": 0, "copper_mg": 0},
-    {"fdc_id": 2131541, "food_name": 'White Bread', "serving_size": 25, "serving_units": 'g', "energy_kcal": 280,
-     "total_fat_g": 2, "saturated_fat_g": 0, "trans_fat_g": 0, "cholesterol_mg": 0, "sodium_mg": 540,
-     "total_carbohydrates_g": 52, "dietary_fiber_g": 0, "sugars_g": 8, "protein_g": 8, "vitamin_D_mcg": 0,
-     "potassium_mg": 0, "iron_mg": 3, "calcium_mg": 0, "vitamin_E_mg": 0, "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0,
-     "niacin_B3_mg": 0, "folate_B9_mcg": 0, "biotin_B7_mcg": 0, "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 0,
-     "iodine_mcg": 0, "magnesium_mg": 0, "zinc_mg": 0, "copper_mg": 0},
-    {"fdc_id": 169655, "food_name": 'Sugars, Granulated', "serving_size": 1, "serving_units": 'cup', "energy_kcal": 387,
-     "total_fat_g": 0, "saturated_fat_g": 0, "trans_fat_g": 0, "cholesterol_mg": 0, "sodium_mg": 1,
-     "total_carbohydrates_g": 99, "dietary_fiber_g": 0, "sugars_g": 99, "protein_g": 0, "vitamin_D_mcg": 0,
-     "potassium_mg": 2, "iron_mg": 0, "calcium_mg": 1, "vitamin_E_mg": 0, "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0,
-     "niacin_B3_mg": 0, "folate_B9_mcg": 0, "biotin_B7_mcg": 0, "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 0,
-     "iodine_mcg": 0, "magnesium_mg": 0, "zinc_mg": 0, "copper_mg": 0},
-    {"fdc_id": 169761, "food_name": 'Wheat Flour, White, All-Purpose, Unenriched', "serving_size": 1,
-     "serving_units": 'cup', "energy_kcal": 364, "total_fat_g": 0, "saturated_fat_g": 0, "trans_fat_g": 0,
-     "cholesterol_mg": 0, "sodium_mg": 2, "total_carbohydrates_g": 76, "dietary_fiber_g": 2, "sugars_g": 0,
-     "protein_g": 10, "vitamin_D_mcg": 0, "potassium_mg": 107, "iron_mg": 1, "calcium_mg": 15, "vitamin_E_mg": 0,
-     "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0, "niacin_B3_mg": 1, "folate_B9_mcg": 26, "biotin_B7_mcg": 0,
-     "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 108, "iodine_mcg": 0, "magnesium_mg": 22, "zinc_mg": 0,
-     "copper_mg": 0},
-    {"fdc_id": 175040, "food_name": 'Leavening Agents, Baking Soda', "serving_size": 0.5, "serving_units": 'tsp',
-     "energy_kcal": 0, "total_fat_g": 0, "saturated_fat_g": 0, "trans_fat_g": 0, "cholesterol_mg": 0, "sodium_mg": 27360,
-     "total_carbohydrates_g": 0, "dietary_fiber_g": 0, "sugars_g": 0, "protein_g": 0, "vitamin_D_mcg": 0,
-     "potassium_mg": 0, "iron_mg": 0, "calcium_mg": 0, "vitamin_E_mg": 0, "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0,
-     "niacin_B3_mg": 0, "folate_B9_mcg": 0, "biotin_B7_mcg": 0, "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 0,
-     "iodine_mcg": 0, "magnesium_mg": 0, "zinc_mg": 0, "copper_mg": 0},
-    {"fdc_id": 172805, "food_name": 'Leavening Agents, Baking Powder, Low-Sodium', "serving_size": 0.5,
-     "serving_units": 'tsp', "energy_kcal": 97, "total_fat_g": 0, "saturated_fat_g": 0, "trans_fat_g": 0,
-     "cholesterol_mg": 0, "sodium_mg": 90, "total_carbohydrates_g": 46, "dietary_fiber_g": 2, "sugars_g": 0,
-     "protein_g": 0, "vitamin_D_mcg": 0, "potassium_mg": 10100, "iron_mg": 8, "calcium_mg": 4332, "vitamin_E_mg": 0,
-     "thiamin_B1_mg": 0, "riboflavin_B2_mg": 0, "niacin_B3_mg": 0, "folate_B9_mcg": 0, "biotin_B7_mcg": 0,
-     "pantothenic_acid_B5_mg": 0, "phosphorous_mg": 6869, "iodine_mcg": 0, "magnesium_mg": 29, "zinc_mg": 0,
-     "copper_mg": 0}
+    dict(biotin_B7_mcg=0, calcium_mg=0, cholesterol_mg=54, copper_mg=0, dietary_fiber_g=0, energy_kcal=125,
+         fdc_id=2103038, folate_B9_mcg=0, food_name='Angus Roasted Beef', iodine_mcg=0, iron_mg=1, magnesium_mg=0,
+         niacin_B3_mg=0, pantothenic_acid_B5_mg=0, phosphorous_mg=0, potassium_mg=0, protein_g=23, riboflavin_B2_mg=0,
+         saturated_fat_g=0, serving_size=56, serving_units='g', sodium_mg=571, sugars_g=0, thiamin_B1_mg=0,
+         total_carbohydrates_g=0, total_fat_g=3, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0, zinc_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=64, cholesterol_mg=48, copper_mg=0, dietary_fiber_g=1, energy_kcal=287,
+         fdc_id=2103039, folate_B9_mcg=0, food_name='Cornbread', iodine_mcg=0, iron_mg=1, magnesium_mg=0, niacin_B3_mg=0,
+         pantothenic_acid_B5_mg=0, phosphorous_mg=0, potassium_mg=0, protein_g=4, riboflavin_B2_mg=0, saturated_fat_g=2,
+         serving_size=94, serving_units='g', sodium_mg=500, sugars_g=20, thiamin_B1_mg=0, total_carbohydrates_g=52,
+         total_fat_g=7, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0, zinc_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=6, cholesterol_mg=0, copper_mg=0, dietary_fiber_g=0, energy_kcal=304, fdc_id=169640,
+         folate_B9_mcg=2, food_name='Honey', iodine_mcg=0, iron_mg=0, magnesium_mg=2, niacin_B3_mg=0,
+         pantothenic_acid_B5_mg=0, phosphorous_mg=4, potassium_mg=52, protein_g=0, riboflavin_B2_mg=0, saturated_fat_g=0,
+         serving_size=1, serving_units='cup', sodium_mg=4, sugars_g=82, thiamin_B1_mg=0, total_carbohydrates_g=82,
+         total_fat_g=0, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0, zinc_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=123, cholesterol_mg=14, copper_mg=0, dietary_fiber_g=4, energy_kcal=198,
+         fdc_id=1944909, folate_B9_mcg=0, food_name='Artisan Smooth & Creamy Gelato, Toasted Coconut', iodine_mcg=0,
+         iron_mg=0, magnesium_mg=0, niacin_B3_mg=0, pantothenic_acid_B5_mg=0, phosphorous_mg=0, potassium_mg=170,
+         protein_g=4, riboflavin_B2_mg=0, saturated_fat_g=8, serving_size=106, serving_units='g', sodium_mg=52,
+         sugars_g=21, thiamin_B1_mg=0, total_carbohydrates_g=25, total_fat_g=10, trans_fat_g=0, vitamin_D_mcg=0,
+         vitamin_E_mg=0, zinc_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=138, cholesterol_mg=15, copper_mg=0, dietary_fiber_g=0, energy_kcal=71,
+         fdc_id=1970473, folate_B9_mcg=0, food_name='Milk', iodine_mcg=0, iron_mg=0, magnesium_mg=0, niacin_B3_mg=0,
+         pantothenic_acid_B5_mg=0, phosphorous_mg=104, potassium_mg=179, protein_g=3, riboflavin_B2_mg=0,
+         saturated_fat_g=2, serving_size=240, serving_units='ml', sodium_mg=58, sugars_g=5, thiamin_B1_mg=0,
+         total_carbohydrates_g=5, total_fat_g=3, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0, zinc_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=0, cholesterol_mg=0, dietary_fiber_g=0, energy_kcal=0, fdc_id=2031685,
+         folate_B9_mcg=0, food_name='Rooibos Caffeine-Free Red Tea Bags, Rooibos', iodine_mcg=0, iron_mg=0,
+         magnesium_mg=0, niacin_B3_mg=0, pantothenic_acid_B5_mg=0, phosphorous_mg=0, potassium_mg=0, protein_g=0,
+         riboflavin_B2_mg=0, saturated_fat_g=0, serving_size=2, serving_units='g', sodium_mg=0, sugars_g=0,
+         thiamin_B1_mg=0, total_carbohydrates_g=0, total_fat_g=0, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0,
+         zinc_mg=0, copper_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=0, cholesterol_mg=0, dietary_fiber_g=0, energy_kcal=0, fdc_id=946384,
+         folate_B9_mcg=0, food_name='Splenda, No Calorie Granulated Sweetner', iodine_mcg=0, iron_mg=0, magnesium_mg=0,
+         niacin_B3_mg=0, pantothenic_acid_B5_mg=0, phosphorous_mg=0, potassium_mg=0, protein_g=0, riboflavin_B2_mg=0,
+         saturated_fat_g=0, serving_size=0.5, serving_units='g', sodium_mg=0, sugars_g=0, thiamin_B1_mg=0,
+         total_carbohydrates_g=200, total_fat_g=0, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0, zinc_mg=0,
+         copper_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=47, cholesterol_mg=0, copper_mg=0, dietary_fiber_g=7, energy_kcal=233,
+         fdc_id=1886332, folate_B9_mcg=19, food_name='Whole Wheat Bread', iodine_mcg=0, iron_mg=2, magnesium_mg=0,
+         niacin_B3_mg=2, pantothenic_acid_B5_mg=0, phosphorous_mg=0, potassium_mg=0, protein_g=11, riboflavin_B2_mg=0,
+         saturated_fat_g=0, serving_size=43, serving_units='g', sodium_mg=395, sugars_g=6, thiamin_B1_mg=0,
+         total_carbohydrates_g=44, total_fat_g=3, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0, zinc_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=0, cholesterol_mg=0, copper_mg=0, dietary_fiber_g=0, energy_kcal=280,
+         fdc_id=2131541, folate_B9_mcg=0, food_name='White Bread', iodine_mcg=0, iron_mg=3, magnesium_mg=0,
+         niacin_B3_mg=0, pantothenic_acid_B5_mg=0, phosphorous_mg=0, potassium_mg=0, protein_g=8, riboflavin_B2_mg=0,
+         saturated_fat_g=0, serving_size=25, serving_units='g', sodium_mg=540, sugars_g=8, thiamin_B1_mg=0,
+         total_carbohydrates_g=52, total_fat_g=2, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0, zinc_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=1, cholesterol_mg=0, copper_mg=0, dietary_fiber_g=0, energy_kcal=387, fdc_id=169655,
+         folate_B9_mcg=0, food_name='Sugars, Granulated', iodine_mcg=0, iron_mg=0, magnesium_mg=0, niacin_B3_mg=0,
+         pantothenic_acid_B5_mg=0, phosphorous_mg=0, potassium_mg=2, protein_g=0, riboflavin_B2_mg=0, saturated_fat_g=0,
+         serving_size=1, serving_units='cup', sodium_mg=1, sugars_g=99, thiamin_B1_mg=0, total_carbohydrates_g=99,
+         total_fat_g=0, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0, zinc_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=15, cholesterol_mg=0, copper_mg=0, dietary_fiber_g=2, energy_kcal=364,
+         fdc_id=169761, folate_B9_mcg=26, food_name='Wheat Flour, White, All-Purpose, Unenriched', iodine_mcg=0,
+         iron_mg=1, magnesium_mg=22, niacin_B3_mg=1, pantothenic_acid_B5_mg=0, phosphorous_mg=108, potassium_mg=107,
+         protein_g=10, riboflavin_B2_mg=0, saturated_fat_g=0, serving_size=1, serving_units='cup', sodium_mg=2,
+         sugars_g=0, thiamin_B1_mg=0, total_carbohydrates_g=76, total_fat_g=0, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0, zinc_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=0, cholesterol_mg=0, copper_mg=0, dietary_fiber_g=0, energy_kcal=0, fdc_id=175040,
+         folate_B9_mcg=0, food_name='Leavening Agents, Baking Soda', iodine_mcg=0, iron_mg=0, magnesium_mg=0,
+         niacin_B3_mg=0, pantothenic_acid_B5_mg=0, phosphorous_mg=0, potassium_mg=0, protein_g=0, riboflavin_B2_mg=0,
+         saturated_fat_g=0, serving_size=0.5, serving_units='tsp', sodium_mg=27360, sugars_g=0, thiamin_B1_mg=0,
+         total_carbohydrates_g=0, total_fat_g=0, trans_fat_g=0, vitamin_D_mcg=0, vitamin_E_mg=0, zinc_mg=0),
+    dict(biotin_B7_mcg=0, calcium_mg=4332, cholesterol_mg=0, copper_mg=0, dietary_fiber_g=2, energy_kcal=97,
+         fdc_id=172805, folate_B9_mcg=0, food_name='Leavening Agents, Baking Powder, Low-Sodium', iodine_mcg=0,
+         iron_mg=8, magnesium_mg=29, niacin_B3_mg=0, pantothenic_acid_B5_mg=0, phosphorous_mg=6869, potassium_mg=10100,
+         protein_g=0, riboflavin_B2_mg=0, saturated_fat_g=0, serving_size=0.5, serving_units='tsp', sodium_mg=90,
+         sugars_g=0, thiamin_B1_mg=0, total_carbohydrates_g=46, total_fat_g=0, trans_fat_g=0, vitamin_D_mcg=0,
+         vitamin_E_mg=0, zinc_mg=0)
 ]
 
-request_factory = RequestFactory()
 
-
-class test_foods(TestCase):
+class foods_test_case(TestCase):
 
     def setUp(self):
         self.food_names = list()
@@ -104,9 +110,17 @@ class test_foods(TestCase):
             food_model_obj.save()
             self.food_names.append(html.escape(food_model_obj.food_name, quote=True))
         self.food_names.sort()
+        self.request_factory = RequestFactory()
+
+    def tearDown(self):
+        for food_model_obj in Food.objects.filter():
+            food_model_obj.delete()
+
+
+class test_foods(foods_test_case):
 
     def test_foods_normal(self):
-        request = request_factory.get("/foods/")
+        request = self.request_factory.get("/foods/")
         content = foods(request).content.decode('utf-8')
         indexes = list()
         for food_name in self.food_names:
@@ -118,8 +132,8 @@ class test_foods(TestCase):
                     f"'{food_name[indexes[i - 1]]}', '{food_name[indexes[i]]}', " \
                     f"'{food_name[indexes[i + 1]]}' disordered"
 
-    def test_foods_pagination(self):
-        request = request_factory.get("/foods/", data={'page_number': 1, 'page_size': 10})
+    def test_foods_pagination_normal(self):
+        request = self.request_factory.get("/foods/", data={'page_number': 1, 'page_size': 10})
         content = foods(request).content.decode('utf-8')
         for food_name in self.food_names[:10]:
             assert food_name in content, f"'{food_name}' not in output of foods.views.foods() "\
@@ -133,20 +147,38 @@ class test_foods(TestCase):
                "doesn't contain pagination link to page 2"
 
     def test_foods_pagination_bad_arg(self):
-        request = request_factory.get("/foods/", data={'page_number': 'one', 'page_size': 10})
+        request = self.request_factory.get("/foods/", data={'page_number': 'one', 'page_size': 10})
         content = foods(request).content.decode('utf-8')
         assert "value for page_number must be an integer; received &#x27;one&#x27;" in content, \
                 "calling foods() with params {'page_number': 'one', 'page_size': 10} did not produce the correct error"
 
     def test_foods_pagination_overshooting_arg(self):
-        request = request_factory.get("/foods/", data={'page_number': 3, 'page_size': 10})
+        request = self.request_factory.get("/foods/", data={'page_number': 3, 'page_size': 10})
         content = foods(request).content.decode('utf-8')
         assert "No more results" in content, \
                 "calling foods() with params {'page_number': 3, 'page_size': 10} "\
                 "did not produce 'No more results' message"
 
-    def tearDown(self):
-        for food_model_obj in Food.objects.filter():
-            food_model_obj.delete()
 
+class test_foods_fdc_id(foods_test_case):
 
+    def test_foods_fdc_id_normal(self):
+        food_model_obj_argd = random.choice(food_model_objs_argds)
+        fdc_id = food_model_obj_argd["fdc_id"]
+        food_name = food_model_obj_argd["food_name"]
+        request = self.request_factory.get(f"/foods/{fdc_id}/")
+        content = foods_fdc_id(request, fdc_id).content.decode('utf-8')
+        assert food_model_obj_argd["food_name"] in content, f"calling foods_fdc_id(request, fdc_id={fdc_id}) "\
+                f"returned content that did not contain food_name value '{food_name}'"
+        for food_param, nutrient_name in food_params_to_nutrient_names.items():
+            nutrient_amount = re.escape(str(food_model_obj_argd[food_param]))
+            nutrient_units = re.escape(food_params_to_units[food_param])
+            nutrient_name = re.escape(nutrient_name)
+            if food_param == "energy_kcal":
+                assert re.search(f">{nutrient_name}<.*\n.*\n.*>{nutrient_amount}<", content), f"returned content from "\
+                        f"foods_fdc_id(request, fdc_id={fdc_id}) does not contain 'Calories' followed 2 lines later "\
+                        f"with '>{nutrient_amount}<'"
+            else:
+                assert re.search(f">{nutrient_name}<.*\n.*>{nutrient_amount}{nutrient_units}<", content), \
+                        f"returned content from foods_fdc_id(request, fdc_id={fdc_id}) does not contain '{nutrient_name}' "\
+                        f"followed on the next line by '>{nutrient_amount}{nutrient_units}<'"
