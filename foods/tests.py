@@ -244,7 +244,7 @@ class test_foods_local_search(foods_test_case):
             assert food_name in content, f"calling foods_local_search(request) with CGI params {cgi_query_string} " \
                     "doesn't return a page with all matching food_names listed"
 
-    def test_foods_local_search_results_normal(self):
+    def test_foods_local_search_results_pagination_normal(self):
         cgi_data = {'search_query': 'Bread', 'page_number': 1, 'page_size': 1}
         request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
         content = foods_local_search_results(request).content.decode('utf-8')
@@ -259,6 +259,14 @@ class test_foods_local_search(foods_test_case):
         assert '<a href="/foods/local_search_results/?page_size=1&page_number=2&search_query=Bread">2</a>' in content, \
                 "output of foods.views.foods() with params " \
                 f"{cgi_query_string} doesn't contain pagination link to page 2"
+
+    def test_foods_local_search_results_pagination_too_far(self):
+        cgi_data = {'search_query': 'Bread', 'page_number': 3, 'page_size': 2}
+        request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
+        content = foods_local_search_results(request).content.decode('utf-8')
+        assert "No more results" in content, f"calling foods_local_search(request) with page_number and page_size " \
+                "values that places the page off the end of the results didn't produce a page containing " \
+                "'No more results'"
 
     def test_foods_local_search_results_error_no_matches(self):
         cgi_data = {'search_query': 'Rowrbazzle', 'page_number': 1, 'page_size': 1}

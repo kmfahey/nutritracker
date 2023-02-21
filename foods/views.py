@@ -127,6 +127,15 @@ def foods_local_search_results(request):
         return HttpResponse(local_search_template.render(context, request))
 
     food_objs = [Food_Detailed.from_model_obj(food_model_obj) for food_model_obj in food_objs]
+    number_of_results = len(food_objs)
+    number_of_pages = math.ceil(number_of_results / page_size)
+    if page_number > number_of_pages:
+        context["more_than_one_page"] = True
+        context["message"] = "No more results"
+        context["pagination_links"] = generate_pagination_links("/foods/local_search_results/", number_of_results,
+                                                                page_size, page_number, search_query=search_query)
+        return HttpResponse(local_search_results_template.render(context, request))
+
     if len(food_objs) > page_size:
         context["more_than_one_page"] = True
         context["pagination_links"] = generate_pagination_links("/foods/local_search_results/", len(food_objs),
