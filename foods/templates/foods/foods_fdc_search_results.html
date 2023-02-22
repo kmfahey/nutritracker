@@ -6,6 +6,8 @@
 
 {% include "foods/_fdc_search_header.html" %}
 
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
 {% for food_obj in food_objs %}
     <div>
     {% if food_obj.in_db_already is False %}

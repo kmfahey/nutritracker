@@ -336,5 +336,17 @@ class test_foods_fdc_search_results(foods_test_case):
                     f"{cgi_query_string} yielded content that doesn't contain '>{Food}<' followed by 'Calories: " \
                     f"{calories}' on the next line (which is in the response JSON)"
 
+    def test_foods_fdc_search_results_error_case_overshooting_arg(self):
+        cgi_data = {'search_query': 'Bread', 'page_number': 5, 'page_size': 25}
+        request = self.request_factory.get("/foods/fdc_search_results/", data=cgi_data)
+        response = foods_fdc_search_results(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
+        content = response.content.decode('utf-8')
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        assert "No more results" in content, \
+                f"calling foods_fdc_search_results(request, Mock_Fdc_Api_Contacter) with cgi args {cgi_query_string} " \
+                "yielded content that didn't contain 'No more results'"
+        assert '<a href="/foods/fdc_search_results/?page_size=25&page_number=2&search_query=Bread">2</a>' in content, \
+                f"calling foods_fdc_search_results(request, Mock_Fdc_Api_Contacter) with cgi args {cgi_query_string} " \
+                "yielded content that didn't contain pagination link to page 2"
 
 

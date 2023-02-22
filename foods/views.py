@@ -129,17 +129,15 @@ def foods_local_search_results(request):
     food_objs = [Food_Detailed.from_model_obj(food_model_obj) for food_model_obj in food_objs]
     number_of_results = len(food_objs)
     number_of_pages = math.ceil(number_of_results / page_size)
+    context["pagination_links"] = generate_pagination_links("/foods/local_search_results/", number_of_results,
+                                                            page_size, page_number, search_query=search_query)
     if page_number > number_of_pages:
         context["more_than_one_page"] = True
         context["message"] = "No more results"
-        context["pagination_links"] = generate_pagination_links("/foods/local_search_results/", number_of_results,
-                                                                page_size, page_number, search_query=search_query)
         return HttpResponse(local_search_results_template.render(context, request))
 
     if len(food_objs) > page_size:
         context["more_than_one_page"] = True
-        context["pagination_links"] = generate_pagination_links("/foods/local_search_results/", len(food_objs),
-                                                                page_size, page_number, search_query=search_query)
         context['food_objs'] = slice_output_list_by_page(food_objs, page_size, page_number)
     else:
         context["more_than_one_page"] = False
@@ -178,18 +176,21 @@ def foods_fdc_search_results(request, fdc_api_contacter=Fdc_Api_Contacter):
     if not number_of_results:
         context["message"] = "No matches"
         return HttpResponse(fdc_search_template.render(context, request))
-    context["pagination_links"] = generate_pagination_links("/foods/fdc_search_results/", number_of_results, page_size,
-                                                            page_number, search_query=search_query)
-    if number_of_results < page_size * (page_number - 1) + 1:
-        context["more_than_one_page"] = True
-        context["message"] = "No more results"
-        return HttpResponse(fdc_search_template.render(context, request))
-
     food_objs = api_contacter.search_by_keywords(query=search_query, page_size=page_size, page_number=page_number)
     for food_obj in food_objs:
         food_obj.in_db_already = bool(len(Food.objects.filter(fdc_id=food_obj.fdc_id)))
-    context["more_than_one_page"] = number_of_results > page_size
+
+    context["pagination_links"] = generate_pagination_links("/foods/fdc_search_results/", number_of_results, page_size,
+                                                            page_number, search_query=search_query)
+
+    number_of_pages = math.ceil(number_of_results / page_size)
+    if page_number > number_of_pages:
+        context["more_than_one_page"] = True
+        context["message"] = "No more results"
+        return HttpResponse(fdc_search_results_template.render(context, request))
+
     context['food_objs'] = food_objs
+    context["more_than_one_page"] = number_of_results > page_size
     return HttpResponse(fdc_search_results_template.render(context, request))
 
 
