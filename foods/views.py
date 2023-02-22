@@ -195,12 +195,12 @@ def foods_fdc_search_results(request, fdc_api_contacter=Fdc_Api_Contacter):
 
 
 @require_http_methods(["GET"])
-def foods_fdc_search_fdc_id(request, fdc_id):
+def foods_fdc_search_fdc_id(request, fdc_id, fdc_api_contacter=Fdc_Api_Contacter):
     template = loader.get_template('foods/foods_fdc_search_+fdc_id+.html')
     subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation}
 
-    api_contacter = Fdc_Api_Contacter(FDC_API_KEY)
+    api_contacter = fdc_api_contacter(FDC_API_KEY)
     food_obj = api_contacter.look_up_fdc_id(fdc_id)
     if food_obj is None:
         return HttpResponse(f"No such FDC ID in the FoodData Central database: {fdc_id}", status=404)

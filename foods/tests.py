@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 import html
 import random
 import re
@@ -11,8 +12,8 @@ from django.test import TestCase
 
 from .models import Food
 from .views import foods, foods_fdc_id, foods_local_search, foods_local_search_results, foods_fdc_search, \
-        foods_fdc_search_results
-from utils import Food_Stub
+        foods_fdc_search_results, foods_fdc_search_fdc_id
+from utils import Food_Stub, Food_Detailed
 
 
 food_params_to_nutrient_names = \
@@ -114,6 +115,15 @@ class Mock_Fdc_Api_Contacter:
     with open("./test/number_of_search_results.json", "r") as number_of_search_results_fh:
         number_of_search_results_data = json.loads(number_of_search_results_fh.read())
 
+    look_up_fdc_id_data = dict()
+
+    for filename in os.listdir("./test/"):
+        if not filename.startswith("look_up_fdc_id_"):
+            continue
+        fdc_id = int(filename.removeprefix("look_up_fdc_id_").removesuffix(".json"))
+        with open(f"./test/{filename}") as look_up_fdc_id_fh:
+            look_up_fdc_id_data[fdc_id] = json.loads(look_up_fdc_id_fh.read())
+
     def __init__(self, unneeded_api_key):
         pass
 
@@ -125,6 +135,15 @@ class Mock_Fdc_Api_Contacter:
         for result_obj in self.search_by_keywords_data['foods']:
             results_list.append(Food_Stub.from_fdc_json_obj(result_obj))
         return results_list
+
+    def look_up_fdc_id(self, fdc_id):
+        if fdc_id not in self.look_up_fdc_id_data:
+            raise ValueError(f"can't mock result with fdc_id={fdc_id}, "
+                             "data not present in memorized store of json results")
+        json_data = self.look_up_fdc_id_data[fdc_id]
+        if not Food_Detailed.is_usable_json_object(json_data):
+            return False
+        return Food_Detailed.from_fdc_json_obj(json_data)
 
 
 class foods_test_case(TestCase):
@@ -335,6 +354,9 @@ class test_foods_fdc_search_results(foods_test_case):
                     f"calling foods_fdc_search_results(request, Mock_Fdc_Api_Contacter) with cgi args " \
                     f"{cgi_query_string} yielded content that doesn't contain '>{Food}<' followed by 'Calories: " \
                     f"{calories}' on the next line (which is in the response JSON)"
+        assert '<a href="/foods/fdc_search_results/?page_size=25&page_number=2&search_query=Bread">2</a>' in content, \
+                f"calling foods_fdc_search_results(request, Mock_Fdc_Api_Contacter) with cgi args {cgi_query_string} " \
+                "yielded content that didn't contain pagination link to page 2"
 
     def test_foods_fdc_search_results_error_case_overshooting_arg(self):
         cgi_data = {'search_query': 'Bread', 'page_number': 5, 'page_size': 25}
@@ -350,3 +372,30 @@ class test_foods_fdc_search_results(foods_test_case):
                 "yielded content that didn't contain pagination link to page 2"
 
 
+class test_foods_fdc_search_results(foods_test_case):
+
+    def test_foods_fdc_search_fdc_id_normal_case(self):
+        fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
+        request = self.request_factory.get(f"/foods/fdc_search/{fdc_id}/")
+        mock_api_contacter = Mock_Fdc_Api_Contacter(str(hex(random.randint(2**63, 2**64))))
+        response = foods_fdc_search_fdc_id(request, fdc_id, fdc_api_contacter=Mock_Fdc_Api_Contacter)
+        content = response.content.decode('utf-8')
+        food_obj = mock_api_contacter.look_up_fdc_id(fdc_id)
+        food_name = html.escape(food_obj.food_name)
+        assert f">{food_name} - from FoodData Central data<" in content, \
+                f"calling foods_fdc_search_fdc_id(request, {fdc_id}, fdc_api_contacter=Mock_Fdc_Api_Contacter) doesn't " \
+                f"yield content containing the food_name value of food object with fdc_id={fdc_id}"
+        for food_param, nutrient_name in food_params_to_nutrient_names.items():
+            nutrient_amount = getattr(food_obj, food_param).amount
+            nutrient_amount = int(nutrient_amount) if nutrient_amount == round(nutrient_amount) else round(nutrient_amount, 1)
+            nutrient_units = re.escape(food_params_to_units[food_param])
+            nutrient_name = re.escape(nutrient_name)
+            if food_param == "energy_kcal":
+                assert re.search(f">{nutrient_name}<.*\n.*\n.*>{nutrient_amount}<", content), \
+                        f"calling foods_fdc_search_fdc_id(request, {fdc_id}, fdc_api_contacter=Mock_Fdc_Api_Contacter) doesn't " \
+                        f"yield content containing 'Calories' followed 2 lines later with '>{nutrient_amount}<'"
+            else:
+                assert re.search(f">{nutrient_name}<.*\n.*>{nutrient_amount}{nutrient_units}<", content), \
+                        f"calling foods_fdc_search_fdc_id(request, {fdc_id}, fdc_api_contacter=Mock_Fdc_Api_Contacter) doesn't " \
+                        f"yield content containing '{nutrient_name}' followed on the next line by " \
+                        f"'>{nutrient_amount}{nutrient_units}<'"
