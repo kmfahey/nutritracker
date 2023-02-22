@@ -10,7 +10,8 @@ from django.test.client import RequestFactory
 from django.test import TestCase
 
 from .models import Food
-from .views import foods, foods_fdc_id, foods_local_search, foods_local_search_results
+from .views import foods, foods_fdc_id, foods_local_search, foods_local_search_results, foods_fdc_search, \
+        foods_fdc_search_results
 from utils import Food_Stub
 
 
@@ -107,19 +108,21 @@ food_model_objs_argds = [
 
 class Mock_Fdc_Api_Contacter:
 
-    with open("./test/mock_api_query_results.json", "r") as mock_api_json:
-        search_results_prefetched_json = mock_api_json.read()
-        search_results_parsed_json = json.loads(search_results_prefetched_json)
+    with open("./test/search_by_keywords.json", "r") as search_by_keywords_fh:
+        search_by_keywords_data = json.loads(search_by_keywords_fh.read())
+
+    with open("./test/number_of_search_results.json", "r") as number_of_search_results_fh:
+        number_of_search_results_data = json.loads(number_of_search_results_fh.read())
 
     def __init__(self, unneeded_api_key):
         pass
 
     def number_of_search_results(self, query):
-        return len(self.search_results_parsed_json['foods'])
+        return len(self.number_of_search_results_data['foods'])
 
     def search_by_keywords(self, query, page_size=25, page_number=1):
         results_list = list()
-        for result_obj in self.search_results_parsed_json['foods']:
+        for result_obj in self.search_by_keywords_data['foods']:
             results_list.append(Food_Stub.from_fdc_json_obj(result_obj))
         return results_list
 
@@ -142,7 +145,7 @@ class foods_test_case(TestCase):
 
 class test_foods(foods_test_case):
 
-    def test_foods_normal(self):
+    def test_foods_normal_case(self):
         request = self.request_factory.get("/foods/")
         content = foods(request).content.decode('utf-8')
         indexes = list()
@@ -155,7 +158,7 @@ class test_foods(foods_test_case):
                     f"'{food_name[indexes[i - 1]]}', '{food_name[indexes[i]]}', " \
                     f"'{food_name[indexes[i + 1]]}' disordered"
 
-    def test_foods_pagination_normal(self):
+    def test_foods_pagination_normal_case(self):
         request = self.request_factory.get("/foods/", data={'page_number': 1, 'page_size': 10})
         content = foods(request).content.decode('utf-8')
         for food_name in self.food_names[:10]:
@@ -169,13 +172,13 @@ class test_foods(foods_test_case):
                "output of foods.views.foods() with params {'page_number': 1, 'page_size': 10} "\
                "doesn't contain pagination link to page 2"
 
-    def test_foods_pagination_error_bad_arg(self):
+    def test_foods_pagination_error_case_bad_arg(self):
         request = self.request_factory.get("/foods/", data={'page_number': 'one', 'page_size': 10})
         content = foods(request).content.decode('utf-8')
         assert "value for page_number must be an integer; received &#x27;one&#x27;" in content, \
                 "calling foods() with params {'page_number': 'one', 'page_size': 10} did not produce the correct error"
 
-    def test_foods_pagination_error_overshooting_arg(self):
+    def test_foods_pagination_error_case_overshooting_arg(self):
         request = self.request_factory.get("/foods/", data={'page_number': 3, 'page_size': 10})
         content = foods(request).content.decode('utf-8')
         assert "No more results" in content, \
@@ -185,7 +188,7 @@ class test_foods(foods_test_case):
 
 class test_foods_fdc_id(foods_test_case):
 
-    def test_foods_fdc_id_normal(self):
+    def test_foods_fdc_id_normal_case(self):
         food_model_obj_argd = random.choice(food_model_objs_argds)
         fdc_id = food_model_obj_argd["fdc_id"]
         food_name = html.escape(food_model_obj_argd["food_name"])
@@ -206,7 +209,7 @@ class test_foods_fdc_id(foods_test_case):
                         f"returned content from foods_fdc_id(request, fdc_id={fdc_id}) does not contain '{nutrient_name}' "\
                         f"followed on the next line by '>{nutrient_amount}{nutrient_units}<'"
 
-    def test_foods_fdc_id_error_invalid_id(self):
+    def test_foods_fdc_id_error_case_invalid_id(self):
         # The fdc ids found in food_model_objs_argds are roughly in the range
         # [2**17, 2**22] == [131072, 4194304]
         spurious_fdc_id = random.randint(2**17, 2**22)
@@ -223,7 +226,7 @@ class test_foods_fdc_id(foods_test_case):
                 "returned content from calling foods_fdc_id() with an invalid fdc_id doesn't return document with " \
                 "correct error message"
 
-    def test_foods_fdc_id_error_id_with_duplicate_objs(self):
+    def test_foods_fdc_id_error_case_id_with_duplicate_objs(self):
         first_food_argd = random.choice(food_model_objs_argds)
         first_fdc_id = first_food_argd["fdc_id"]
         second_food_argd = random.choice(food_model_objs_argds)
@@ -249,7 +252,7 @@ class test_foods_local_search(foods_test_case):
     # test, since this suite is not testing the structure of the templates. The
     # response is tested for existing and the suite moves on. This test is more
     # useful to catch if foods_local_search() has started throwing an exception.
-    def test_foods_local_search_normal(self):
+    def test_foods_local_search_normal_case(self):
         request = self.request_factory.get("/foods/local_search/")
         response = foods(request)
         assert response.status_code == 200, \
@@ -258,7 +261,7 @@ class test_foods_local_search(foods_test_case):
 
 class test_foods_local_search_results(foods_test_case):
 
-    def test_foods_local_search_results_normal(self):
+    def test_foods_local_search_results_normal_case(self):
         cgi_data = {'search_query': 'Bread', 'page_number': 1, 'page_size': 25}
         request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
         content = foods(request).content.decode('utf-8')
@@ -268,7 +271,7 @@ class test_foods_local_search_results(foods_test_case):
             assert food_name in content, f"calling foods_local_search(request) with CGI params {cgi_query_string} " \
                     "doesn't return a page with all matching food_names listed"
 
-    def test_foods_local_search_results_pagination_normal(self):
+    def test_foods_local_search_results_pagination_normal_case(self):
         cgi_data = {'search_query': 'Bread', 'page_number': 1, 'page_size': 1}
         request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
         content = foods_local_search_results(request).content.decode('utf-8')
@@ -292,7 +295,7 @@ class test_foods_local_search_results(foods_test_case):
                 "values that places the page off the end of the results didn't produce a page containing " \
                 "'No more results'"
 
-    def test_foods_local_search_results_error_no_matches(self):
+    def test_foods_local_search_results_error_case_no_matches(self):
         cgi_data = {'search_query': 'Rowrbazzle', 'page_number': 1, 'page_size': 1}
         request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
         content = foods_local_search_results(request).content.decode('utf-8')
@@ -303,11 +306,35 @@ class test_foods_local_search_results(foods_test_case):
 
 class test_foods_fdc_search(foods_test_case):
 
-    def test_foods_fdc_search_normal(self):
+    def test_foods_fdc_search_normal_case(self):
         request = self.request_factory.get("/foods/fdc_search/")
-        response = foods(request)
+        response = foods_fdc_search(request)
         assert response.status_code == 200, \
                 "returned content from calling foods_fdc_search() does not have status_code == 200"
 
 
-#class test_foods_fdc_search_results(foods_test_case):
+class test_foods_fdc_search_results(foods_test_case):
+
+    result_food_to_calories = [
+        ('Bread', 146), ('Bread', 357), ('Bread', 263), ('Bread', 196), ('Bread', 240), ('Bread', 263), ('Bread', 222),
+        ('Bread', 306), ('Bread', 306), ('Bread', 269), ('Bread', 8600), ('Bread', 250), ('Bread', 250), ('Bread', 250),
+        ('Bread', 255), ('Bread', 248), ('Bread', 222), ('Bread, Cheese', 408), ('Bread, Cinnamon', 253),
+        ('Bread, Egg', 287), ('Bread, Italian', 259), ('Bread, Oatmeal', 269), ('Bread, Potato', 266),
+        ('Bread, Pumpernickel', 250), ('Bread, Rye', 259)
+    ]
+
+    def test_foods_fdc_search_results_normal_case(self):
+        cgi_data = {'search_query': 'Bread', 'page_number': 1, 'page_size': 25}
+        request = self.request_factory.get("/foods/fdc_search_results/", data=cgi_data)
+        response = foods_fdc_search_results(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
+        content = response.content.decode('utf-8')
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        for food, calories in self.result_food_to_calories:
+            food_calories_re = re.compile(f">{food}<.*\n.*Calories: {calories}")
+            assert food_calories_re.search(content), \
+                    f"calling foods_fdc_search_results(request, Mock_Fdc_Api_Contacter) with cgi args " \
+                    f"{cgi_query_string} yielded content that doesn't contain '>{Food}<' followed by 'Calories: " \
+                    f"{calories}' on the next line (which is in the response JSON)"
+
+
+
