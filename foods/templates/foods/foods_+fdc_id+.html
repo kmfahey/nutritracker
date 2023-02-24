@@ -6,6 +6,12 @@
 
 <h3>{{ food_obj.food_name }}</h3>
 
+{% if message %}<p><b>{{ message }}</b></p>{% endif %}
+
+{% if error is False %}
+
 {% include "main/_nutrition_facts_table.html" %}
+
+{% endif %}
 
 {% endblock %}

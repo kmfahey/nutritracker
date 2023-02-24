@@ -138,8 +138,7 @@ class Mock_Fdc_Api_Contacter:
 
     def look_up_fdc_id(self, fdc_id):
         if fdc_id not in self.look_up_fdc_id_data:
-            raise ValueError(f"can't mock result with fdc_id={fdc_id}, "
-                             "data not present in memorized store of json results")
+            return None
         json_data = self.look_up_fdc_id_data[fdc_id]
         if not Food_Detailed.is_usable_json_object(json_data):
             return False
@@ -241,9 +240,10 @@ class test_foods_fdc_id(foods_test_case):
         content = response.content.decode('utf-8')
         assert response.status_code == 404, "returned content from calling foods_fdc_id() with an invalid fdc_id " \
                 "doesn't return a response with status_code == 404"
-        assert f"no object in 'foods' collection in 'nutritracker' data store with FDC ID {spurious_fdc_id}" in content, \
-                "returned content from calling foods_fdc_id() with an invalid fdc_id doesn't return document with " \
-                "correct error message"
+        error_message = f"no object in &#x27;foods&#x27; collection in &#x27;nutritracker&#x27; data store with " \
+                        f"FDC ID {spurious_fdc_id}"
+        assert error_message in content, "returned content from calling foods_fdc_id() with an invalid fdc_id " \
+                "doesn't return document with correct error message"
 
     def test_foods_fdc_id_error_case_id_with_duplicate_objs(self):
         first_food_argd = random.choice(food_model_objs_argds)
@@ -375,7 +375,8 @@ class test_foods_fdc_search_results(foods_test_case):
 class test_foods_fdc_search_results(foods_test_case):
 
     def test_foods_fdc_search_fdc_id_normal_case(self):
-        fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
+        #fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
+        fdc_id = 172673
         request = self.request_factory.get(f"/foods/fdc_search/{fdc_id}/")
         mock_api_contacter = Mock_Fdc_Api_Contacter(str(hex(random.randint(2**63, 2**64))))
         response = foods_fdc_search_fdc_id(request, fdc_id, fdc_api_contacter=Mock_Fdc_Api_Contacter)
@@ -399,3 +400,21 @@ class test_foods_fdc_search_results(foods_test_case):
                         f"calling foods_fdc_search_fdc_id(request, {fdc_id}, fdc_api_contacter=Mock_Fdc_Api_Contacter) doesn't " \
                         f"yield content containing '{nutrient_name}' followed on the next line by " \
                         f"'>{nutrient_amount}{nutrient_units}<'"
+
+    def test_foods_fdc_search_fdc_id_error_case_nonexistent_fdc_id(self):
+        spurious_fdc_id = random.randint(2**17, 2**22)
+        while spurious_fdc_id in Mock_Fdc_Api_Contacter.look_up_fdc_id_data:
+            spurious_fdc_id = random.randint(2**17, 2**22)
+        request = self.request_factory.get(f"/foods/fdc_search/{spurious_fdc_id}/")
+        response = foods_fdc_search_fdc_id(request, spurious_fdc_id, fdc_api_contacter=Mock_Fdc_Api_Contacter)
+        content = response.content.decode('utf-8')
+        assert response.status_code == 404, f"calling foods_fdc_search_fdc_id(request, {spurious_fdc_id}, " \
+                f"fdc_api_contacter=Mock_Fdc_Api_Contacter), where {spurious_fdc_id} is an invalid FDC ID, " \
+                "doesn't return a response with status code 404"
+        assert f"No such FDC ID in the FoodData Central database: {spurious_fdc_id}" in content, \
+                f"calling foods_fdc_search_fdc_id(request, {spurious_fdc_id}, " \
+                f"fdc_api_contacter=Mock_Fdc_Api_Contacter), where {spurious_fdc_id} is an invalid FDC ID, " \
+                "doesn't yield content containing the appropriate error message"
+
+
+

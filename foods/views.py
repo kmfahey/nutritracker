@@ -73,16 +73,22 @@ def foods(request):
 @require_http_methods(["GET"])
 def foods_fdc_id(request, fdc_id):
     template = loader.get_template('foods/foods_+fdc_id+.html')
+    subordinate_navigation = navigation_links_displayer.full_href_list_callable()
+    context = {'error': False, 'message': '', 'subordinate_navigation': subordinate_navigation}
+
     food_model_objs = Food.objects.filter(fdc_id=fdc_id)
     if not len(food_model_objs):
-        return HttpResponse(f"no object in 'foods' collection in 'nutritracker' data store with FDC ID {fdc_id}",
-                            status=404)
+        context["error"] = True
+        context["message"] = f"no object in 'foods' collection in 'nutritracker' data store with FDC ID {fdc_id}"
+        return HttpResponse(template.render(context, request), status=404)
     elif len(food_model_objs) > 1:
-        return HttpResponse(f"inconsistent state: multiple objects matching query for FDC ID {fdc_id}", status=500)
+        context["error"] = True
+        context["message"] = f"inconsistent state: multiple objects matching query for FDC ID {fdc_id}"
+        return HttpResponse(template.render(context, request), status=500)
     food_model_obj = food_model_objs[0]
     food_obj = Food_Detailed.from_model_obj(food_model_obj)
-    subordinate_navigation = navigation_links_displayer.full_href_list_callable()
-    context = {'food_obj': food_obj, 'food_or_recipe_obj': food_obj, 'subordinate_navigation': subordinate_navigation}
+    context['food_obj'] = food_obj
+    context['food_or_recipe_obj'] = food_obj
     return HttpResponse(template.render(context, request))
 
 
