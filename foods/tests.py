@@ -473,9 +473,21 @@ class test_foods_fdc_import(foods_test_case):
         content = response.content.decode('utf-8')
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         success_message = '<b>Not imported.</b> A food with this FDC ID already exists in the local database. ' \
-                f"It's accessible at " + f'<a href="/foods/{fdc_id}/">'
+                "It's accessible at " + f'<a href="/foods/{fdc_id}/">'
         assert success_message in content, f"calling foods_fdc_import(request, " \
                 f"fdc_api_contacter=Mock_Fdc_Api_Contacter) with CGI params {cgi_query_string} where that food " \
                 "object is present in the database doesn't yield content containing the appropriate success message"
 
-
+    def test_foods_fdc_import_error_case_api_responds_fdc_id_invalid(self):
+        spurious_fdc_id = random.randint(2**17, 2**22)
+        while spurious_fdc_id in Mock_Fdc_Api_Contacter.look_up_fdc_id_data:
+            spurious_fdc_id = random.randint(2**17, 2**22)
+        cgi_data = {'fdc_id': spurious_fdc_id}
+        request = self.request_factory.get("/foods/fdc_import/", data=cgi_data)
+        response = foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
+        content = response.content.decode('utf-8')
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        assert f"No such FDC ID in the FoodData Central database: {spurious_fdc_id}" in content, \
+                "calling foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter) with CGI " \
+                f"params {cgi_query_string} where {spurious_fdc_id} is not present in the mock api doesn't " \
+                "yield content containing the appropriate error message"
