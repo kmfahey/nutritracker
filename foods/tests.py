@@ -433,7 +433,7 @@ class test_foods_fdc_search_fdc_id(foods_test_case):
 
 class test_foods_fdc_import(foods_test_case):
 
-    def test_foods_fdc_import_normal_case(self):
+    def test_foods_fdc_import_normal_case_imported(self):
         fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
         cgi_data = {'fdc_id': fdc_id}
         request = self.request_factory.get("/foods/fdc_import/", data=cgi_data)
@@ -459,3 +459,23 @@ class test_foods_fdc_import(foods_test_case):
         error_message = "value for fdc_id must be an integer greater than or equal to 1; received &#x27;-1&#x27;"
         assert error_message in content, f"calling foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)"\
                 f" with CGI params {cgi_query_string} doesn't yield content containing the appropriate error message"
+
+    def test_foods_fdc_import_normal_case_not_imported(self):
+        mock_api_contacter = Mock_Fdc_Api_Contacter(str(hex(random.randint(2**63, 2**64))))
+        fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
+        food_obj = mock_api_contacter.look_up_fdc_id(fdc_id)
+        food_model_cls_argd = food_obj.to_model_cls_args()
+        food_model_obj = Food(**food_model_cls_argd)
+        food_model_obj.save()
+        cgi_data = {'fdc_id': fdc_id}
+        request = self.request_factory.get("/foods/fdc_import/", data=cgi_data)
+        response = foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
+        content = response.content.decode('utf-8')
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        success_message = '<b>Not imported.</b> A food with this FDC ID already exists in the local database. ' \
+                f"It's accessible at " + f'<a href="/foods/{fdc_id}/">'
+        assert success_message in content, f"calling foods_fdc_import(request, " \
+                f"fdc_api_contacter=Mock_Fdc_Api_Contacter) with CGI params {cgi_query_string} where that food " \
+                "object is present in the database doesn't yield content containing the appropriate success message"
+
+
