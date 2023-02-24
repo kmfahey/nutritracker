@@ -13,8 +13,9 @@ from django.template import loader
 from django.contrib.auth.models import User
 from .models import Account
 
-from utils import ACTIVITY_LEVELS_TABLE, FEET_TO_METERS_CONVERSION_FACTOR, POUNDS_TO_KILOGRAMS_CONVERSION_FACTOR, \
-        BMI_THRESHOLDS, Navigation_Links_Displayer, get_cgi_params, cast_to_int, cast_to_float, check_str_param
+from nutritracker.utils import ACTIVITY_LEVELS_TABLE, FEET_TO_METERS_CONVERSION_FACTOR, \
+        POUNDS_TO_KILOGRAMS_CONVERSION_FACTOR, BMI_THRESHOLDS, Navigation_Links_Displayer, get_cgi_params, \
+        cast_to_int, cast_to_float, check_str_param
 
 
 URL_RESERVED_WORDS = ('new_user', 'delete_user', 'auth', 'logout')

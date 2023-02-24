@@ -6,7 +6,7 @@ import sys
 import subprocess
 import pymongo
 
-from utils import *
+from nutritracker.utils import *
 
 
 api_key = decouple.config("FDC_API_KEY")

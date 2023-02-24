@@ -18,8 +18,8 @@ from django.template import loader
 from django.db.models import Q
 
 from .models import Food, Recipe, Ingredient
-from utils import Nutrient, Recipe_Detailed, Food_Detailed, Navigation_Links_Displayer, generate_pagination_links, \
-        slice_output_list_by_page, retrieve_pagination_params, get_cgi_params, cast_to_int
+from nutritracker.utils import Nutrient, Recipe_Detailed, Food_Detailed, Navigation_Links_Displayer, \
+        generate_pagination_links, slice_output_list_by_page, retrieve_pagination_params, get_cgi_params, cast_to_int
 
 
 navigation_links_displayer = Navigation_Links_Displayer({'/recipes/': "Main Recipes List",

@@ -13,7 +13,7 @@ from django.test import TestCase
 from .models import Food
 from .views import foods, foods_fdc_id, foods_local_search, foods_local_search_results, foods_fdc_search, \
         foods_fdc_search_results, foods_fdc_search_fdc_id
-from utils import Food_Stub, Food_Detailed
+from nutritracker.utils import Food_Stub, Food_Detailed
 
 
 food_params_to_nutrient_names = \

@@ -16,7 +16,7 @@ from django.template import loader
 from django.views.decorators.http import require_http_methods
 
 from .models import Food
-from utils import Food_Detailed, Navigation_Links_Displayer, generate_pagination_links, get_cgi_params, \
+from nutritracker.utils import Food_Detailed, Navigation_Links_Displayer, generate_pagination_links, get_cgi_params, \
         slice_output_list_by_page, cast_to_int, Fdc_Api_Contacter, retrieve_pagination_params
 
 
