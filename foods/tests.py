@@ -12,7 +12,7 @@ from django.test import TestCase
 
 from .models import Food
 from .views import foods, foods_fdc_id, foods_local_search, foods_local_search_results, foods_fdc_search, \
-        foods_fdc_search_results, foods_fdc_search_fdc_id, foods_fdc_import
+        foods_fdc_search_results, foods_fdc_search_fdc_id, foods_fdc_import, foods_add_food
 from nutritracker.utils import Food_Stub, Food_Detailed
 
 
@@ -491,3 +491,15 @@ class test_foods_fdc_import(foods_test_case):
                 "calling foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter) with CGI " \
                 f"params {cgi_query_string} where {spurious_fdc_id} is not present in the mock api doesn't " \
                 "yield content containing the appropriate error message"
+
+
+class test_foods_add_food(foods_test_case):
+
+    def test_foods_add_food_normal_case_no_cgi(self):
+        # /foods/add_food/ is a static page, and this test suite doesn't test
+        # template validity, so all that can be tested here is that a result is
+        # returned with status 200.
+        request = self.request_factory.get("/foods/add_food/")
+        response = foods_add_food(request)
+        assert response.status_code == 200, \
+                "returned content from calling foods_add_food() with no CGI params does not have status_code == 200"

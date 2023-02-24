@@ -245,10 +245,10 @@ def foods_fdc_import(request, fdc_api_contacter=Fdc_Api_Contacter):
         context['message'] = f"No such FDC ID in the FoodData Central database: {fdc_id}"
         return HttpResponse(template.render(context, request))
 
-    context['imported'] = True
     food_model_cls_argd = food_obj.to_model_cls_args()
     food_model_obj = Food(**food_model_cls_argd)
     food_model_obj.save()
+    context['imported'] = True
 
     context['food_obj'] = food_model_obj
     return HttpResponse(template.render(context, request))
