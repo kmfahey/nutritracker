@@ -484,6 +484,8 @@ class Food_Detailed(Abstract_Food):
         elif food_json_obj["dataType"] == "Branded":
             return ("fdcId" in food_json_obj and "description" in food_json_obj
                     and "servingSize" in food_json_obj and "servingSizeUnit" in food_json_obj)
+        else:
+            return False
 
     @classmethod
     def from_fdc_json_obj(self, food_json_obj):

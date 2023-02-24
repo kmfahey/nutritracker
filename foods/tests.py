@@ -109,19 +109,19 @@ food_model_objs_argds = [
 
 class Mock_Fdc_Api_Contacter:
 
-    with open("./test/search_by_keywords.json", "r") as search_by_keywords_fh:
+    with open("./testing_data/search_by_keywords.json", "r") as search_by_keywords_fh:
         search_by_keywords_data = json.loads(search_by_keywords_fh.read())
 
-    with open("./test/number_of_search_results.json", "r") as number_of_search_results_fh:
+    with open("./testing_data/number_of_search_results.json", "r") as number_of_search_results_fh:
         number_of_search_results_data = json.loads(number_of_search_results_fh.read())
 
     look_up_fdc_id_data = dict()
 
-    for filename in os.listdir("./test/"):
+    for filename in os.listdir("./testing_data/"):
         if not filename.startswith("look_up_fdc_id_"):
             continue
         fdc_id = int(filename.removeprefix("look_up_fdc_id_").removesuffix(".json"))
-        with open(f"./test/{filename}") as look_up_fdc_id_fh:
+        with open(f"./testing_data/{filename}") as look_up_fdc_id_fh:
             look_up_fdc_id_data[fdc_id] = json.loads(look_up_fdc_id_fh.read())
 
     def __init__(self, unneeded_api_key):
@@ -273,7 +273,7 @@ class test_foods_local_search(foods_test_case):
     # useful to catch if foods_local_search() has started throwing an exception.
     def test_foods_local_search_normal_case(self):
         request = self.request_factory.get("/foods/local_search/")
-        response = foods(request)
+        response = foods_local_search(request)
         assert response.status_code == 200, \
                 "returned content from calling foods_local_search() does not have status_code == 200"
 
@@ -310,7 +310,7 @@ class test_foods_local_search_results(foods_test_case):
         cgi_data = {'search_query': 'Bread', 'page_number': 3, 'page_size': 2}
         request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
         content = foods_local_search_results(request).content.decode('utf-8')
-        assert "No more results" in content, f"calling foods_local_search(request) with page_number and page_size " \
+        assert "No more results" in content, "calling foods_local_search(request) with page_number and page_size " \
                 "values that places the page off the end of the results didn't produce a page containing " \
                 "'No more results'"
 
@@ -318,8 +318,7 @@ class test_foods_local_search_results(foods_test_case):
         cgi_data = {'search_query': 'Rowrbazzle', 'page_number': 1, 'page_size': 1}
         request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
         content = foods_local_search_results(request).content.decode('utf-8')
-        cgi_query_string = urllib.parse.urlencode(cgi_data)
-        assert "No matches" in content, f"calling foods_local_search(request) with a non-matching search_query " \
+        assert "No matches" in content, "calling foods_local_search(request) with a non-matching search_query " \
                 "doesn't return a page containing 'No matches'"
 
 
@@ -372,11 +371,10 @@ class test_foods_fdc_search_results(foods_test_case):
                 "yielded content that didn't contain pagination link to page 2"
 
 
-class test_foods_fdc_search_results(foods_test_case):
+class test_foods_fdc_search_fdc_id(foods_test_case):
 
     def test_foods_fdc_search_fdc_id_normal_case(self):
-        #fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
-        fdc_id = 172673
+        fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
         request = self.request_factory.get(f"/foods/fdc_search/{fdc_id}/")
         mock_api_contacter = Mock_Fdc_Api_Contacter(str(hex(random.randint(2**63, 2**64))))
         response = foods_fdc_search_fdc_id(request, fdc_id, fdc_api_contacter=Mock_Fdc_Api_Contacter)
@@ -416,5 +414,18 @@ class test_foods_fdc_search_results(foods_test_case):
                 f"fdc_api_contacter=Mock_Fdc_Api_Contacter), where {spurious_fdc_id} is an invalid FDC ID, " \
                 "doesn't yield content containing the appropriate error message"
 
-
-
+    def test_foods_fdc_search_fdc_id_error_case_unusable_json_data(self):
+        fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
+        description = Mock_Fdc_Api_Contacter.look_up_fdc_id_data[fdc_id]["description"]
+        del Mock_Fdc_Api_Contacter.look_up_fdc_id_data[fdc_id]["description"]
+        request = self.request_factory.get(f"/foods/fdc_search/{fdc_id}/")
+        response = foods_fdc_search_fdc_id(request, fdc_id, fdc_api_contacter=Mock_Fdc_Api_Contacter)
+        content = response.content.decode('utf-8')
+        Mock_Fdc_Api_Contacter.look_up_fdc_id_data[fdc_id]["description"] = description 
+        assert response.status_code == 500, f"calling foods_fdc_search_fdc_id(request, {fdc_id}, " \
+                f"fdc_api_contacter=Mock_Fdc_Api_Contacter), where {fdc_id} is associated with " \
+                "unusable JSON data, doesn't return a response with status code 500"
+        assert f"Internal error in rendering food with ID {fdc_id}" in content, \
+                f"calling foods_fdc_search_fdc_id(request, {fdc_id}, " \
+                f"fdc_api_contacter=Mock_Fdc_Api_Contacter), where {fdc_id} is associated with " \
+                "unusable JSON data, doesn't return a response with status code 500"
