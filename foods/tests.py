@@ -12,7 +12,7 @@ from django.test import TestCase
 
 from .models import Food
 from .views import foods, foods_fdc_id, foods_local_search, foods_local_search_results, foods_fdc_search, \
-        foods_fdc_search_results, foods_fdc_search_fdc_id
+        foods_fdc_search_results, foods_fdc_search_fdc_id, foods_fdc_import
 from nutritracker.utils import Food_Stub, Food_Detailed
 
 
@@ -374,8 +374,7 @@ class test_foods_fdc_search_results(foods_test_case):
 class test_foods_fdc_search_fdc_id(foods_test_case):
 
     def test_foods_fdc_search_fdc_id_normal_case(self):
-        #fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
-        fdc_id = 171849
+        fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
         request = self.request_factory.get(f"/foods/fdc_search/{fdc_id}/")
         mock_api_contacter = Mock_Fdc_Api_Contacter(str(hex(random.randint(2**63, 2**64))))
         response = foods_fdc_search_fdc_id(request, fdc_id, fdc_api_contacter=Mock_Fdc_Api_Contacter)
@@ -430,3 +429,24 @@ class test_foods_fdc_search_fdc_id(foods_test_case):
                 f"calling foods_fdc_search_fdc_id(request, {fdc_id}, " \
                 f"fdc_api_contacter=Mock_Fdc_Api_Contacter), where {fdc_id} is associated with " \
                 "unusable JSON data, doesn't return a response with status code 500"
+
+
+class test_foods_fdc_search_fdc_id(foods_test_case):
+
+    def test_foods_fdc_import(self):
+        fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
+        cgi_data = {'fdc_id': fdc_id}
+        request = self.request_factory.get(f"/foods/fdc_import/", data=cgi_data)
+        response = foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
+        content = response.content.decode('utf-8')
+        success_message = f'<b>Imported.</b> You can now access this food locally at <a href="/foods/{fdc_id}/">'
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        assert success_message in content, f"calling foods_fdc_import(request, {fdc_id}, " \
+                "fdc_api_contacter=Mock_Fdc_Api_Contacter) doesn't yield content containing the " \
+                "appropriate success message"
+        food_objs = Food.objects.filter(fdc_id=fdc_id)
+        assert len(food_objs) == 1, f"calling foods_fdc_import(request, {fdc_id}, " \
+                "fdc_api_contacter=Mock_Fdc_Api_Contacter) returned the appropriate result, but didn't actually " \
+                "import the data at that fdc_id into the nutritracker data store"
+
+

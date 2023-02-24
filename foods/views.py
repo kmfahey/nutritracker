@@ -222,12 +222,12 @@ def foods_fdc_search_fdc_id(request, fdc_id, fdc_api_contacter=Fdc_Api_Contacter
 
 
 @require_http_methods(["GET", "POST"])
-def foods_fdc_import(request):
+def foods_fdc_import(request, fdc_api_contacter=Fdc_Api_Contacter):
     template = loader.get_template('foods/foods_fdc_import.html')
     subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation, 'error': False}
     cgi_params = get_cgi_params(request)
-    api_contacter = Fdc_Api_Contacter(FDC_API_KEY)
+    api_contacter = fdc_api_contacter(FDC_API_KEY)
 
     retval = cast_to_int(cgi_params.get('fdc_id', 0), 'fdc_id', template, context, request, lowerb=1)
     if isinstance(retval, HttpResponse):
