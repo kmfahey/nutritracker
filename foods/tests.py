@@ -374,7 +374,8 @@ class test_foods_fdc_search_results(foods_test_case):
 class test_foods_fdc_search_fdc_id(foods_test_case):
 
     def test_foods_fdc_search_fdc_id_normal_case(self):
-        fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
+        #fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
+        fdc_id = 171849
         request = self.request_factory.get(f"/foods/fdc_search/{fdc_id}/")
         mock_api_contacter = Mock_Fdc_Api_Contacter(str(hex(random.randint(2**63, 2**64))))
         response = foods_fdc_search_fdc_id(request, fdc_id, fdc_api_contacter=Mock_Fdc_Api_Contacter)
@@ -386,7 +387,7 @@ class test_foods_fdc_search_fdc_id(foods_test_case):
                 f"yield content containing the food_name value of food object with fdc_id={fdc_id}"
         for food_param, nutrient_name in food_params_to_nutrient_names.items():
             nutrient_amount = getattr(food_obj, food_param).amount
-            nutrient_amount = int(nutrient_amount) if nutrient_amount == round(nutrient_amount) else round(nutrient_amount, 1)
+            nutrient_amount = round(nutrient_amount) if nutrient_amount == round(nutrient_amount) else round(nutrient_amount, 1)
             nutrient_units = re.escape(food_params_to_units[food_param])
             nutrient_name = re.escape(nutrient_name)
             if food_param == "energy_kcal":

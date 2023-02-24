@@ -204,14 +204,18 @@ def foods_fdc_search_results(request, fdc_api_contacter=Fdc_Api_Contacter):
 def foods_fdc_search_fdc_id(request, fdc_id, fdc_api_contacter=Fdc_Api_Contacter):
     template = loader.get_template('foods/foods_fdc_search_+fdc_id+.html')
     subordinate_navigation = navigation_links_displayer.full_href_list_callable()
-    context = {'subordinate_navigation': subordinate_navigation}
+    context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
 
     api_contacter = fdc_api_contacter(FDC_API_KEY)
     food_obj = api_contacter.look_up_fdc_id(fdc_id)
     if food_obj is None:
-        return HttpResponse(f"No such FDC ID in the FoodData Central database: {fdc_id}", status=404)
+        context['error'] = True
+        context['message'] = f"No such FDC ID in the FoodData Central database: {fdc_id}"
+        return HttpResponse(template.render(context, request), status=404)
     elif food_obj is False:
-        return HttpResponse(f"Internal error in rendering food with ID {fdc_id}", status=500)
+        context['error'] = True
+        context['message'] = f"Internal error in rendering food with ID {fdc_id}"
+        return HttpResponse(template.render(context, request), status=500)
     food_obj.in_db_already = bool(len(Food.objects.filter(fdc_id=food_obj.fdc_id)))
     context['food_or_recipe_obj'] = context['food_obj'] = food_obj
     return HttpResponse(template.render(context, request))
