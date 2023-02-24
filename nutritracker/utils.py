@@ -69,6 +69,7 @@ def cast_to_int(strval, param_name, template, context, request, lowerb=-math.inf
         context["message"] = f"value for {param_name} must be an integer; received '{strval}'"
         return HttpResponse(template.render(context, request))
     if not (lowerb <= intval <= upperb):
+        context["error"] = True
         if lowerb == -math.inf:
             context["message"] = f"value for {param_name} must be an integer less than or equal to {upperb}; received '{intval}'"
         elif upperb == math.inf:

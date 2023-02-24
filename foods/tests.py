@@ -421,7 +421,7 @@ class test_foods_fdc_search_fdc_id(foods_test_case):
         request = self.request_factory.get(f"/foods/fdc_search/{fdc_id}/")
         response = foods_fdc_search_fdc_id(request, fdc_id, fdc_api_contacter=Mock_Fdc_Api_Contacter)
         content = response.content.decode('utf-8')
-        Mock_Fdc_Api_Contacter.look_up_fdc_id_data[fdc_id]["description"] = description 
+        Mock_Fdc_Api_Contacter.look_up_fdc_id_data[fdc_id]["description"] = description
         assert response.status_code == 500, f"calling foods_fdc_search_fdc_id(request, {fdc_id}, " \
                 f"fdc_api_contacter=Mock_Fdc_Api_Contacter), where {fdc_id} is associated with " \
                 "unusable JSON data, doesn't return a response with status code 500"
@@ -431,22 +431,31 @@ class test_foods_fdc_search_fdc_id(foods_test_case):
                 "unusable JSON data, doesn't return a response with status code 500"
 
 
-class test_foods_fdc_search_fdc_id(foods_test_case):
+class test_foods_fdc_import(foods_test_case):
 
-    def test_foods_fdc_import(self):
+    def test_foods_fdc_import_normal_case(self):
         fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
         cgi_data = {'fdc_id': fdc_id}
-        request = self.request_factory.get(f"/foods/fdc_import/", data=cgi_data)
+        request = self.request_factory.get("/foods/fdc_import/", data=cgi_data)
         response = foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
         content = response.content.decode('utf-8')
         success_message = f'<b>Imported.</b> You can now access this food locally at <a href="/foods/{fdc_id}/">'
         cgi_query_string = urllib.parse.urlencode(cgi_data)
-        assert success_message in content, f"calling foods_fdc_import(request, {fdc_id}, " \
-                "fdc_api_contacter=Mock_Fdc_Api_Contacter) doesn't yield content containing the " \
-                "appropriate success message"
+        assert success_message in content, f"calling foods_fdc_import(request, " \
+                f"fdc_api_contacter=Mock_Fdc_Api_Contacter) with CGI params {cgi_query_string} doesn't yield " \
+                "content containing the appropriate success message"
         food_objs = Food.objects.filter(fdc_id=fdc_id)
-        assert len(food_objs) == 1, f"calling foods_fdc_import(request, {fdc_id}, " \
-                "fdc_api_contacter=Mock_Fdc_Api_Contacter) returned the appropriate result, but didn't actually " \
+        assert len(food_objs) == 1, f"calling foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter) " \
+                f"with CGI params {cgi_query_string} returned the appropriate result, but didn't actually " \
                 "import the data at that fdc_id into the nutritracker data store"
 
-
+    def test_foods_fdc_import_error_case_invalid_fdc_id(self):
+        fdc_id = -1
+        cgi_data = {'fdc_id': fdc_id}
+        request = self.request_factory.get("/foods/fdc_import/", data=cgi_data)
+        response = foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
+        content = response.content.decode('utf-8')
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        error_message = "value for fdc_id must be an integer greater than or equal to 1; received &#x27;-1&#x27;"
+        assert error_message in content, f"calling foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)"\
+                f" with CGI params {cgi_query_string} doesn't yield content containing the appropriate error message"
