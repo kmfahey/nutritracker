@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import random
 import html
 import faker
 import urllib.parse
@@ -11,7 +12,7 @@ from django.contrib.auth.models import User
 from django.test.client import RequestFactory
 
 from .models import Food, Ingredient, Recipe
-from .views import recipes
+from .views import recipes, recipes_mongodb_id
 
 
 food_model_argds = {
@@ -180,4 +181,17 @@ class test_recipes(recipes_test_case):
                 "logged-in user doesn't yield content with the appropriate error message"
         for recipe_name in self.recipes:
             assert html.escape(recipe_name) not in content, f"calling recipes(request) without a logged-in user " \
-                    "yields content that lists at least one recipe (in this case, '{recipe_name}'"
+                    f"yields content that lists at least one recipe (in this case, '{recipe_name}'"
+
+
+class test_recipes_mongodb_id(recipes_test_case):
+
+    def test_recipes_mongodb_id_normal_case(self):
+        recipe_model_obj = random.choice(list(self.recipes.values()))
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get(f"/recipes/{recipe_model_obj._id}")
+                )
+        content = recipes_mongodb_id(request, recipe_model_obj._id).content.decode('utf-8')
+        assert html.escape(recipe_model_obj.recipe_name) in content, "calling recipes_mongodb_id(request, " \
+                f"'{recipe_model_obj._id}') doesn't yield content containing the corresponding recipe name, " \
+                f"'{recipe_model_obj.recipe_name}'"
