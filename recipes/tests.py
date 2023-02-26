@@ -240,3 +240,19 @@ class test_recipes_search_results(recipes_test_case):
                 assert recipe_name_esc not in content, f'calling recipes_search_results(request) with cgi params ' \
                         f'{cgi_query_string} yields content containing the recipe name "{recipe_name}" although it ' \
                         'is not a match and should not be listed'
+
+    def test_recipes_search_results_normal_case_no_matches(self):
+        cgi_data = {"search_query": "Pickle", "page_size": 25, "page_number": 1}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get("/recipes/search_results/", data=cgi_data)
+        )
+        content = recipes_search_results(request).content.decode('utf-8')
+        assert "No matches" in content, f'calling recipes_search_results(request) with cgi params ' \
+                        f'{cgi_query_string} does not yield content containing the string "No matches" ' \
+                        'even though there should be no matches based on the extant Recipe objects'
+        for recipe_name in self.recipes:
+            recipe_name_esc = html.escape(recipe_name)
+            assert recipe_name_esc not in content, f'calling recipes_search_results(request) with cgi params ' \
+                    f'{cgi_query_string} yields content containing the recipe name "{recipe_name}" although it ' \
+                    'is not a match and should not be listed'
