@@ -126,7 +126,6 @@ def recipes_search_results(request):
     subordinate_navigation = navigation_links_displayer.full_href_list_callable()
     context = {'subordinate_navigation': subordinate_navigation, 'message': '', 'more_than_one_page': False,
                'error': False, 'message': ''}
-    template = loader.get_template('recipes/recipes_search.html')
     template = loader.get_template('recipes/recipes_search_results.html')
 
     retval = retrieve_pagination_params(template, context, request, default_page_size, search_url, query=True)
