@@ -279,22 +279,22 @@ class test_foods_local_search_results(foods_test_case):
 
     def test_foods_local_search_results_normal_case(self):
         cgi_data = {'search_query': 'Bread', 'page_number': 1, 'page_size': 25}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
         content = foods(request).content.decode('utf-8')
         matching_food_names = [food_argd["food_name"] for food_argd in food_model_objs_argds if "Bread" in food_argd["food_name"]]
-        cgi_query_string = urllib.parse.urlencode(cgi_data)
         for food_name in matching_food_names:
             assert food_name in content, f"calling foods_local_search(request) with CGI params {cgi_query_string} " \
                     "doesn't return a page with all matching food_names listed"
 
     def test_foods_local_search_results_pagination_normal_case(self):
         cgi_data = {'search_query': 'Bread', 'page_number': 1, 'page_size': 1}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self.request_factory.get("/foods/local_search_results/", data=cgi_data)
         content = foods_local_search_results(request).content.decode('utf-8')
         bread_re = re.compile("bread", re.I)
         matching_food_names = sorted([html.escape(food_argd["food_name"]) for food_argd in food_model_objs_argds
                                                                               if bread_re.search(food_argd["food_name"])])
-        cgi_query_string = urllib.parse.urlencode(cgi_data)
         assert matching_food_names[0] in content, f"calling foods_local_search(request) with CGI params " \
                 f"{cgi_query_string} didn't return a page which doesn't return a page containing '{matching_food_names[0]}'"
         assert matching_food_names[1] not in content, f"calling foods_local_search(request) with CGI params " \
@@ -340,10 +340,10 @@ class test_foods_fdc_search_results(foods_test_case):
 
     def test_foods_fdc_search_results_normal_case(self):
         cgi_data = {'search_query': 'Bread', 'page_number': 1, 'page_size': 25}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self.request_factory.get("/foods/fdc_search_results/", data=cgi_data)
         response = foods_fdc_search_results(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
         content = response.content.decode('utf-8')
-        cgi_query_string = urllib.parse.urlencode(cgi_data)
         for food, calories in self.result_food_to_calories:
             food_calories_re = re.compile(f">{food}<.*\n.*Calories: {calories}")
             assert food_calories_re.search(content), \
@@ -356,10 +356,10 @@ class test_foods_fdc_search_results(foods_test_case):
 
     def test_foods_fdc_search_results_error_case_overshooting_arg(self):
         cgi_data = {'search_query': 'Bread', 'page_number': 5, 'page_size': 25}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self.request_factory.get("/foods/fdc_search_results/", data=cgi_data)
         response = foods_fdc_search_results(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
         content = response.content.decode('utf-8')
-        cgi_query_string = urllib.parse.urlencode(cgi_data)
         assert "No more results" in content, \
                 f"calling foods_fdc_search_results(request, Mock_Fdc_Api_Contacter) with cgi args {cgi_query_string} " \
                 "yielded content that didn't contain 'No more results'"
@@ -433,11 +433,11 @@ class test_foods_fdc_import(foods_test_case):
     def test_foods_fdc_import_normal_case_imported(self):
         fdc_id = random.choice(list(Mock_Fdc_Api_Contacter.look_up_fdc_id_data))
         cgi_data = {'fdc_id': fdc_id}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self.request_factory.get("/foods/fdc_import/", data=cgi_data)
         response = foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
         content = response.content.decode('utf-8')
         success_message = f'<b>Imported.</b> You can now access this food locally at <a href="/foods/{fdc_id}/">'
-        cgi_query_string = urllib.parse.urlencode(cgi_data)
         assert success_message in content, f"calling foods_fdc_import(request, " \
                 f"fdc_api_contacter=Mock_Fdc_Api_Contacter) with CGI params {cgi_query_string} doesn't yield " \
                 "content containing the appropriate success message"
@@ -449,10 +449,10 @@ class test_foods_fdc_import(foods_test_case):
     def test_foods_fdc_import_error_case_invalid_fdc_id(self):
         fdc_id = -1
         cgi_data = {'fdc_id': fdc_id}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self.request_factory.get("/foods/fdc_import/", data=cgi_data)
         response = foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
         content = response.content.decode('utf-8')
-        cgi_query_string = urllib.parse.urlencode(cgi_data)
         error_message = "value for fdc_id must be an integer greater than or equal to 1; received &#x27;-1&#x27;"
         assert error_message in content, f"calling foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)"\
                 f" with CGI params {cgi_query_string} doesn't yield content containing the appropriate error message"
@@ -465,10 +465,10 @@ class test_foods_fdc_import(foods_test_case):
         food_model_obj = Food(**food_model_cls_argd)
         food_model_obj.save()
         cgi_data = {'fdc_id': fdc_id}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self.request_factory.get("/foods/fdc_import/", data=cgi_data)
         response = foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
         content = response.content.decode('utf-8')
-        cgi_query_string = urllib.parse.urlencode(cgi_data)
         success_message = '<b>Not imported.</b> A food with this FDC ID already exists in the local database. ' \
                 "It's accessible at " + f'<a href="/foods/{fdc_id}/">'
         assert success_message in content, f"calling foods_fdc_import(request, " \
@@ -480,10 +480,10 @@ class test_foods_fdc_import(foods_test_case):
         while spurious_fdc_id in Mock_Fdc_Api_Contacter.look_up_fdc_id_data:
             spurious_fdc_id = random.randint(2**17, 2**22)
         cgi_data = {'fdc_id': spurious_fdc_id}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self.request_factory.get("/foods/fdc_import/", data=cgi_data)
         response = foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter)
         content = response.content.decode('utf-8')
-        cgi_query_string = urllib.parse.urlencode(cgi_data)
         assert f"No such FDC ID in the FoodData Central database: {spurious_fdc_id}" in content, \
                 "calling foods_fdc_import(request, fdc_api_contacter=Mock_Fdc_Api_Contacter) with CGI " \
                 f"params {cgi_query_string} where {spurious_fdc_id} is not present in the mock api doesn't " \
