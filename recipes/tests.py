@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 from django.test.client import RequestFactory
 
 from .models import Food, Ingredient, Recipe
-from .views import recipes, recipes_mongodb_id
+from .views import recipes, recipes_mongodb_id, recipes_search
 
 
 food_model_argds = {
@@ -208,3 +208,15 @@ class test_recipes_mongodb_id(recipes_test_case):
         assert error_message in content, f"calling recipes_mongodb_id(request, '{bogus_mongodb_id}'), where that " \
                 "object id is not associated with any Recipe object, doesn't yield content containing the " \
                 "appropriate error message"
+
+
+class test_recipes_search(recipes_test_case):
+
+    # recipes_search() is a static page, so all there is to test is if it returns a response with status code 200.
+    def test_recipes_search_normal_case(self):
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get("/recipes/search/")
+                )
+        logout(request)
+        response = recipes_search(request)
+        assert response.status_code == 200, "calling recipes_search() doesn't yield a response with status code == 200"
