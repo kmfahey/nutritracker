@@ -5,6 +5,7 @@ import html
 import faker
 import urllib.parse
 
+from bson.objectid import ObjectId
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.contrib.auth import authenticate, login, logout
 from django.test import TestCase
@@ -187,11 +188,23 @@ class test_recipes(recipes_test_case):
 class test_recipes_mongodb_id(recipes_test_case):
 
     def test_recipes_mongodb_id_normal_case(self):
-        recipe_model_obj = random.choice(list(self.recipes.values()))
+        # Those two very big integers are 0x100000000000000000000000 and 0xffffffffffffffffffffffff. The argument to
+        # ObjectId must have 24 digits when displayed in hexadecimal to be taken as a valid object.
+        bogus_mongodb_id = ObjectId(str(hex(random.randint(4951760157141521099596496896,
+                                                          79228162514264337593543950335))).removeprefix("0x"))
+        # Just in case by random chance a valid object id was picked.
+        while len(Recipe.objects.filter(_id=bogus_mongodb_id)):
+            bogus_mongodb_id = ObjectId(str(hex(random.randint(4951760157141521099596496896,
+                                                              79228162514264337593543950335))).removeprefix("0x"))
         request = self._middleware_and_user_bplate(
-                self.request_factory.get(f"/recipes/{recipe_model_obj._id}")
+                self.request_factory.get(f"/recipes/{bogus_mongodb_id}")
                 )
-        content = recipes_mongodb_id(request, recipe_model_obj._id).content.decode('utf-8')
-        assert html.escape(recipe_model_obj.recipe_name) in content, "calling recipes_mongodb_id(request, " \
-                f"'{recipe_model_obj._id}') doesn't yield content containing the corresponding recipe name, " \
-                f"'{recipe_model_obj.recipe_name}'"
+        response = recipes_mongodb_id(request, bogus_mongodb_id)
+        content = response.content.decode('utf-8')
+        error_message = html.escape("Error 404: no object in 'recipes' collection in 'nutritracker' data store "
+                                        f"with _id='{bogus_mongodb_id}'")
+        assert response.status_code == 404, f"calling recipes_mongodb_id(request, '{bogus_mongodb_id}'), where that " \
+                "object id is not associated with any Recipe object, doesn't yield a response with status code == 404"
+        assert error_message in content, f"calling recipes_mongodb_id(request, '{bogus_mongodb_id}'), where that " \
+                "object id is not associated with any Recipe object, doesn't yield content containing the " \
+                "appropriate error message"
