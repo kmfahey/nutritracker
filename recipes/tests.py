@@ -5,7 +5,7 @@ import faker
 import urllib.parse
 
 from django.contrib.sessions.middleware import SessionMiddleware
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.test.client import RequestFactory
@@ -170,4 +170,14 @@ class test_recipes(recipes_test_case):
         assert '<a href="/recipes/?page_size=2&page_number=2">2</a>' in content, "calling recipes(request) with " \
                 f"cgi params {cgi_query_string} didn't yield content containing correct pagination links"
 
-
+    def test_recipes_error_case_user_not_logged_in(self):
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get("/recipes/")
+                )
+        logout(request)
+        content = recipes(request).content.decode('utf-8')
+        assert "You are not logged in; no recipes to display." in content, "calling recipes(request) without a " \
+                "logged-in user doesn't yield content with the appropriate error message"
+        for recipe_name in self.recipes:
+            assert html.escape(recipe_name) not in content, f"calling recipes(request) without a logged-in user " \
+                    "yields content that lists at least one recipe (in this case, '{recipe_name}'"

@@ -10,6 +10,7 @@ from operator import and_, attrgetter
 
 from functools import reduce
 
+from django.contrib.auth import authenticate, login
 from django.shortcuts import redirect
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
@@ -59,35 +60,38 @@ def recipes(request):
 
     user_model_obj = _retrieve_user_obj(request)
 
-    if user_model_obj is not None:
-        retval = retrieve_pagination_params(template, context, request, default_page_size, query=False)
-        if isinstance(retval, HttpResponse):
-            return retval
-        page_size = retval["page_size"]
-        page_number = retval["page_number"]
-
-        recipe_objs = [Recipe_Detailed.from_model_obj(recipe_model_obj)
-                       for recipe_model_obj in Recipe.objects.filter(owner=user_model_obj.username)]
-        recipe_objs = list(filter(lambda recipe_obj: recipe_obj.complete is True, recipe_objs))
-        recipe_objs.sort(key=attrgetter('recipe_name'))
-        number_of_results = len(recipe_objs)
-        number_of_pages = math.ceil(number_of_results / page_size)
-        if page_number > number_of_pages:
-            context["more_than_one_page"] = True
-            context["message"] = "No more results"
-            context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
-            return HttpResponse(template.render(context, request))
-
-        if len(recipe_objs) > page_size:
-            recipe_objs = slice_output_list_by_page(recipe_objs, page_size, page_number)
-            context["more_than_one_page"] = True
-            context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
-        context['recipe_objs'] = recipe_objs
-    else:
+    if user_model_obj is None:
         context["error"] = True
         context["message"] = "You are not logged in; no recipes to display."
         context["pagination_links"] = ""
         context['recipe_objs'] = ()
+        return HttpResponse(template.render(context, request))
+
+    retval = retrieve_pagination_params(template, context, request, default_page_size, query=False)
+    if isinstance(retval, HttpResponse):
+        return retval
+    page_size = retval["page_size"]
+    page_number = retval["page_number"]
+
+    recipe_objs = [Recipe_Detailed.from_model_obj(recipe_model_obj)
+                   for recipe_model_obj in Recipe.objects.filter(owner=user_model_obj.username)]
+    recipe_objs = list(filter(lambda recipe_obj: recipe_obj.complete is True, recipe_objs))
+    recipe_objs.sort(key=attrgetter('recipe_name'))
+    number_of_results = len(recipe_objs)
+    number_of_pages = math.ceil(number_of_results / page_size)
+
+    if page_number > number_of_pages:
+        context["more_than_one_page"] = True
+        context["message"] = "No more results"
+        context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
+        return HttpResponse(template.render(context, request))
+
+    if len(recipe_objs) > page_size:
+        recipe_objs = slice_output_list_by_page(recipe_objs, page_size, page_number)
+        context["more_than_one_page"] = True
+        context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
+
+    context['recipe_objs'] = recipe_objs
     return HttpResponse(template.render(context, request))
 
 
