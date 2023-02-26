@@ -251,3 +251,5 @@ TODO:
     * globally retrofit all foods.views functions to handle either fdc_id or nt_id
 
     * correctly use fdc API search pagination bc currently it's not
+
+    * IMPORTANT: do detective work on how FDC API behaves to detect if the code is picking the wrong serving size for the nutrient data, if they line up in some way and we're picking non-matching items from two different lists

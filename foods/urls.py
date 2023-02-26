@@ -20,6 +20,6 @@ urlpatterns = [
     path('fdc_search/<int:fdc_id>/', views.foods_fdc_search_fdc_id,    name='foods_fdc_search_+fdc_id+_slash'),
     path('fdc_import',               views.foods_fdc_import,           name='foods_fdc_import'),
     path('fdc_import/',              views.foods_fdc_import,           name='foods_fdc_import_slash'),
-    path('add_food',                 views.foods_add_food,             name='foods_add_food'),
-    path('add_food/',                views.foods_add_food,             name='foods_add_food_slash')
+#    path('add_food',                 views.foods_add_food,             name='foods_add_food'),
+#    path('add_food/',                views.foods_add_food,             name='foods_add_food_slash')
 ]

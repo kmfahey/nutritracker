@@ -10,7 +10,6 @@ from operator import and_, attrgetter
 
 from functools import reduce
 
-from django.contrib.auth.models import User
 from django.shortcuts import redirect
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
@@ -85,7 +84,7 @@ def recipes(request):
             context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
         context['recipe_objs'] = recipe_objs
     else:
-        context["error"] = "You are not logged in; no recipes to display."
+        context["error"] = True
         context["message"] = "You are not logged in; no recipes to display."
         context["pagination_links"] = ""
         context['recipe_objs'] = ()

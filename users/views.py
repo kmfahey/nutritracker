@@ -231,8 +231,8 @@ def users_username_edit_profile(request, username):
         context["username"] = username
         context["display_name"] = account_model_obj.display_name
 
-        context["selected_if_male"] =      "selected" if account_model_obj.gender_at_birth == "M" else ""
-        context["selected_if_female"] =    "selected" if account_model_obj.gender_at_birth == "F" else ""
+        context["selected_if_male"] = "selected" if account_model_obj.gender_at_birth == "M" else ""
+        context["selected_if_female"] = "selected" if account_model_obj.gender_at_birth == "F" else ""
 
         context["gender_identity"] = account_model_obj.gender_identity
 
@@ -421,7 +421,7 @@ def users_delete_user(request):
 
     if not len(cgi_params) or 'username' not in cgi_params:
         context['error'] = True
-        context['message'] = f"No 'username' CGI parameter specified, unable to delete user"
+        context['message'] = "No 'username' CGI parameter specified, unable to delete user"
         return HttpResponse(template.render(context, request))
 
     username = check_str_param(cgi_params.get('username', None), 'username', template, context,

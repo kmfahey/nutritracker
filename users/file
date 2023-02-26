@@ -1,0 +1,4 @@
+views.py:24:1: E731 do not assign a lambda expression, use a def
+views.py:234:38: E222 multiple spaces after operator
+views.py:235:40: E222 multiple spaces after operator
+views.py:424:30: F541 f-string is missing placeholders

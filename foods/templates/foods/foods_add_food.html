@@ -8,6 +8,10 @@
 
 {% if message %}<p><b>{{ message }}</b></p>{% endif %}
 
+{% if error is False %}
+
 {% include "foods/_food_add_or_edit_block.html" %}
+
+{% endif %}
 
 {% endblock %}

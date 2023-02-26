@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import random
 import math
 
 from decouple import config
@@ -11,7 +10,6 @@ from functools import reduce
 
 from django.db.models import Q
 from django.http import HttpResponse
-from django.shortcuts import redirect
 from django.template import loader
 from django.views.decorators.http import require_http_methods
 
@@ -254,45 +252,45 @@ def foods_fdc_import(request, fdc_api_contacter=Fdc_Api_Contacter):
     return HttpResponse(template.render(context, request))
 
 
-@require_http_methods(["GET", "POST"])
-def foods_add_food(request):
-    template = loader.get_template('foods/foods_add_food.html')
-    subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/foods/add_food/")
-    context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
-    cgi_params = get_cgi_params(request)
-
-    if len(cgi_params):
-        food_model_obj_argd = dict()
-        try:
-            food_model_obj_argd['food_name'] = cgi_params['food_name']
-            assert len(food_model_obj_argd['food_name'])
-        except (KeyError, AssertionError):
-            context["error"] = True
-            context["message"] = "value for 'food_name' required; must be a string at least 1 character long"
-            return HttpResponse(template.render(context, request))
-        try:
-            food_model_obj_argd['serving_units'] = cgi_params['serving_units']
-            assert food_model_obj_argd['serving_units'] in VALID_SERVING_UNITS
-        except (KeyError, AssertionError):
-            valid_serving_units_quoted = [f"'{unit}'" for unit in VALID_SERVING_UNITS]
-            valid_serving_units_expr = ", ".join(valid_serving_units_quoted[:-1]) + ", or " + valid_serving_units_quoted[-1]
-            context["error"] = True
-            context["message"] = f"value for 'food_name' required; must be one of {valid_serving_units_expr}"
-            return HttpResponse(template.render(context, request))
-        for food_model_obj_key in FOOD_MODEL_OBJ_FLOAT_KEYS:
-            try:
-                food_model_obj_argd[food_model_obj_key] = float(cgi_params[food_model_obj_key])
-                assert food_model_obj_argd[food_model_obj_key] >= 0
-            except (KeyError, ValueError, AssertionError):
-                context["error"] = True
-                context["message"] = f"value for '{food_model_obj_key}' required; must be a decimal value greater than or equal to zero"
-                return HttpResponse(template.render(context, request))
-        food_model_obj_argd["fdc_id"] = 0
-        food_model_obj_argd["nt_hash_id"] = hash(food_model_obj_argd['food_name'])
-        while len(Food.objects.filter(nt_hash_id=food_model_obj_argd["nt_hash_id"])):
-            food_model_obj_argd["nt_hash_id"] = hash(food_model_obj_argd['food_name'] + chr(random.randint(32,126)))
-        food_model_obj = Food(**food_model_obj_argd)
-        food_model_obj.save()
-        return redirect(f"/foods/{food_model_obj_argd['nt_hash_id']}/")
-    else:
-        return HttpResponse(template.render(context, request))
+#@require_http_methods(["GET", "POST"])
+#def foods_add_food(request):
+#    template = loader.get_template('foods/foods_add_food.html')
+#    subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/foods/add_food/")
+#    context = {'subordinate_navigation': subordinate_navigation, 'error': False, 'message': ''}
+#    cgi_params = get_cgi_params(request)
+#
+#    if len(cgi_params):
+#        food_model_obj_argd = dict()
+#        try:
+#            food_model_obj_argd['food_name'] = cgi_params['food_name']
+#            assert len(food_model_obj_argd['food_name'])
+#        except (KeyError, AssertionError):
+#            context["error"] = True
+#            context["message"] = "value for 'food_name' required; must be a string at least 1 character long"
+#            return HttpResponse(template.render(context, request))
+#        try:
+#            food_model_obj_argd['serving_units'] = cgi_params['serving_units']
+#            assert food_model_obj_argd['serving_units'] in VALID_SERVING_UNITS
+#        except (KeyError, AssertionError):
+#            valid_serving_units_quoted = [f"'{unit}'" for unit in VALID_SERVING_UNITS]
+#            valid_serving_units_expr = ", ".join(valid_serving_units_quoted[:-1]) + ", or " + valid_serving_units_quoted[-1]
+#            context["error"] = True
+#            context["message"] = f"value for 'food_name' required; must be one of {valid_serving_units_expr}"
+#            return HttpResponse(template.render(context, request))
+#        for food_model_obj_key in FOOD_MODEL_OBJ_FLOAT_KEYS:
+#            try:
+#                food_model_obj_argd[food_model_obj_key] = float(cgi_params[food_model_obj_key])
+#                assert food_model_obj_argd[food_model_obj_key] >= 0
+#            except (KeyError, ValueError, AssertionError):
+#                context["error"] = True
+#                context["message"] = f"value for '{food_model_obj_key}' required; must be a decimal value greater than or equal to zero"
+#                return HttpResponse(template.render(context, request))
+#        food_model_obj_argd["fdc_id"] = 0
+#        food_model_obj_argd["nt_hash_id"] = hash(food_model_obj_argd['food_name'])
+#        while len(Food.objects.filter(nt_hash_id=food_model_obj_argd["nt_hash_id"])):
+#            food_model_obj_argd["nt_hash_id"] = hash(food_model_obj_argd['food_name'] + chr(random.randint(32,126)))
+#        food_model_obj = Food(**food_model_obj_argd)
+#        food_model_obj.save()
+#        return redirect(f"/foods/{food_model_obj_argd['nt_hash_id']}/")
+#    else:
+#        return HttpResponse(template.render(context, request))

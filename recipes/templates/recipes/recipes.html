@@ -6,7 +6,11 @@
 
 {% if message %}<p><b>{{ message }}</b></p>{% endif %}
 
+{% if error is False %}
+
 {% include "recipes/_recipe_obj_foreach.html" %}
+
+{% endif %}
 
 {% if more_than_one_page %}{% autoescape off %}{{ pagination_links }}{% endautoescape %}{% endif %}
 
