@@ -135,19 +135,39 @@ class test_recipes(recipes_test_case):
             assert recipe_name_esc in content, 'calling recipes(request) does not yield content containing the ' \
                     f'"recipe name "{recipe_name}" although it is in the data store and should be listed'
 
-    def test_recipes_pagination_error_case_overshooting_arg(self):
+    def test_recipes_error_case_pagination_overshooting_arg(self):
         cgi_data = {"page_size": 2, "page_number": 4}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
                 self.request_factory.get("/recipes/", data=cgi_data)
                 )
         content = recipes(request).content.decode('utf-8')
-        assert "No more results" in content, f"calling recipes(request) with cgi args {cgi_query_string} that " \
+        assert "No more results" in content, f"calling recipes(request) with cgi params {cgi_query_string} that " \
                 "should point to a page off the end of the recipes list didn't yield content containing " \
                 "appropriate error message"
         assert '<a href="/recipes/?page_size=2&page_number=2">2</a>' in content, f"calling recipes(request) with " \
-                f"cgi args {cgi_query_string} that should point to a page off the end of the recipes list didn't " \
+                f"cgi params {cgi_query_string} that should point to a page off the end of the recipes list didn't " \
                 "yield content containing correct pagination links"
 
+    def test_recipes_normal_case_pagination(self):
+        cgi_data = {"page_size": 2, "page_number": 1}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get("/recipes/", data=cgi_data)
+                )
+        content = recipes(request).content.decode('utf-8')
+        recipe_names = sorted(self.recipes.keys())
+        for recipe_name in recipe_names[0:2]:
+            recipe_name_esc = html.escape(recipe_name)
+            assert recipe_name_esc in content, f'calling recipes(request) with cgi params {cgi_query_string} does ' \
+                    f'not yield content containing the "recipe name "{recipe_name}" although it is in the data store ' \
+                    'and should be listed'
+        for recipe_name in recipe_names[2:]:
+            recipe_name_esc = html.escape(recipe_name)
+            assert recipe_name_esc not in content, f'calling recipes(request) with cgi params {cgi_query_string} ' \
+                    'yields content containing the recipe name "{recipe_name}" although the params should put ' \
+                    'it on a later page'
+        assert '<a href="/recipes/?page_size=2&page_number=2">2</a>' in content, "calling recipes(request) with " \
+                f"cgi params {cgi_query_string} didn't yield content containing correct pagination links"
 
 
