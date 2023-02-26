@@ -87,6 +87,7 @@ class recipes_test_case(TestCase):
             self.foods[food_name] = food_model_obj
 
         # Instancing every Recipe object by way of Food objects and Ingredient objects
+        self.ingredients = list()
         self.recipes = dict()
 
         # Iterating over the recipe_ingredients dict, which associates recipe
@@ -104,6 +105,7 @@ class recipes_test_case(TestCase):
                 food_model_obj = self.foods[food_name]
                 ingredient_model_obj = Ingredient(servings_number=servings_number, food=food_model_obj.serialize())
                 ingredient_model_obj.save()
+                self.ingredients.append(ingredient_model_obj)
                 recipe_model_obj.ingredients.append(ingredient_model_obj.serialize())
 
             # Finish & save the working Recipe object, then add it to the
@@ -122,7 +124,12 @@ class recipes_test_case(TestCase):
         return request
 
     def tearDown(self):
-        pass
+        for recipe_model_obj in self.recipes.values():
+            recipe_model_obj.delete()
+        for ingredient_model_obj in self.ingredients:
+            ingredient_model_obj.delete()
+        for food_model_obj in self.foods.values():
+            food_model_obj.delete()
 
 
 class test_recipes(recipes_test_case):
@@ -256,3 +263,17 @@ class test_recipes_search_results(recipes_test_case):
             assert recipe_name_esc not in content, f'calling recipes_search_results(request) with cgi params ' \
                     f'{cgi_query_string} yields content containing the recipe name "{recipe_name}" although it ' \
                     'is not a match and should not be listed'
+
+    def test_recipes_search_results_error_case_pagination_overshooting_arg(self):
+        cgi_data = {"page_size": 2, "page_number": 4, "search_query": "Butter"}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get("/recipes/search_results/", data=cgi_data)
+        )
+        content = recipes_search_results(request).content.decode('utf-8')
+        assert "No more results" in content, "calling recipes_search_results(request) with cgi params " \
+                f"{cgi_query_string} that should point to a page off the end of the recipes list didn't yield " \
+                "content containing message 'No more results'"
+        assert '<a href="/recipes/search_results/?page_size=2&page_number=2&search_query=Butter">2</a>' in content, \
+                f"calling recipes_search_results(request) with cgi params {cgi_query_string} that should point " \
+                "to a page off the end of the search results didn't yield content containing correct pagination links"

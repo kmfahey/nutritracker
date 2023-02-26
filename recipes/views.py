@@ -141,10 +141,14 @@ def recipes_search_results(request):
     q_term = reduce(and_, (Q(recipe_name__icontains=kw) for kw in kws))
     recipe_objs = list(Recipe.objects.filter(q_term))
     recipe_objs.sort(key=attrgetter('recipe_name'))
+    number_of_results = len(recipe_objs)
+    number_of_pages = math.ceil(number_of_results / page_size)
+
     if not len(recipe_objs):
         context["message"] = "No matches"
         return HttpResponse(template.render(context, request))
-    elif len(recipe_objs) <= page_size and page_number > 1:
+
+    elif page_number > number_of_pages:
         context["more_than_one_page"] = True
         context["message"] = "No more results"
         context["pagination_links"] = generate_pagination_links("/recipes/search_results/", len(recipe_objs),
