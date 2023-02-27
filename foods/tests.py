@@ -8,7 +8,7 @@ import urllib.parse
 import json
 
 from django.test.client import RequestFactory
-from django.test import TestCase
+from django.test import TestCase, tag
 
 from .models import Food
 from .views import foods, foods_fdc_id, foods_local_search, foods_local_search_results, foods_fdc_search, \
@@ -142,6 +142,7 @@ class Mock_Fdc_Api_Contacter:
         return Food_Detailed.from_fdc_json_obj(json_data)
 
 
+@tag("foods")
 class foods_test_case(TestCase):
 
     def setUp(self):

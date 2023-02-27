@@ -8,7 +8,7 @@ import urllib.parse
 from bson.objectid import ObjectId
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.contrib.auth import authenticate, login, logout
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.contrib.auth.models import User
 from django.test.client import RequestFactory
 
@@ -65,6 +65,7 @@ recipe_ingredients = {
 }
 
 
+@tag("recipes")
 class recipes_test_case(TestCase):
 
     def setUp(self):
@@ -195,14 +196,14 @@ class test_recipes(recipes_test_case):
 class test_recipes_mongodb_id(recipes_test_case):
 
     def test_recipes_mongodb_id_normal_case(self):
-        # Those two very big integers are 0x100000000000000000000000 and 0xffffffffffffffffffffffff. The argument to
+        # Those two very big integers are  and . The argument to
         # ObjectId must have 24 digits when displayed in hexadecimal to be taken as a valid object.
-        bogus_mongodb_id = ObjectId(str(hex(random.randint(4951760157141521099596496896,
-                                                          79228162514264337593543950335))).removeprefix("0x"))
+        bogus_mongodb_id = ObjectId(str(hex(random.randint(0x100000000000000000000000,
+                                                           0xffffffffffffffffffffffff))).removeprefix("0x"))
         # Just in case by random chance a valid object id was picked.
         while len(Recipe.objects.filter(_id=bogus_mongodb_id)):
-            bogus_mongodb_id = ObjectId(str(hex(random.randint(4951760157141521099596496896,
-                                                              79228162514264337593543950335))).removeprefix("0x"))
+            bogus_mongodb_id = ObjectId(str(hex(random.randint(0x100000000000000000000000,
+                                                               0xffffffffffffffffffffffff))).removeprefix("0x"))
         request = self._middleware_and_user_bplate(
                 self.request_factory.get(f"/recipes/{bogus_mongodb_id}")
         )
