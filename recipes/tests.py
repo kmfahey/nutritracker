@@ -304,3 +304,19 @@ class test_recipes_builder(recipes_test_case):
                     f"'{recipe_model_obj.recipe_name}' having attribute completed=True, calling " \
                     f"recipes_builder(request) with cgi params {cgi_query_string} yields content containing that " \
                     "recipe_name string value"
+
+    def test_recipes_builder_normal_case_no_recipes_to_display(self):
+        cgi_data = {"page_size": 25, "page_number": 1}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get("/recipes/search/", data=cgi_data)
+        )
+        content = recipes_builder(request).content.decode('utf-8')
+        assert "No recipes in the works" in content, "calling recipes_builder(request) with cgi params " \
+                f"{cgi_query_string}, where all extant Recipe objects have the attribute complete=True, " \
+                "doesn't yield content containing message 'No recipes in the works'"
+        for recipe_model_obj in self.recipes.values():
+            assert html.escape(recipe_model_obj.recipe_name) not in content, f"calling recipes_builder(request) " \
+                    f"with cgi params {cgi_query_string}, where all extant Recipe objects have the attribute " \
+                    "complete=True, yields content containing the recipe_name string value " \
+                    f"'{recipe_model_obj.recipe_name}'"
