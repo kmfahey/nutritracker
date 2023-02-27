@@ -5,6 +5,7 @@ import html
 import faker
 import urllib.parse
 
+from operator import attrgetter
 from bson.objectid import ObjectId
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.contrib.auth import authenticate, login, logout
@@ -13,7 +14,7 @@ from django.contrib.auth.models import User
 from django.test.client import RequestFactory
 
 from .models import Food, Ingredient, Recipe
-from .views import recipes, recipes_mongodb_id, recipes_search, recipes_search_results
+from .views import recipes, recipes_mongodb_id, recipes_search, recipes_search_results, recipes_builder
 
 
 food_model_argds = {
@@ -278,3 +279,28 @@ class test_recipes_search_results(recipes_test_case):
         assert '<a href="/recipes/search_results/?page_size=2&page_number=2&search_query=Butter">2</a>' in content, \
                 f"calling recipes_search_results(request) with cgi params {cgi_query_string} that should point " \
                 "to a page off the end of the search results didn't yield content containing correct pagination links"
+
+
+class test_recipes_builder(recipes_test_case):
+
+    def test_recipes_builder_normal_case(self):
+        recipe_model_objs = sorted(self.recipes.values(), key=attrgetter('recipe_name'))
+        for recipe_model_obj in recipe_model_objs[:2]:
+            recipe_model_obj.complete = False
+            recipe_model_obj.save()
+        cgi_data = {"page_size": 25, "page_number": 1}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get("/recipes/search/", data=cgi_data)
+        )
+        content = recipes_builder(request).content.decode('utf-8')
+        for recipe_model_obj in recipe_model_objs[:2]:
+            assert html.escape(recipe_model_obj.recipe_name) in content, "having set up the recipe model object " \
+                    f"by name '{recipe_model_obj.recipe_name}' to have attribute completed=False, calling " \
+                    f"recipes_builder(request) with cgi params {cgi_query_string} does not yield content containing " \
+                    "that recipe_name string value"
+        for recipe_model_obj in recipe_model_objs[2:]:
+            assert html.escape(recipe_model_obj.recipe_name) not in content, "with the recipe model object by name " \
+                    f"'{recipe_model_obj.recipe_name}' having attribute completed=True, calling " \
+                    f"recipes_builder(request) with cgi params {cgi_query_string} yields content containing that " \
+                    "recipe_name string value"
