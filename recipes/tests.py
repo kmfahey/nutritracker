@@ -14,7 +14,8 @@ from django.contrib.auth.models import User
 from django.test.client import RequestFactory
 
 from .models import Food, Ingredient, Recipe
-from .views import recipes, recipes_mongodb_id, recipes_search, recipes_search_results, recipes_builder
+from .views import recipes, recipes_mongodb_id, recipes_search, recipes_search_results, recipes_builder, \
+        recipes_builder_new
 
 
 food_model_argds = {
@@ -353,3 +354,16 @@ class test_recipes_builder(recipes_test_case):
         content = recipes_builder(request).content.decode('utf-8')
         assert "value for page_number must be an integer; received &#x27;one&#x27;" in content, \
                 f"calling recipes_builder() with cgi params {cgi_query_string}  did not produce the correct error"
+
+
+class test_recipes_builder_new(recipes_test_case):
+
+    # When called with no CGI params recipes_builder_new() displays a static
+    # page, so all there is to test is that status code is 200.
+    def test_recipes_builder_new_normal_case_no_args(self):
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get("/recipes/builder/new/")
+        )
+        response = recipes_builder_new(request)
+        assert response.status_code == 200, "calling recipes_builder_new() with no CGI params doesn't yield a " \
+                "response with status code == 200"
