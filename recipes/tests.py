@@ -297,7 +297,7 @@ class test_recipes_builder(recipes_test_case):
         cgi_data = {"page_size": 25, "page_number": 1}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/search/", data=cgi_data)
+                self.request_factory.get("/recipes/builder/", data=cgi_data)
         )
         content = recipes_builder(request).content.decode('utf-8')
         for recipe_model_obj in recipe_model_objs[:2]:
@@ -318,7 +318,7 @@ class test_recipes_builder(recipes_test_case):
         cgi_data = {"page_size": 25, "page_number": 1}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/search/", data=cgi_data)
+                self.request_factory.get("/recipes/builder/", data=cgi_data)
         )
         content = recipes_builder(request).content.decode('utf-8')
         assert "No recipes in the works" in content, "calling recipes_builder(request) with cgi params " \
@@ -334,7 +334,7 @@ class test_recipes_builder(recipes_test_case):
         cgi_data = {"page_size": 2, "page_number": 4}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/search/", data=cgi_data)
+                self.request_factory.get("/recipes/builder/", data=cgi_data)
         )
         content = recipes_builder(request).content.decode('utf-8')
         assert "No more recipes" in content, "calling recipes_builder(request) with cgi params " \
@@ -343,3 +343,13 @@ class test_recipes_builder(recipes_test_case):
         assert '<a href="/recipes/builder/?page_size=2&page_number=2">2</a>' in content, \
                 f"calling recipes_search_results(request) with cgi params {cgi_query_string} that should point " \
                 "to a page off the end of the search results didn't yield content containing correct pagination links"
+
+    def test_recipes_builder_pagination_error_case_bad_arg(self):
+        cgi_data = {'page_number': 'one', 'page_size': 10}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get("/recipes/builder/", data=cgi_data)
+        )
+        content = recipes_builder(request).content.decode('utf-8')
+        assert "value for page_number must be an integer; received &#x27;one&#x27;" in content, \
+                f"calling recipes_builder() with cgi params {cgi_query_string}  did not produce the correct error"
