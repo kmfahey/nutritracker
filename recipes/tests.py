@@ -58,7 +58,7 @@ recipe_ingredients = {
         'Whole Wheat Bread': 2, 'Peanut Butter': 0.1268025851
     },
     'Peanut Butter & Butter Sandwich': {
-        'White Bread': 3.04, 'Peanut Butter': 0.1268025851, 'Strawberry Jam': 2.626666667, 'Butter': 4
+        'White Bread': 3.04, 'Peanut Butter': 0.1268025851, 'Butter': 4
     },
     'Peanut Butter & Honey Sandwich': {
         'White Bread': 3.04, 'Peanut Butter': 0.1268025851, 'Honey': 0.04226752838
@@ -283,10 +283,16 @@ class test_recipes_search_results(recipes_test_case):
 
 class test_recipes_builder(recipes_test_case):
 
+    def setUp(self):
+        super().setUp()
+        for recipe_model_obj in self.recipes.values():
+            recipe_model_obj.complete = False
+            recipe_model_obj.save()
+
     def test_recipes_builder_normal_case(self):
         recipe_model_objs = sorted(self.recipes.values(), key=attrgetter('recipe_name'))
-        for recipe_model_obj in recipe_model_objs[:2]:
-            recipe_model_obj.complete = False
+        for recipe_model_obj in recipe_model_objs[2:]:
+            recipe_model_obj.complete = True
             recipe_model_obj.save()
         cgi_data = {"page_size": 25, "page_number": 1}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
@@ -306,6 +312,9 @@ class test_recipes_builder(recipes_test_case):
                     "recipe_name string value"
 
     def test_recipes_builder_normal_case_no_recipes_to_display(self):
+        for recipe_model_obj in self.recipes.values():
+            recipe_model_obj.complete = True
+            recipe_model_obj.save()
         cgi_data = {"page_size": 25, "page_number": 1}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
@@ -320,3 +329,17 @@ class test_recipes_builder(recipes_test_case):
                     f"with cgi params {cgi_query_string}, where all extant Recipe objects have the attribute " \
                     "complete=True, yields content containing the recipe_name string value " \
                     f"'{recipe_model_obj.recipe_name}'"
+
+    def test_recipes_builder_error_case_pagination_overshooting_arg(self):
+        cgi_data = {"page_size": 2, "page_number": 4}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get("/recipes/search/", data=cgi_data)
+        )
+        content = recipes_builder(request).content.decode('utf-8')
+        assert "No more recipes" in content, "calling recipes_builder(request) with cgi params " \
+                f"{cgi_query_string} that should point to a page off the end of the recipes list didn't yield " \
+                "content containing message 'No more results'"
+        assert '<a href="/recipes/builder/?page_size=2&page_number=2">2</a>' in content, \
+                f"calling recipes_search_results(request) with cgi params {cgi_query_string} that should point " \
+                "to a page off the end of the search results didn't yield content containing correct pagination links"

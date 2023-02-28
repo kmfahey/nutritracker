@@ -182,19 +182,23 @@ def recipes_builder(request):
     recipe_objs = list(filter(lambda recipe_obj: recipe_obj.complete is False, recipe_objs))
     recipe_objs.sort(key=attrgetter('recipe_name'))
 
+    if len(recipe_objs) == 0:
+        context["message"] = "No recipes in the works"
+        return HttpResponse(template.render(context, request))
+
     number_of_results = len(recipe_objs)
     number_of_pages = math.ceil(number_of_results / page_size)
 
     if page_number > number_of_pages:
         context["more_than_one_page"] = True
-        context["message"] = "No recipes in the works"
-        context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
+        context["message"] = "No more recipes"
+        context["pagination_links"] = generate_pagination_links("/recipes/builder/", number_of_results, page_size, page_number)
         return HttpResponse(template.render(context, request))
 
     if len(recipe_objs) > page_size:
         recipe_objs = slice_output_list_by_page(recipe_objs, page_size, page_number)
         context["more_than_one_page"] = True
-        context["pagination_links"] = generate_pagination_links("/recipes/", number_of_results, page_size, page_number)
+        context["pagination_links"] = generate_pagination_links("/recipes/builder/", number_of_results, page_size, page_number)
 
     context['recipe_objs'] = recipe_objs
 
