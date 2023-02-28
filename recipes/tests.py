@@ -17,7 +17,7 @@ from operator import attrgetter
 
 from .models import Food, Ingredient, Recipe
 from .views import recipes, recipes_mongodb_id, recipes_search, recipes_search_results, recipes_builder, \
-        recipes_builder_new
+        recipes_builder_new, recipes_builder_mongodb_id
 
 
 food_model_argds = {
@@ -129,11 +129,11 @@ class recipes_test_case(TestCase):
         return request
 
     def tearDown(self):
-        for recipe_model_obj in self.recipes.values():
+        for recipe_model_obj in Recipe.objects.filter():
             recipe_model_obj.delete()
-        for ingredient_model_obj in self.ingredients:
+        for ingredient_model_obj in Ingredient.objects.filter():
             ingredient_model_obj.delete()
-        for food_model_obj in self.foods.values():
+        for food_model_obj in Food.objects.filter():
             food_model_obj.delete()
 
 
@@ -401,3 +401,19 @@ class test_recipes_builder_new(recipes_test_case):
         error_message = "value for recipe_name must be a string with length greater than 1 characters long"
         assert error_message in content, f"calling recipes_builder_new() with CGI params '{cgi_query_string}' does " \
                 "not yield content containing the appropriate error message"
+
+
+class test_recipes_builder_mongodb_id(recipes_test_case):
+
+    def test_recipes_builder_mongodb_id_normal_case(self):
+        recipe_name = "Peanut Butter & Jam & Butter Sandwich" 
+        recipe_model_obj = Recipe(recipe_name=recipe_name, complete=False, ingredients=list())
+        recipe_model_obj.save()
+        mongodb_id = recipe_model_obj._id
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{mongodb_id}/")
+        )
+        response = recipes_builder_mongodb_id(request, mongodb_id)
+        assert response.status_code == 200, "calling recipes_builder_mongodb_id() with an objectid associated with " \
+                "an extant Recipe object doesn't yield a response with status code == 200"
+
