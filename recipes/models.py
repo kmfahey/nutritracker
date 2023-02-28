@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import codecs
+
 from bson.objectid import ObjectId
 
 from djongo import models

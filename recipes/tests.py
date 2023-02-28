@@ -141,7 +141,7 @@ class test_recipes(recipes_test_case):
 
     def test_recipes_normal_case(self):
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/")
+            self.request_factory.get("/recipes/")
         )
         content = recipes(request).content.decode('utf-8')
         for recipe_name in self.recipes.keys():
@@ -153,40 +153,40 @@ class test_recipes(recipes_test_case):
         cgi_data = {"page_size": 2, "page_number": 4}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/", data=cgi_data)
+            self.request_factory.get("/recipes/", data=cgi_data)
         )
         content = recipes(request).content.decode('utf-8')
-        assert "No more results" in content, f"calling recipes(request) with cgi params {cgi_query_string} that " \
+        assert "No more results" in content, f"calling recipes(request) with CGI params '{cgi_query_string}' that " \
                 "should point to a page off the end of the recipes list didn't yield content containing " \
                 "appropriate error message"
         assert '<a href="/recipes/?page_size=2&page_number=2">2</a>' in content, f"calling recipes(request) with " \
-                f"cgi params {cgi_query_string} that should point to a page off the end of the recipes list didn't " \
+                f"cgi params '{cgi_query_string}' that should point to a page off the end of the recipes list didn't " \
                 "yield content containing correct pagination links"
 
     def test_recipes_normal_case_pagination(self):
         cgi_data = {"page_size": 2, "page_number": 1}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/", data=cgi_data)
+            self.request_factory.get("/recipes/", data=cgi_data)
         )
         content = recipes(request).content.decode('utf-8')
         recipe_names = sorted(self.recipes.keys())
         for recipe_name in recipe_names[0:2]:
             recipe_name_esc = html.escape(recipe_name)
-            assert recipe_name_esc in content, f'calling recipes(request) with cgi params {cgi_query_string} does ' \
+            assert recipe_name_esc in content, f"calling recipes(request) with CGI params '{cgi_query_string}' does " \
                     f'not yield content containing the recipe name "{recipe_name}" although it is in the data store ' \
                     'and should be listed'
         for recipe_name in recipe_names[2:]:
             recipe_name_esc = html.escape(recipe_name)
-            assert recipe_name_esc not in content, f'calling recipes(request) with cgi params {cgi_query_string} ' \
+            assert recipe_name_esc not in content, f"calling recipes(request) with CGI params '{cgi_query_string}' " \
                     'yields content containing the recipe name "{recipe_name}" although the params should put ' \
                     'it on a later page'
         assert '<a href="/recipes/?page_size=2&page_number=2">2</a>' in content, "calling recipes(request) with " \
-                f"cgi params {cgi_query_string} didn't yield content containing correct pagination links"
+                f"cgi params '{cgi_query_string}' didn't yield content containing correct pagination links"
 
     def test_recipes_error_case_user_not_logged_in(self):
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/")
+            self.request_factory.get("/recipes/")
         )
         logout(request)
         content = recipes(request).content.decode('utf-8')
@@ -209,7 +209,7 @@ class test_recipes_mongodb_id(recipes_test_case):
             bogus_mongodb_id = ObjectId(str(hex(random.randint(0x100000000000000000000000,
                                                                0xffffffffffffffffffffffff))).removeprefix("0x"))
         request = self._middleware_and_user_bplate(
-                self.request_factory.get(f"/recipes/{bogus_mongodb_id}")
+            self.request_factory.get(f"/recipes/{bogus_mongodb_id}")
         )
         response = recipes_mongodb_id(request, bogus_mongodb_id)
         content = response.content.decode('utf-8')
@@ -227,7 +227,7 @@ class test_recipes_search(recipes_test_case):
     # recipes_search() is a static page, so all there is to test is if it returns a response with status code 200.
     def test_recipes_search_normal_case(self):
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/search/")
+            self.request_factory.get("/recipes/search/")
         )
         response = recipes_search(request)
         assert response.status_code == 200, "calling recipes_search() doesn't yield a response with status code == 200"
@@ -239,48 +239,48 @@ class test_recipes_search_results(recipes_test_case):
         cgi_data = {"search_query": "Honey", "page_size": 25, "page_number": 1}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/search_results/", data=cgi_data)
+            self.request_factory.get("/recipes/search_results/", data=cgi_data)
         )
         content = recipes_search_results(request).content.decode('utf-8')
         for recipe_name in self.recipes:
             recipe_name_esc = html.escape(recipe_name)
             if "Honey" in recipe_name:
-                assert recipe_name_esc in content, f'calling recipes_search_results(request) with cgi params ' \
-                        f'{cgi_query_string} does not yield content containing the recipe name "{recipe_name}" ' \
+                assert recipe_name_esc in content, f'calling recipes_search_results(request) with CGI params ' \
+                        f"'{cgi_query_string}' does not yield content containing the recipe name '{recipe_name}' " \
                         'although it is a match and should be listed'
             else:
-                assert recipe_name_esc not in content, f'calling recipes_search_results(request) with cgi params ' \
-                        f'{cgi_query_string} yields content containing the recipe name "{recipe_name}" although it ' \
+                assert recipe_name_esc not in content, f'calling recipes_search_results(request) with CGI params ' \
+                        f"'{cgi_query_string}' yields content containing the recipe name '{recipe_name}' although it " \
                         'is not a match and should not be listed'
 
     def test_recipes_search_results_normal_case_no_matches(self):
         cgi_data = {"search_query": "Pickle", "page_size": 25, "page_number": 1}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/search_results/", data=cgi_data)
+            self.request_factory.get("/recipes/search_results/", data=cgi_data)
         )
         content = recipes_search_results(request).content.decode('utf-8')
-        assert "No matches" in content, f'calling recipes_search_results(request) with cgi params ' \
-                        f'{cgi_query_string} does not yield content containing the string "No matches" ' \
+        assert "No matches" in content, f'calling recipes_search_results(request) with CGI params ' \
+                        f"'{cgi_query_string}' does not yield content containing the string 'No matches' " \
                         'even though there should be no matches based on the extant Recipe objects'
         for recipe_name in self.recipes:
             recipe_name_esc = html.escape(recipe_name)
-            assert recipe_name_esc not in content, f'calling recipes_search_results(request) with cgi params ' \
-                    f'{cgi_query_string} yields content containing the recipe name "{recipe_name}" although it ' \
+            assert recipe_name_esc not in content, f'calling recipes_search_results(request) with CGI params ' \
+                    f"'{cgi_query_string}' yields content containing the recipe name '{recipe_name}' although it " \
                     'is not a match and should not be listed'
 
     def test_recipes_search_results_error_case_pagination_overshooting_arg(self):
         cgi_data = {"page_size": 2, "page_number": 4, "search_query": "Butter"}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/search_results/", data=cgi_data)
+            self.request_factory.get("/recipes/search_results/", data=cgi_data)
         )
         content = recipes_search_results(request).content.decode('utf-8')
-        assert "No more results" in content, "calling recipes_search_results(request) with cgi params " \
-                f"{cgi_query_string} that should point to a page off the end of the recipes list didn't yield " \
+        assert "No more results" in content, "calling recipes_search_results(request) with CGI params " \
+                f"'{cgi_query_string}' that should point to a page off the end of the recipes list didn't yield " \
                 "content containing message 'No more results'"
         assert '<a href="/recipes/search_results/?page_size=2&page_number=2&search_query=Butter">2</a>' in content, \
-                f"calling recipes_search_results(request) with cgi params {cgi_query_string} that should point " \
+                f"calling recipes_search_results(request) with CGI params '{cgi_query_string}' that should point " \
                 "to a page off the end of the search results didn't yield content containing correct pagination links"
 
 
@@ -300,18 +300,18 @@ class test_recipes_builder(recipes_test_case):
         cgi_data = {"page_size": 25, "page_number": 1}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/builder/", data=cgi_data)
+            self.request_factory.get("/recipes/builder/", data=cgi_data)
         )
         content = recipes_builder(request).content.decode('utf-8')
         for recipe_model_obj in recipe_model_objs[:2]:
             assert html.escape(recipe_model_obj.recipe_name) in content, "having set up the recipe model object " \
                     f"by name '{recipe_model_obj.recipe_name}' to have attribute completed=False, calling " \
-                    f"recipes_builder(request) with cgi params {cgi_query_string} does not yield content containing " \
+                    f"recipes_builder(request) with CGI params '{cgi_query_string}' does not yield content containing " \
                     "that recipe_name string value"
         for recipe_model_obj in recipe_model_objs[2:]:
             assert html.escape(recipe_model_obj.recipe_name) not in content, "with the recipe model object by name " \
                     f"'{recipe_model_obj.recipe_name}' having attribute completed=True, calling " \
-                    f"recipes_builder(request) with cgi params {cgi_query_string} yields content containing that " \
+                    f"recipes_builder(request) with CGI params '{cgi_query_string}' yields content containing that " \
                     "recipe_name string value"
 
     def test_recipes_builder_normal_case_no_recipes_to_display(self):
@@ -321,15 +321,15 @@ class test_recipes_builder(recipes_test_case):
         cgi_data = {"page_size": 25, "page_number": 1}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/builder/", data=cgi_data)
+            self.request_factory.get("/recipes/builder/", data=cgi_data)
         )
         content = recipes_builder(request).content.decode('utf-8')
-        assert "No recipes in the works" in content, "calling recipes_builder(request) with cgi params " \
-                f"{cgi_query_string}, where all extant Recipe objects have the attribute complete=True, " \
+        assert "No recipes in the works" in content, "calling recipes_builder(request) with CGI params " \
+                f"'{cgi_query_string}', where all extant Recipe objects have the attribute complete=True, " \
                 "doesn't yield content containing message 'No recipes in the works'"
         for recipe_model_obj in self.recipes.values():
             assert html.escape(recipe_model_obj.recipe_name) not in content, f"calling recipes_builder(request) " \
-                    f"with cgi params {cgi_query_string}, where all extant Recipe objects have the attribute " \
+                    f"with CGI params '{cgi_query_string}', where all extant Recipe objects have the attribute " \
                     "complete=True, yields content containing the recipe_name string value " \
                     f"'{recipe_model_obj.recipe_name}'"
 
@@ -337,25 +337,25 @@ class test_recipes_builder(recipes_test_case):
         cgi_data = {"page_size": 2, "page_number": 4}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/builder/", data=cgi_data)
+            self.request_factory.get("/recipes/builder/", data=cgi_data)
         )
         content = recipes_builder(request).content.decode('utf-8')
-        assert "No more recipes" in content, "calling recipes_builder(request) with cgi params " \
-                f"{cgi_query_string} that should point to a page off the end of the recipes list didn't yield " \
+        assert "No more recipes" in content, "calling recipes_builder(request) with CGI params " \
+                f"'{cgi_query_string}' that should point to a page off the end of the recipes list didn't yield " \
                 "content containing message 'No more results'"
         assert '<a href="/recipes/builder/?page_size=2&page_number=2">2</a>' in content, \
-                f"calling recipes_search_results(request) with cgi params {cgi_query_string} that should point " \
+                f"calling recipes_search_results(request) with CGI params '{cgi_query_string}' that should point " \
                 "to a page off the end of the search results didn't yield content containing correct pagination links"
 
     def test_recipes_builder_pagination_error_case_bad_arg(self):
         cgi_data = {'page_number': 'one', 'page_size': 10}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/builder/", data=cgi_data)
+            self.request_factory.get("/recipes/builder/", data=cgi_data)
         )
         content = recipes_builder(request).content.decode('utf-8')
         assert "value for page_number must be an integer; received &#x27;one&#x27;" in content, \
-                f"calling recipes_builder() with cgi params {cgi_query_string}  did not produce the correct error"
+                f"calling recipes_builder() with CGI params '{cgi_query_string}'  did not produce the correct error"
 
 
 class test_recipes_builder_new(recipes_test_case):
@@ -364,7 +364,7 @@ class test_recipes_builder_new(recipes_test_case):
     # page, so all there is to test is that status code is 200.
     def test_recipes_builder_new_normal_case_no_args(self):
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/builder/new/")
+            self.request_factory.get("/recipes/builder/new/")
         )
         response = recipes_builder_new(request)
         assert response.status_code == 200, "calling recipes_builder_new() with no CGI params doesn't yield a " \
@@ -374,16 +374,30 @@ class test_recipes_builder_new(recipes_test_case):
         cgi_data = {"recipe_name": "Peanut Butter & Jam & Butter Sandwich"}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
-                self.request_factory.get("/recipes/builder/new/", data=cgi_data)
+            self.request_factory.get("/recipes/builder/new/", data=cgi_data)
         )
         response = recipes_builder_new(request)
         assert isinstance(response, HttpResponseRedirect), f"calling recipes_builder_new() with CGI params " \
-                f"{cgi_query_string} doesn't return a redirect"
+                f"'{cgi_query_string}' doesn't return a redirect"
         try:
             recipe_model_obj = Recipe.objects.get(recipe_name=cgi_data["recipe_name"])
         except Recipe.DoesNotExist:
-            raise AssertionError(f"calling recipes_builder_new() with CGI params {cgi_query_string} doesn't instance "
+            raise AssertionError(f"calling recipes_builder_new() with CGI params '{cgi_query_string}' doesn't instance "
                                  "& save a Recipe object to the data store with that recipe name")
         assert response.url == f"/recipes/builder/{recipe_model_obj._id}/", f"calling recipes_builder_new() with CGI " \
-                f"params {cgi_query_string} creates & saves a Recipe object by that name, but returns a redirect " \
+                f"params '{cgi_query_string}' creates & saves a Recipe object by that name, but returns a redirect " \
                 "that doesn't point to the correct url including that object's ObjectId"
+
+    def test_recipes_builder_new_error_case_bad_recipe_name_arg(self):
+        cgi_data = {"recipe_name": ""}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get("/recipes/builder/new/", data=cgi_data)
+        )
+        response = recipes_builder_new(request)
+        assert not isinstance(response, HttpResponseRedirect), f"calling recipes_builder_new() with CGI params " \
+                f"'{cgi_query_string}' returns a redirect instead a page with content containing an error message"
+        content = response.content.decode('utf-8')
+        error_message = "value for recipe_name must be a string with length greater than 1 characters long"
+        assert error_message in content, f"calling recipes_builder_new() with CGI params '{cgi_query_string}' does " \
+                "not yield content containing the appropriate error message"

@@ -18,7 +18,8 @@ from django.db.models import Q
 
 from .models import Food, Recipe, Ingredient
 from nutritracker.utils import Nutrient, Recipe_Detailed, Food_Detailed, Navigation_Links_Displayer, \
-        generate_pagination_links, slice_output_list_by_page, retrieve_pagination_params, get_cgi_params, cast_to_int
+        generate_pagination_links, slice_output_list_by_page, retrieve_pagination_params, get_cgi_params, \
+        cast_to_int, check_str_param
 
 
 navigation_links_displayer = Navigation_Links_Displayer({'/recipes/': "Main Recipes List",
@@ -208,21 +209,21 @@ def recipes_builder(request):
 @require_http_methods(["GET"])
 def recipes_builder_new(request):
     cgi_params = get_cgi_params(request)
-    builder_url = "/recipes/builder/new/"
     template = loader.get_template('recipes/recipes_builder_new.html')
     context = {'subordinate_navigation': navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/"),
                'error': False, 'message': ''}
 
     if not len(cgi_params.keys()):
         return HttpResponse(template.render(context, request))
-    else:
-        recipe_name = cgi_params.get('recipe_name', None)
-        if not recipe_name:
-            return redirect(builder_url)
-        recipe_model_obj = Recipe(recipe_name=recipe_name, complete=False, ingredients=list())
-        recipe_model_obj.save()
-        mongodb_id = recipe_model_obj._id
-        return redirect(f"/recipes/builder/{mongodb_id}/")
+
+    retval = check_str_param(cgi_params.get('recipe_name', ''), 'recipe_name', template, context, request, lowerb=1)
+    if isinstance(retval, HttpResponse):
+        return retval
+    recipe_name = retval
+    recipe_model_obj = Recipe(recipe_name=recipe_name, complete=False, ingredients=list())
+    recipe_model_obj.save()
+    mongodb_id = recipe_model_obj._id
+    return redirect(f"/recipes/builder/{mongodb_id}/")
 
 
 @require_http_methods(["GET"])
