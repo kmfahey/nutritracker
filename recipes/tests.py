@@ -5,13 +5,15 @@ import html
 import faker
 import urllib.parse
 
-from operator import attrgetter
 from bson.objectid import ObjectId
-from django.contrib.sessions.middleware import SessionMiddleware
+
 from django.contrib.auth import authenticate, login, logout
-from django.test import TestCase, tag
 from django.contrib.auth.models import User
+from django.contrib.sessions.middleware import SessionMiddleware
+from django.http import HttpResponseRedirect
 from django.test.client import RequestFactory
+from django.test import TestCase, tag
+from operator import attrgetter
 
 from .models import Food, Ingredient, Recipe
 from .views import recipes, recipes_mongodb_id, recipes_search, recipes_search_results, recipes_builder, \
@@ -367,3 +369,21 @@ class test_recipes_builder_new(recipes_test_case):
         response = recipes_builder_new(request)
         assert response.status_code == 200, "calling recipes_builder_new() with no CGI params doesn't yield a " \
                 "response with status code == 200"
+
+    def test_recipes_builder_new_normal_case_w_recipe_name_arg(self):
+        cgi_data = {"recipe_name": "Peanut Butter & Jam & Butter Sandwich"}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+                self.request_factory.get("/recipes/builder/new/", data=cgi_data)
+        )
+        response = recipes_builder_new(request)
+        assert isinstance(response, HttpResponseRedirect), f"calling recipes_builder_new() with CGI params " \
+                f"{cgi_query_string} doesn't return a redirect"
+        try:
+            recipe_model_obj = Recipe.objects.get(recipe_name=cgi_data["recipe_name"])
+        except Recipe.DoesNotExist:
+            raise AssertionError(f"calling recipes_builder_new() with CGI params {cgi_query_string} doesn't instance "
+                                 "& save a Recipe object to the data store with that recipe name")
+        assert response.url == f"/recipes/builder/{recipe_model_obj._id}/", f"calling recipes_builder_new() with CGI " \
+                f"params {cgi_query_string} creates & saves a Recipe object by that name, but returns a redirect " \
+                "that doesn't point to the correct url including that object's ObjectId"
