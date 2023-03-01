@@ -69,6 +69,17 @@ recipe_ingredients = {
 }
 
 
+def _generate_bogus_mongodb_id(model_class):
+    # A bogus ObjectId must have 24 digits in hex to be taken as a valid object.
+    bogus_mongodb_id = ObjectId(str(hex(random.randint(0x100000000000000000000000,
+                                                       0xffffffffffffffffffffffff))).removeprefix("0x"))
+    # Just in case by random chance a valid object id was picked.
+    while len(model_class.objects.filter(_id=bogus_mongodb_id)):
+        bogus_mongodb_id = ObjectId(str(hex(random.randint(0x100000000000000000000000,
+                                                           0xffffffffffffffffffffffff))).removeprefix("0x"))
+    return bogus_mongodb_id
+
+
 @tag("recipes")
 class recipes_test_case(TestCase):
 
@@ -471,3 +482,19 @@ class test_recipes_builder_mongodb_id_delete(recipes_test_case):
         except Recipe.DoesNotExist:
             raise AssertionError("calling recipes_builder_mongodb_id_delete() with a valid object id but without " 
                 "the CGI params '{cgi_query_string}' nevertheless deletes the Recipe object with that id.")
+
+    def test_recipes_builder_mongodb_id_delete_error_case_invalid_mongodb_id(self):
+        bogus_mongodb_id = _generate_bogus_mongodb_id(Recipe)
+        cgi_data = {"button": "Delete"}
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{bogus_mongodb_id}/delete/", data=cgi_data)
+        )
+        response = recipes_builder_mongodb_id_delete(request, bogus_mongodb_id)
+        assert response.status_code == 404, "calling recipes_builder_mongodb_id_delete() with an invalid objectid " \
+                "that doesn't correspond to any Recipe object doesn't yield a response with status code 404"
+        content = response.content.decode('utf-8')
+        error_message = "Error 404: no object in &#x27;recipes&#x27; collection in &#x27;nutritracker&#x27; data " \
+                f"store with _id=&#x27;{bogus_mongodb_id}&#x27;"
+        assert error_message in content, "calling recipes_builder_mongodb_id_delete() with an invalid objectid " \
+                "that doesn't correspond to any Recipe object doesn't yield content containing the appropriate " \
+                "error message"
