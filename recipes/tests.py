@@ -17,7 +17,7 @@ from operator import attrgetter
 
 from .models import Food, Ingredient, Recipe
 from .views import recipes, recipes_mongodb_id, recipes_search, recipes_search_results, recipes_builder, \
-        recipes_builder_new, recipes_builder_mongodb_id
+        recipes_builder_new, recipes_builder_mongodb_id, recipes_builder_mongodb_id_delete
 
 
 food_model_argds = {
@@ -436,3 +436,23 @@ class test_recipes_builder_mongodb_id(recipes_test_case):
         assert error_message in content, "calling recipes_builder_mongodb_id() with an invalid objectid that " \
                 "doesn't correspond to any Recipe object doesn't yield content containing the appropriate error " \
                 "message"
+
+
+class test_recipes_builder_mongodb_id_delete(recipes_test_case):
+
+    def test_recipes_builder_mongodb_id_delete_normal_case(self):
+        mongodb_id = random.choice(list(self.recipes.values()))._id
+        cgi_data = {"button": "Delete"}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{mongodb_id}/delete/", data=cgi_data)
+        )
+        response = recipes_builder_mongodb_id_delete(request, mongodb_id)
+        assert not isinstance(response, HttpResponseRedirect), f"calling recipes_builder_mongodb_id_delete() with " \
+                f"CGI params '{cgi_query_string}' and a valid MongoDB id returns a redirect when it shouldn't"
+        assert response.status_code == 200
+        assert not any(recipe_model_obj._id == mongodb_id for recipe_model_obj in Recipe.objects.filter()), \
+                f"calling recipes_builder_mongodb_id_delete() with CGI params '{cgi_query_string}' and a valid " \
+                "MongoDB id fails to delete from the database the Recipe object with that id"
+
+
