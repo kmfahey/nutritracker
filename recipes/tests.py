@@ -455,4 +455,19 @@ class test_recipes_builder_mongodb_id_delete(recipes_test_case):
                 f"calling recipes_builder_mongodb_id_delete() with CGI params '{cgi_query_string}' and a valid " \
                 "MongoDB id fails to delete from the database the Recipe object with that id"
 
-
+    def test_recipes_builder_mongodb_id_delete_error_case_wo_button(self):
+        mongodb_id = random.choice(list(self.recipes.values()))._id
+        cgi_query_string = urllib.parse.urlencode({"button": "Delete"})
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{mongodb_id}/delete/")
+        )
+        response = recipes_builder_mongodb_id_delete(request, mongodb_id)
+        assert isinstance(response, HttpResponseRedirect), f"calling recipes_builder_mongodb_id_delete() without " \
+                f"the CGI params '{cgi_query_string}' doesn't return a redirect"
+        assert response.url == f"/recipes/builder/{mongodb_id}/", f"calling recipes_builder_new() without the " \
+                f"CGI params '{cgi_query_string}' doesn't return a redirect to the appropriate URL"
+        try:
+            Recipe.objects.get(_id=ObjectId(mongodb_id))
+        except Recipe.DoesNotExist:
+            raise AssertionError("calling recipes_builder_new() with a valid object id but without the CGI " 
+                    f"params '{cgi_query_string}' nevertheless deletes the Recipe object with that id.")
