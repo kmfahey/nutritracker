@@ -464,10 +464,10 @@ class test_recipes_builder_mongodb_id_delete(recipes_test_case):
         response = recipes_builder_mongodb_id_delete(request, mongodb_id)
         assert isinstance(response, HttpResponseRedirect), f"calling recipes_builder_mongodb_id_delete() without " \
                 f"the CGI params '{cgi_query_string}' doesn't return a redirect"
-        assert response.url == f"/recipes/builder/{mongodb_id}/", f"calling recipes_builder_new() without the " \
-                f"CGI params '{cgi_query_string}' doesn't return a redirect to the appropriate URL"
+        assert response.url == f"/recipes/builder/{mongodb_id}/", f"calling recipes_builder_mongodb_id_delete() " \
+                f"without the CGI params '{cgi_query_string}' doesn't return a redirect to the appropriate URL"
         try:
             Recipe.objects.get(_id=ObjectId(mongodb_id))
         except Recipe.DoesNotExist:
-            raise AssertionError("calling recipes_builder_new() with a valid object id but without the CGI " 
-                    f"params '{cgi_query_string}' nevertheless deletes the Recipe object with that id.")
+            raise AssertionError("calling recipes_builder_mongodb_id_delete() with a valid object id but without " 
+                "the CGI params '{cgi_query_string}' nevertheless deletes the Recipe object with that id.")
