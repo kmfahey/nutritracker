@@ -200,8 +200,7 @@ class test_recipes(recipes_test_case):
 class test_recipes_mongodb_id(recipes_test_case):
 
     def test_recipes_mongodb_id_normal_case(self):
-        # Those two very big integers are  and . The argument to
-        # ObjectId must have 24 digits when displayed in hexadecimal to be taken as a valid object.
+        # A bogus ObjectId must have 24 digits in hex to be taken as a valid object.
         bogus_mongodb_id = ObjectId(str(hex(random.randint(0x100000000000000000000000,
                                                            0xffffffffffffffffffffffff))).removeprefix("0x"))
         # Just in case by random chance a valid object id was picked.
@@ -417,3 +416,23 @@ class test_recipes_builder_mongodb_id(recipes_test_case):
         assert response.status_code == 200, "calling recipes_builder_mongodb_id() with an objectid associated with " \
                 "an extant Recipe object doesn't yield a response with status code == 200"
 
+    def test_recipes_builder_mongodb_id_error_case_invalid_mongodb_id(self):
+        # A bogus ObjectId must have 24 digits in hex to be taken as a valid object.
+        bogus_mongodb_id = ObjectId(str(hex(random.randint(0x100000000000000000000000,
+                                                           0xffffffffffffffffffffffff))).removeprefix("0x"))
+        # Just in case by random chance a valid object id was picked.
+        while len(Recipe.objects.filter(_id=bogus_mongodb_id)):
+            bogus_mongodb_id = ObjectId(str(hex(random.randint(0x100000000000000000000000,
+                                                               0xffffffffffffffffffffffff))).removeprefix("0x"))
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{bogus_mongodb_id}/")
+        )
+        response = recipes_builder_mongodb_id(request, bogus_mongodb_id)
+        assert response.status_code == 404, "calling recipes_builder_mongodb_id() with an invalid objectid that " \
+                "doesn't correspond to any Recipe object doesn't yield a response with status code 404"
+        content = response.content.decode('utf-8')
+        error_message = "Error 404: no object in &#x27;recipes&#x27; collection in &#x27;nutritracker&#x27; data " \
+                f"store with _id=&#x27;{bogus_mongodb_id}&#x27;"
+        assert error_message in content, "calling recipes_builder_mongodb_id() with an invalid objectid that " \
+                "doesn't correspond to any Recipe object doesn't yield content containing the appropriate error " \
+                "message"
