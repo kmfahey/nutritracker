@@ -544,3 +544,17 @@ class test_recipes_builder_mongodb_id_remove_ingredient(recipes_test_case):
         assert error_message in content, "calling recipes_builder_mongodb_id_remove_ingredient() with an invalid " \
                 "objectid that doesn't correspond to any Recipe object doesn't yield content containing the " \
                 "appropriate error message"
+
+    def test_recipes_builder_mongodb_id_remove_ingredient_error_case_invalid_fdc_id(self):
+        fdc_id = -1
+        cgi_data = {"fdc_id": fdc_id}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        recipe_model_obj = random.choice(list(self.recipes.values()))
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{recipe_model_obj._id}/delete/", data=cgi_data)
+        )
+        content = recipes_builder_mongodb_id_remove_ingredient(request, recipe_model_obj._id).content.decode('utf-8')
+        error_message = "value for fdc_id must be an integer greater than or equal to 1; received &#x27;-1&#x27;"
+        assert error_message in content, f"calling recipes_builder_mongodb_id_remove_ingredient() with a valid " \
+                f"Recipe objectid and CGI params '{cgi_query_string}' does not yield content containing the " \
+                "appropriate error message"
