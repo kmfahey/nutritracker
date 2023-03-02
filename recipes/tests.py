@@ -545,7 +545,7 @@ class test_recipes_builder_mongodb_id_remove_ingredient(recipes_test_case):
                 "objectid that doesn't correspond to any Recipe object doesn't yield content containing the " \
                 "appropriate error message"
 
-    def test_recipes_builder_mongodb_id_remove_ingredient_error_case_invalid_fdc_id(self):
+    def test_recipes_builder_mongodb_id_remove_ingredient_error_case_nonconformant_fdc_id_arg(self):
         fdc_id = -1
         cgi_data = {"fdc_id": fdc_id}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
@@ -558,3 +558,20 @@ class test_recipes_builder_mongodb_id_remove_ingredient(recipes_test_case):
         assert error_message in content, f"calling recipes_builder_mongodb_id_remove_ingredient() with a valid " \
                 f"Recipe objectid and CGI params '{cgi_query_string}' does not yield content containing the " \
                 "appropriate error message"
+
+    def test_recipes_builder_mongodb_id_remove_ingredient_error_case_invented_fdc_id(self):
+        recipe_model_obj = random.choice(list(self.recipes.values()))
+        fdc_ids = [serialized_ingredient_obj['food']['fdc_id'] for serialized_ingredient_obj in recipe_model_obj.ingredients]
+        spurious_fdc_id = random.randint(2**17, 2**22)
+        while spurious_fdc_id in fdc_ids:
+            spurious_fdc_id = random.randint(2**17, 2**22)
+        cgi_data = {"fdc_id": spurious_fdc_id}
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{recipe_model_obj._id}/remove_ingredient/", data=cgi_data)
+        )
+        content = recipes_builder_mongodb_id_remove_ingredient(request, recipe_model_obj._id).content.decode('utf-8')
+        error_message = f"recipe with _id=&#x27;{recipe_model_obj._id}&#x27; has no ingredient with " \
+                f"fdc_id=&#x27;{spurious_fdc_id}&#x27;"
+        assert error_message in content, "calling recipes_builder_mongodb_id_remove_ingredient() with a valid " \
+                "Recipe objectid and an invalid fdc_id does not yield content containing the appropriate error message"
+
