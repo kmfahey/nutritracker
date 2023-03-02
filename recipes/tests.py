@@ -511,7 +511,6 @@ class test_recipes_builder_mongodb_id_remove_ingredient(recipes_test_case):
                 ingredient_model_obj = Ingredient.objects.get(_id=ObjectId(serialized_ingredient_obj['_id']))
                 break
         cgi_data = {"fdc_id": food_model_obj.fdc_id}
-        cgi_query_string = urllib.parse.urlencode(cgi_data)
         request = self._middleware_and_user_bplate(
             self.request_factory.get(f"/recipes/builder/{recipe_model_obj._id}/delete/", data=cgi_data)
         )
@@ -529,5 +528,19 @@ class test_recipes_builder_mongodb_id_remove_ingredient(recipes_test_case):
                 "calling recipes_builder_mongodb_id_remove_ingredient() with a Recipe object's mongodb_id and the " \
                 "fdc_id of an ingredient in that recipe doesn't remove that ingredient from the Recipe object"
 
-
-
+    def test_recipes_builder_mongodb_id_remove_ingredient_error_case_invalid_mongodb_id(self):
+        bogus_mongodb_id = _generate_bogus_mongodb_id(Recipe)
+        food_model_obj = random.choice(list(Food.objects.filter()))
+        cgi_data = {"fdc_id": food_model_obj.fdc_id}
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{bogus_mongodb_id}/remove_ingredient/", data=cgi_data)
+        )
+        response = recipes_builder_mongodb_id_remove_ingredient(request, bogus_mongodb_id)
+        assert response.status_code == 404, "calling recipes_builder_mongodb_id_remove_ingredient() with an " \
+                "invalid objectid that doesn't correspond to any Recipe object doesn't yield a response with status code 404"
+        content = response.content.decode('utf-8')
+        error_message = "Error 404: no object in &#x27;recipes&#x27; collection in &#x27;nutritracker&#x27; data " \
+                f"store with _id=&#x27;{bogus_mongodb_id}&#x27;"
+        assert error_message in content, "calling recipes_builder_mongodb_id_remove_ingredient() with an invalid " \
+                "objectid that doesn't correspond to any Recipe object doesn't yield content containing the " \
+                "appropriate error message"
