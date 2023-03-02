@@ -17,7 +17,8 @@ from operator import attrgetter
 
 from .models import Food, Ingredient, Recipe
 from .views import recipes, recipes_mongodb_id, recipes_search, recipes_search_results, recipes_builder, \
-        recipes_builder_new, recipes_builder_mongodb_id, recipes_builder_mongodb_id_delete
+        recipes_builder_new, recipes_builder_mongodb_id, recipes_builder_mongodb_id_delete, \
+        recipes_builder_mongodb_id_remove_ingredient
 
 
 food_model_argds = {
@@ -498,3 +499,35 @@ class test_recipes_builder_mongodb_id_delete(recipes_test_case):
         assert error_message in content, "calling recipes_builder_mongodb_id_delete() with an invalid objectid " \
                 "that doesn't correspond to any Recipe object doesn't yield content containing the appropriate " \
                 "error message"
+
+
+class test_recipes_builder_mongodb_id_remove_ingredient(recipes_test_case):
+
+    def test_recipes_builder_mongodb_id_remove_ingredient_normal_case(self):
+        recipe_model_obj = self.recipes['Peanut Butter & Jam Sandwich']
+        food_model_obj = self.foods['Strawberry Jam']
+        for serialized_ingredient_obj in recipe_model_obj.ingredients:
+            if serialized_ingredient_obj['food']['fdc_id'] == food_model_obj.fdc_id:
+                ingredient_model_obj = Ingredient.objects.get(_id=ObjectId(serialized_ingredient_obj['_id']))
+                break
+        cgi_data = {"fdc_id": food_model_obj.fdc_id}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{recipe_model_obj._id}/delete/", data=cgi_data)
+        )
+        content = recipes_builder_mongodb_id_remove_ingredient(request, recipe_model_obj._id).content.decode('utf-8')
+        deletion_message = f'The ingredient of {ingredient_model_obj.servings_number}{food_model_obj.serving_units} ' \
+                f'of the <a href="/recipes/builder/{recipe_model_obj._id}/add_ingredient/{food_model_obj.fdc_id}/">' \
+                f'{food_model_obj.food_name}</a> has been removed from your ' \
+                f'{html.escape(recipe_model_obj.recipe_name)} recipe.'
+        assert deletion_message in content, "calling recipes_builder_mongodb_id_remove_ingredient() " \
+                "with a Recipe object's mongodb_id and the fdc_id of an ingredient in that recipe doesn't yield " \
+                "content containing the appropriate deletion message"
+        recipe_model_obj.refresh_from_db()
+        assert not any(serialized_ingredient_obj['food']['fdc_id'] == food_model_obj.fdc_id
+                       for serialized_ingredient_obj in recipe_model_obj.ingredients), \
+                "calling recipes_builder_mongodb_id_remove_ingredient() with a Recipe object's mongodb_id and the " \
+                "fdc_id of an ingredient in that recipe doesn't remove that ingredient from the Recipe object"
+
+
+

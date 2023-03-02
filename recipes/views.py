@@ -267,8 +267,7 @@ def recipes_builder_mongodb_id_remove_ingredient(request, mongodb_id):
     subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/")
     context = {'subordinate_navigation': subordinate_navigation, 'more_than_one_page': False, 'error': False,
                'message': ''}
-    template = loader.get_template(
-                                                 'recipes/recipes_builder_+mongodb_id+_add_or_remove_ingredient.html')
+    template = loader.get_template('recipes/recipes_builder_+mongodb_id+_add_or_remove_ingredient.html')
     cgi_params = get_cgi_params(request)
 
     retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
@@ -315,8 +314,7 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
     subordinate_navigation = navigation_links_displayer.href_list_wo_one_callable("/recipes/builder/")
     context = {'subordinate_navigation': subordinate_navigation, 'more_than_one_page': False, 'error': False,
                'message': '', 'searched': False}
-    template = loader.get_template(
-                                                 'recipes/recipes_builder_+mongodb_id+_add_or_remove_ingredient.html')
+    template = loader.get_template('recipes/recipes_builder_+mongodb_id+_add_or_remove_ingredient.html')
 
     retval = _fetch_recipe_or_404(mongodb_id, template, context, request)
     if isinstance(retval, HttpResponse):
