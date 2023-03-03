@@ -613,3 +613,23 @@ class test_recipes_builder_mongodb_id_add_ingredient(recipes_test_case):
                    for serialized_ingredient_obj in recipe_model_obj.ingredients), \
                 "calling recipes_builder_mongodb_id_add_ingredient() with a Recipe object's mongodb_id and the fdc_id " \
                 "of an ingredient to add to that recipe doesn't add the ingredient to the Recipe object"
+
+    def test_recipes_builder_mongodb_id_add_ingredient_error_case_invalid_mongodb_id(self):
+        bogus_mongodb_id = _generate_bogus_mongodb_id(Recipe)
+        food_model_obj = random.choice(list(Food.objects.filter()))
+        cgi_data = {"fdc_id": food_model_obj.fdc_id}
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{bogus_mongodb_id}/add_ingredient/", data=cgi_data)
+        )
+        response = recipes_builder_mongodb_id_add_ingredient(request, bogus_mongodb_id)
+        assert response.status_code == 404, "calling recipes_builder_mongodb_id_add_ingredient() with an " \
+                "invalid objectid that doesn't correspond to any Recipe object doesn't yield a response with status code 404"
+        content = response.content.decode('utf-8')
+        error_message = "Error 404: no object in &#x27;recipes&#x27; collection in &#x27;nutritracker&#x27; data " \
+                f"store with _id=&#x27;{bogus_mongodb_id}&#x27;"
+        assert error_message in content, "calling recipes_builder_mongodb_id_add_ingredient() with an invalid " \
+                "objectid that doesn't correspond to any Recipe object doesn't yield content containing the " \
+                "appropriate error message"
+
+
+
