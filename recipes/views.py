@@ -289,6 +289,7 @@ def recipes_builder_mongodb_id_remove_ingredient(request, mongodb_id):
         if recipe_model_obj.ingredients[index]["food"]["fdc_id"] != fdc_id:
             continue
         context["servings_number"] = recipe_model_obj.ingredients[index]["servings_number"]
+        ingredient_dict = recipe_model_obj.ingredients[index]
         del recipe_model_obj.ingredients[index]
         found = True
         break
@@ -297,11 +298,14 @@ def recipes_builder_mongodb_id_remove_ingredient(request, mongodb_id):
         context["message"] = f"recipe with _id='{mongodb_id}' has no ingredient with fdc_id='{fdc_id}'"
         return HttpResponse(template.render(context, request))
     recipe_model_obj.save()
+
     context["recipe_obj"] = Recipe_Detailed.from_model_obj(recipe_model_obj)
 
     food_model_obj = Food.objects.get(fdc_id=fdc_id)
     food_obj = Food_Detailed.from_model_obj(food_model_obj)
     context["food_obj"] = food_obj
+
+    context["ingredient_serving_qty"] = ingredient_dict["servings_number"] * food_model_obj.serving_size
 
     context["mode"] = "removed"
     return HttpResponse(template.render(context, request))
@@ -350,8 +354,10 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
                                   f"data store with fdc_id='{fdc_id}'")
             return HttpResponse(template.render(context, request), status=404)
 
+        context["ingredient_serving_qty"] = servings_number * food_model_obj.serving_size
+
         food_obj = Food_Detailed.from_model_obj(food_model_obj)
-        context["food_objs"] = [food_obj]
+        context["food_obj"] = food_obj
         ingredient_obj = Ingredient(servings_number=servings_number, food=food_model_obj.serialize())
         recipe_model_obj = Recipe.objects.get(_id=ObjectId(mongodb_id))
         recipe_model_obj.ingredients.append(ingredient_obj.serialize())
@@ -526,4 +532,4 @@ def recipes_builder_mongodb_id_open_for_editing(request, mongodb_id):
     recipe_model_obj.complete = False
     recipe_model_obj.save()
 
-    return redirect(f"/recipes/{mongodb_id}/")
+    return redirect(f"/recipes/builder/{mongodb_id}/")

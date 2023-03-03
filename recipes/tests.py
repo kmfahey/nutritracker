@@ -18,7 +18,7 @@ from operator import attrgetter
 from .models import Food, Ingredient, Recipe
 from .views import recipes, recipes_mongodb_id, recipes_search, recipes_search_results, recipes_builder, \
         recipes_builder_new, recipes_builder_mongodb_id, recipes_builder_mongodb_id_delete, \
-        recipes_builder_mongodb_id_remove_ingredient
+        recipes_builder_mongodb_id_remove_ingredient, recipes_builder_mongodb_id_add_ingredient
 
 
 food_model_argds = {
@@ -79,6 +79,9 @@ def _generate_bogus_mongodb_id(model_class):
         bogus_mongodb_id = ObjectId(str(hex(random.randint(0x100000000000000000000000,
                                                            0xffffffffffffffffffffffff))).removeprefix("0x"))
     return bogus_mongodb_id
+
+def floatformat(floatval):
+    return round(floatval) if floatval == round(floatval) else round(floatval, 1)
 
 
 @tag("recipes")
@@ -515,7 +518,8 @@ class test_recipes_builder_mongodb_id_remove_ingredient(recipes_test_case):
             self.request_factory.get(f"/recipes/builder/{recipe_model_obj._id}/delete/", data=cgi_data)
         )
         content = recipes_builder_mongodb_id_remove_ingredient(request, recipe_model_obj._id).content.decode('utf-8')
-        deletion_message = f'The ingredient of {ingredient_model_obj.servings_number}{food_model_obj.serving_units} ' \
+        ingredient_serving_qty = floatformat(ingredient_model_obj.servings_number * food_model_obj.serving_size)
+        deletion_message = f'The ingredient of {ingredient_serving_qty}{food_model_obj.serving_units} ' \
                 f'of the <a href="/recipes/builder/{recipe_model_obj._id}/add_ingredient/{food_model_obj.fdc_id}/">' \
                 f'{food_model_obj.food_name}</a> has been removed from your ' \
                 f'{html.escape(recipe_model_obj.recipe_name)} recipe.'
@@ -575,3 +579,37 @@ class test_recipes_builder_mongodb_id_remove_ingredient(recipes_test_case):
         assert error_message in content, "calling recipes_builder_mongodb_id_remove_ingredient() with a valid " \
                 "Recipe objectid and an invalid fdc_id does not yield content containing the appropriate error message"
 
+
+class test_recipes_builder_mongodb_id_add_ingredient(recipes_test_case):
+
+    def test_recipes_builder_mongodb_id_add_ingredient_normal_case(self):
+        recipe_model_obj = self.recipes['Peanut Butter & Jam Sandwich']
+        # This is the official way to copy a model object: set its pk (ie.
+        # primary key) attribute to None and its _state.adding attribute to
+        # True.
+        recipe_model_obj.pk = None
+        recipe_model_obj._state.adding = True
+        recipe_model_obj.recipe_name = "Peanut Butter & Jam & Butter Sandwich"
+        recipe_model_obj.complete = False
+        recipe_model_obj.save()
+        food_model_obj = Food.objects.get(food_name="Butter")
+        cgi_data = {'fdc_id': food_model_obj.fdc_id, 'servings_number': 4}
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{recipe_model_obj._id}/add_ingredient/", data=cgi_data)
+        )
+        content = recipes_builder_mongodb_id_add_ingredient(request, recipe_model_obj._id).content.decode('utf-8')
+        recipe_model_obj.refresh_from_db()
+        ingredient_serving_qty = floatformat(cgi_data["servings_number"] * food_model_obj.serving_size)
+        success_message = f'An ingredient of {ingredient_serving_qty}{food_model_obj.serving_units} of ' \
+                f'the <a href="/recipes/builder/{recipe_model_obj._id}/add_ingredient/{food_model_obj.fdc_id}/">' \
+                f'{html.escape(food_model_obj.food_name)}</a> has been added to your ' \
+                f'{html.escape(recipe_model_obj.recipe_name)} recipe. ' \
+                f'<a href="/recipes/builder/{recipe_model_obj._id}/">Click here</a> to add another ingredient, ' \
+                'finish the recipe, or delete it.'
+        assert success_message in content, "calling recipes_builder_mongodb_id_add_ingredient() " \
+                "with a Recipe object's mongodb_id and the fdc_id of an ingredient to add to that recipe doesn't yield " \
+                "content containing the appropriate addition message"
+        assert any(serialized_ingredient_obj['food']['fdc_id'] == food_model_obj.fdc_id
+                   for serialized_ingredient_obj in recipe_model_obj.ingredients), \
+                "calling recipes_builder_mongodb_id_add_ingredient() with a Recipe object's mongodb_id and the fdc_id " \
+                "of an ingredient to add to that recipe doesn't add the ingredient to the Recipe object"
