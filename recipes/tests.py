@@ -13,7 +13,7 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.http import HttpResponseRedirect
 from django.test.client import RequestFactory
 from django.test import TestCase, tag
-from operator import attrgetter
+from operator import attrgetter, itemgetter
 
 from .models import Food, Ingredient, Recipe
 from .views import recipes, recipes_mongodb_id, recipes_search, recipes_search_results, recipes_builder, \
@@ -79,6 +79,7 @@ def _generate_bogus_mongodb_id(model_class):
         bogus_mongodb_id = ObjectId(str(hex(random.randint(0x100000000000000000000000,
                                                            0xffffffffffffffffffffffff))).removeprefix("0x"))
     return bogus_mongodb_id
+
 
 def floatformat(floatval):
     return round(floatval) if floatval == round(floatval) else round(floatval, 1)
@@ -642,4 +643,27 @@ class test_recipes_builder_mongodb_id_add_ingredient(recipes_test_case):
         assert "value for fdc_id must be an integer; received &#x27;bad argument&#x27;" in content, \
                 f"calling recipes_builder() with CGI params '{cgi_query_string}' did not produce the correct error"
 
+    def test_recipes_builder_mongodb_id_add_ingredient_error_case_wo_servings_number(self):
+        recipe_model_obj = random.choice(list(self.recipes.values()))
+        recipe_fdc_ids = [ingr_dict['food']['fdc_id'] for ingr_dict in recipe_model_obj.ingredients]
+        fdc_id = random.choice(list(Food.objects.filter())).fdc_id
+        while fdc_id in recipe_fdc_ids:
+            fdc_id = random.choice(list(Food.objects.filter())).fdc_id
+        cgi_data = {'fdc_id': fdc_id}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{recipe_model_obj._id}/add_ingredient/", data=cgi_data)
+        )
+        response = recipes_builder_mongodb_id_delete(request, recipe_model_obj._id)
+        recipe_model_obj.refresh_from_db()
+        assert isinstance(response, HttpResponseRedirect), f"calling recipes_builder_mongodb_id_delete() with " \
+                f"a valid Recipe objectid and the CGI params '{cgi_query_string}' doesn't return a redirect"
+        assert response.url == f"/recipes/builder/{recipe_model_obj._id}/", \
+                f"calling recipes_builder_mongodb_id_delete() with the CGI params '{cgi_query_string}' returns a " \
+                "redirect that doesn't point to the appropriate URL"
+        assert not any(serialized_ingredient_obj['food']['fdc_id'] == fdc_id
+                   for serialized_ingredient_obj in recipe_model_obj.ingredients), \
+                f"calling recipes_builder_mongodb_id_add_ingredient() with a valid Recipe objectid but the CGI " \
+                f"params '{cgi_query_string}' returns a redirect but nevertheless adds that ingredient to the " \
+                "Recipe object"
 
