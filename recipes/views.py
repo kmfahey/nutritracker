@@ -343,7 +343,7 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
             assert servings_number > 0
         except (ValueError, AssertionError):
             context["error"] = True
-            context["message"] = "value for 'servings_number' must be a floating-point number greater than zero"
+            context["message"] = "value for servings_number must be a floating-point number greater than zero"
             return HttpResponse(template.render(context, request))
 
         try:

@@ -632,7 +632,7 @@ class test_recipes_builder_mongodb_id_add_ingredient(recipes_test_case):
                 "objectid that doesn't correspond to any Recipe object doesn't yield content containing the " \
                 "appropriate error message"
 
-    def test_recipes_builder_mongodb_id_add_ingredient_error_case_bad_arg(self):
+    def test_recipes_builder_mongodb_id_add_ingredient_error_case_bad_fdc_id_arg(self):
         recipe_model_obj = random.choice(list(self.recipes.values()))
         cgi_data = {'fdc_id': 'bad argument', 'servings_number': 4}
         cgi_query_string = urllib.parse.urlencode(cgi_data)
@@ -641,7 +641,8 @@ class test_recipes_builder_mongodb_id_add_ingredient(recipes_test_case):
         )
         content = recipes_builder_mongodb_id_add_ingredient(request, recipe_model_obj._id).content.decode('utf-8')
         assert "value for fdc_id must be an integer; received &#x27;bad argument&#x27;" in content, \
-                f"calling recipes_builder() with CGI params '{cgi_query_string}' did not produce the correct error"
+                f"calling recipes_builder_mongodb_id_add_ingredient() with CGI params '{cgi_query_string}' did " \
+                "not produce the correct error"
 
     def test_recipes_builder_mongodb_id_add_ingredient_error_case_wo_servings_number(self):
         recipe_model_obj = random.choice(list(self.recipes.values()))
@@ -667,3 +668,18 @@ class test_recipes_builder_mongodb_id_add_ingredient(recipes_test_case):
                 f"params '{cgi_query_string}' returns a redirect but nevertheless adds that ingredient to the " \
                 "Recipe object"
 
+    def test_recipes_builder_mongodb_id_add_ingredient_error_case_bad_servings_number_arg(self):
+        recipe_model_obj = random.choice(list(self.recipes.values()))
+        recipe_fdc_ids = [ingr_dict['food']['fdc_id'] for ingr_dict in recipe_model_obj.ingredients]
+        fdc_id = random.choice(list(Food.objects.filter())).fdc_id
+        while fdc_id in recipe_fdc_ids:
+            fdc_id = random.choice(list(Food.objects.filter())).fdc_id
+        cgi_data = {'fdc_id': fdc_id, 'servings_number': 'bad argument'}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{recipe_model_obj._id}/add_ingredient/", data=cgi_data)
+        )
+        content = recipes_builder_mongodb_id_add_ingredient(request, recipe_model_obj._id).content.decode('utf-8')
+        assert "value for servings_number must be a floating-point number greater than zero" in content, \
+                f"calling recipes_builder_mongodb_id_add_ingredient() with CGI params '{cgi_query_string}' did " \
+                "not yield content with the correct error"
