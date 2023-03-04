@@ -13,7 +13,7 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.http import HttpResponseRedirect
 from django.test.client import RequestFactory
 from django.test import TestCase, tag
-from operator import attrgetter, itemgetter
+from operator import attrgetter
 
 from .models import Food, Ingredient, Recipe
 from .views import recipes, recipes_mongodb_id, recipes_search, recipes_search_results, recipes_builder, \
@@ -654,15 +654,15 @@ class test_recipes_builder_mongodb_id_add_ingredient(recipes_test_case):
         request = self._middleware_and_user_bplate(
             self.request_factory.get(f"/recipes/builder/{recipe_model_obj._id}/add_ingredient/", data=cgi_data)
         )
-        response = recipes_builder_mongodb_id_delete(request, recipe_model_obj._id)
+        response = recipes_builder_mongodb_id_add_ingredient(request, recipe_model_obj._id)
         recipe_model_obj.refresh_from_db()
-        assert isinstance(response, HttpResponseRedirect), f"calling recipes_builder_mongodb_id_delete() with " \
-                f"a valid Recipe objectid and the CGI params '{cgi_query_string}' doesn't return a redirect"
-        assert response.url == f"/recipes/builder/{recipe_model_obj._id}/", \
-                f"calling recipes_builder_mongodb_id_delete() with the CGI params '{cgi_query_string}' returns a " \
-                "redirect that doesn't point to the appropriate URL"
+        assert isinstance(response, HttpResponseRedirect), f"calling recipes_builder_mongodb_id_add_ingredient() " \
+                f"with a valid Recipe objectid and the CGI params '{cgi_query_string}' doesn't return a redirect"
+        assert response.url == f"/recipes/builder/{recipe_model_obj._id}/add_ingredient/", \
+                f"calling recipes_builder_mongodb_id_add_ingredient() with the CGI params '{cgi_query_string}' " \
+                "returns a redirect that doesn't point to the appropriate URL"
         assert not any(serialized_ingredient_obj['food']['fdc_id'] == fdc_id
-                   for serialized_ingredient_obj in recipe_model_obj.ingredients), \
+                       for serialized_ingredient_obj in recipe_model_obj.ingredients), \
                 f"calling recipes_builder_mongodb_id_add_ingredient() with a valid Recipe objectid but the CGI " \
                 f"params '{cgi_query_string}' returns a redirect but nevertheless adds that ingredient to the " \
                 "Recipe object"
