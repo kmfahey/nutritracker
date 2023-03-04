@@ -683,3 +683,21 @@ class test_recipes_builder_mongodb_id_add_ingredient(recipes_test_case):
         assert "value for servings_number must be a floating-point number greater than zero" in content, \
                 f"calling recipes_builder_mongodb_id_add_ingredient() with CGI params '{cgi_query_string}' did " \
                 "not yield content with the correct error"
+
+    def test_recipes_builder_mongodb_id_add_ingredient_error_case_invented_fdc_id(self):
+        recipe_model_obj = random.choice(list(self.recipes.values()))
+        recipe_fdc_ids = [ingr_dict['food']['fdc_id'] for ingr_dict in recipe_model_obj.ingredients]
+        spurious_fdc_id = random.randint(2**17, 2**22)
+        while spurious_fdc_id in recipe_fdc_ids:
+            spurious_fdc_id = random.randint(2**17, 2**22)
+        cgi_data = {"fdc_id": spurious_fdc_id, 'servings_number': 1}
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{recipe_model_obj._id}/add_ingredient/", data=cgi_data)
+        )
+        content = recipes_builder_mongodb_id_add_ingredient(request, recipe_model_obj._id).content.decode('utf-8')
+        error_message = "error: no object in &#x27;foods&#x27; collection in &#x27;nutritracker&#x27; data store " \
+                f"with fdc_id=&#x27;{spurious_fdc_id}&#x27;"
+        assert error_message in content, "calling recipes_builder_mongodb_id_add_ingredient() with a valid Recipe " \
+                "objectid and an invalid fdc_id does not yield content containing the appropriate error message"
+
+

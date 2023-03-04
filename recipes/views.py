@@ -350,9 +350,9 @@ def recipes_builder_mongodb_id_add_ingredient(request, mongodb_id):
             food_model_obj = Food.objects.get(fdc_id=fdc_id)
         except Food.DoesNotExist:
             context["error"] = True
-            context["message"] = (f"Error 404: no object in 'foods' collection in 'nutritracker' "
+            context["message"] = (f"error: no object in 'foods' collection in 'nutritracker' "
                                   f"data store with fdc_id='{fdc_id}'")
-            return HttpResponse(template.render(context, request), status=404)
+            return HttpResponse(template.render(context, request))
 
         context["ingredient_serving_qty"] = servings_number * food_model_obj.serving_size
 
