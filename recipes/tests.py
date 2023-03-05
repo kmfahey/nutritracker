@@ -583,7 +583,7 @@ class test_recipes_builder_mongodb_id_remove_ingredient(recipes_test_case):
 
 class test_recipes_builder_mongodb_id_add_ingredient(recipes_test_case):
 
-    def test_recipes_builder_mongodb_id_add_ingredient_normal_case(self):
+    def test_recipes_builder_mongodb_id_add_ingredient_normal_case_adding_ingredient(self):
         recipe_model_obj = self.recipes['Peanut Butter & Jam Sandwich']
         # This is the official way to copy a model object: set its pk (ie.
         # primary key) attribute to None and its _state.adding attribute to
@@ -700,4 +700,23 @@ class test_recipes_builder_mongodb_id_add_ingredient(recipes_test_case):
         assert error_message in content, "calling recipes_builder_mongodb_id_add_ingredient() with a valid Recipe " \
                 "objectid and an invalid fdc_id does not yield content containing the appropriate error message"
 
+    def test_recipes_builder_mongodb_id_add_ingredient_normal_case_searching(self):
+        recipe_model_obj = random.choice(list(self.recipes.values()))
+        cgi_data = {'search_query': 'Bread', 'page_size': 25, 'page_number': 1}
+        cgi_query_string = urllib.parse.urlencode(cgi_data)
+        request = self._middleware_and_user_bplate(
+            self.request_factory.get(f"/recipes/builder/{recipe_model_obj._id}/add_ingredient/", data=cgi_data)
+        )
+        content = recipes_builder_mongodb_id_add_ingredient(request, recipe_model_obj._id).content.decode('utf-8')
+        for food_model_obj in Food.objects.filter():
+            food_content_str = f'<b><a href="/recipes/builder/{recipe_model_obj._id}/add_ingredient/' \
+                    f'{food_model_obj.fdc_id}/">{html.escape(food_model_obj.food_name)}</a></b>'
+            if 'Bread' in food_model_obj.food_name:
+                assert food_content_str in content, "calling recipes_builder_mongodb_id_add_ingredient() " \
+                        f"with valid Recipe objectid and CGI params {cgi_query_string} yields content listing " \
+                        f"the matching food '{food_name}'"
+            else:
+                assert food_content_str not in content, "calling recipes_builder_mongodb_id_add_ingredient() " \
+                        f"with valid Recipe objectid and CGI params {cgi_query_string} yields content listing " \
+                        f"the matching food '{food_name}' when it shouldn't"
 
